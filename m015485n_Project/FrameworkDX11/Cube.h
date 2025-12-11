@@ -17,22 +17,21 @@
 
 #include <d3d11_1.h>
 #include <DirectXMath.h>
+#include <utility>
+
 #include "wrl.h"
 #include "structures.h"
 #include "IRenderable.h"
-
 
 using namespace DirectX;
 
 class Cube : public IRenderable
 {
 public:
-	Cube();
+	Cube(XMFLOAT3 Position, pair<XMFLOAT3, float> Rotation, float scale);
 	~Cube();
 
 	HRESULT	initMesh(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pContext);
 
 private: // variables
-	
-	
 };

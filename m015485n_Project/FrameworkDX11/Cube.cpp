@@ -6,9 +6,12 @@ using namespace DirectX;
 
 constexpr int NUM_VERTICES = 36;
 
-Cube::Cube()
-{	
+Cube::Cube(XMFLOAT3 Position, pair<XMFLOAT3, float> Rotation, float scale)
+{
 	m_vertexCount = NUM_VERTICES;
+	setPosition(Position);
+	setRotate(Rotation.first, Rotation.second);
+	setScale(scale);
 }
 
 Cube::~Cube()
@@ -57,7 +60,7 @@ HRESULT Cube::initMesh(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pContext)
 		{ XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f), XMFLOAT2(1.0f, 0.0f) }, // 5 // 8
 
 		{ XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f), XMFLOAT2(0.0f, 1.0f) }, // 7 // 9
-		{ XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f), XMFLOAT2(0.0f, 0.0f) }, // 4 // 10 
+		{ XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f), XMFLOAT2(0.0f, 0.0f) }, // 4 // 10
 		{ XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f), XMFLOAT2(1.0f, 1.0f) }, // 6 // 11
 
 		// left
@@ -81,7 +84,7 @@ HRESULT Cube::initMesh(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pContext)
 		// front
 		{ XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) }, // 19 // 24
 		{ XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f) , XMFLOAT2(1.0f, 1.0f) }, // 17 // 25
-		{ XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 1.0f) }, // 16 // 26 
+		{ XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 1.0f) }, // 16 // 26
 
 		{ XMFLOAT3(1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(1.0f, 0.0f) }, // 18 // 27
 		{ XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f) , XMFLOAT2(1.0f, 1.0f) }, // 17 // 28
@@ -110,8 +113,6 @@ HRESULT Cube::initMesh(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pContext)
 	if (FAILED(hr))
 		return hr;
 
-
-
 	bd.Usage = D3D11_USAGE_DEFAULT;
 	bd.ByteWidth = sizeof(WORD) * NUM_VERTICES;        // 36 vertices needed for 12 triangles in a triangle list
 	bd.BindFlags = D3D11_BIND_INDEX_BUFFER;
@@ -127,6 +128,10 @@ HRESULT Cube::initMesh(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pContext)
 	if (FAILED(hr))
 		return hr;
 
+	hr = CreateDDSTextureFromFile(pd3dDevice, L"Resources\\tex2.dds", nullptr, m_textureResourceView2.GetAddressOf());
+	if (FAILED(hr))
+		return hr;
+
 	D3D11_SAMPLER_DESC sampDesc;
 	ZeroMemory(&sampDesc, sizeof(sampDesc));
 	sampDesc.Filter = D3D11_FILTER_ANISOTROPIC;
@@ -139,8 +144,8 @@ HRESULT Cube::initMesh(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pContext)
 	hr = pd3dDevice->CreateSamplerState(&sampDesc, &m_textureSampler);
 
 	m_material.Material.Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-	m_material.Material.Specular = XMFLOAT4(1.0f, 0.2f, 0.2f, 1.0f);
-	m_material.Material.SpecularPower = 32.0f;
+	m_material.Material.Specular = XMFLOAT4(0.2f, 0.2f, 0.2f, 1.0f);
+	m_material.Material.SpecularPower = 128.0f;
 	m_material.Material.UseTexture = true;
 
 	// Create the material constant buffer

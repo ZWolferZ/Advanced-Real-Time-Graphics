@@ -66,7 +66,7 @@ enum LightType
 	SpotLight = 2
 };
 
-#define MAX_LIGHTS 1
+#define MAX_LIGHTS 2
 
 struct Light
 {
@@ -80,7 +80,8 @@ struct Light
 		, QuadraticAttenuation(0.0f)
 		, LightType(DirectionalLight)
 		, Enabled(0)
-	{}
+	{
+	}
 
 	DirectX::XMFLOAT4    Position;
 	//----------------------------------- (16 byte boundary)
@@ -100,13 +101,13 @@ struct Light
 	//----------------------------------- (16 byte boundary)
 };  // Total:                              80 bytes ( 5 * 16 )
 
-
 struct LightPropertiesConstantBuffer
 {
 	LightPropertiesConstantBuffer()
 		: EyePosition(0, 0, 0, 1)
 		, GlobalAmbient(0.2f, 0.2f, 0.8f, 1.0f)
-	{}
+	{
+	}
 
 	DirectX::XMFLOAT4   EyePosition;
 	//----------------------------------- (16 byte boundary)

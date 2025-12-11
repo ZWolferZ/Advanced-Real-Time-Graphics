@@ -44,7 +44,6 @@ public:
 	void	setScale(const float scale) { m_scale = scale; }
 	void	setRotate(const XMFLOAT3 axis, const float angleRadians) { m_rotateAxis = axis; m_rotateAngleRadians = angleRadians; }
 
-
 protected:
 
 	XMFLOAT4X4													m_world;
@@ -53,13 +52,14 @@ protected:
 	Microsoft::WRL::ComPtr < ID3D11Buffer>						m_vertexBuffer = nullptr;
 	Microsoft::WRL::ComPtr < ID3D11Buffer>						m_indexBuffer = nullptr;
 	Microsoft::WRL::ComPtr < ID3D11ShaderResourceView>			m_textureResourceView = nullptr;
+	Microsoft::WRL::ComPtr < ID3D11ShaderResourceView>			m_textureResourceView2 = nullptr;
+
 	Microsoft::WRL::ComPtr < ID3D11SamplerState>				m_textureSampler = nullptr;
 
 	Microsoft::WRL::ComPtr < ID3D11Buffer>						m_materialConstantBuffer = nullptr;
 	XMFLOAT3													m_position;
 	float														m_scale = 1;
 	float														m_rotateAngleRadians = 0;
-	XMFLOAT3													m_rotateAxis = XMFLOAT3(0,0,0);
+	XMFLOAT3													m_rotateAxis = XMFLOAT3(0, 0, 0);
 	unsigned int												m_vertexCount = 0;
 };
-

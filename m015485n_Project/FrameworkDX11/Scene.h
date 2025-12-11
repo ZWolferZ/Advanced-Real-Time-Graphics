@@ -31,25 +31,23 @@ public:
 
 	HRESULT		init(HWND hwnd, const Microsoft::WRL::ComPtr<ID3D11Device>& device, const Microsoft::WRL::ComPtr<ID3D11DeviceContext>& context);
 	void		cleanUp();
-	Camera*		getCamera() { return m_pCamera; }
+	Camera* getCamera() { return m_pCamera; }
 
 	void		update(const float deltaTime);
-	
+
 	const LightPropertiesConstantBuffer& getLightProperties() { return m_lightProperties; }
 
-private:
 	void setupLightProperties();
+	void updateLightProperties(unsigned int index, const Light& light);
 
 private:
 	Camera* m_pCamera;
-	
+
 	Microsoft::WRL::ComPtr <ID3D11Device>			m_pd3dDevice;
 	Microsoft::WRL::ComPtr <ID3D11DeviceContext>	m_pImmediateContext;
 	Microsoft::WRL::ComPtr <ID3D11Buffer>			m_pConstantBuffer;
 	Microsoft::WRL::ComPtr <ID3D11Buffer>			m_pLightConstantBuffer;
 
-	
 	vecTypeDrawables		m_vecDrawables;
 	LightPropertiesConstantBuffer m_lightProperties;
 };
-

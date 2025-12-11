@@ -62,6 +62,7 @@ private: // methods
 	void	CentreMouseInWindow(HWND hWnd);
 	void	DrawVersionWindow(const unsigned int FPS);
 	void	DrawHideAllWindows();
+	void	DrawLightUpdateWindow();
 
 private: // properties
 	std::unordered_map<UINT8, bool > inputs;
@@ -89,12 +90,5 @@ private: // properties
 	Microsoft::WRL::ComPtr <ID3D11PixelShader>		m_pPixelShader;
 	Microsoft::WRL::ComPtr <ID3D11InputLayout>		m_pVertexLayout;
 
-
 	Scene* m_pScene;
-	
-
-
-	
-
 };
-
