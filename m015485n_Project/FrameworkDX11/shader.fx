@@ -232,5 +232,7 @@ float4 PS(PS_INPUT IN) : SV_TARGET
 //--------------------------------------------------------------------------------------
 float4 PSSolid(PS_INPUT input) : SV_Target
 {
+    float4 vOutputColor = {1,1,0,1};
+
     return vOutputColor;
 }

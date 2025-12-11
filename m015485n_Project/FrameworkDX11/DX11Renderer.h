@@ -18,14 +18,16 @@
 #include <d3d11_1.h>
 #include "constants.h"
 #include "Camera.h"
-#include "Cube.h"
+#include "GameObject.h"
 
 #include <vector>
 #include <unordered_map>
 
+#include "ImGuiRendering.h"
+
 class Scene;
 
-typedef vector<Cube*> vecTypeDrawables;
+typedef vector<GameObject*> vecTypeDrawables;
 
 struct ImGuiParameterState
 {
@@ -55,21 +57,16 @@ public:
 private: // methods
 	HRESULT initDevice(HWND hwnd);
 	void    cleanupDevice();
-	void	initIMGUI(HWND hwnd);
-	void	IMGUIDraw(const unsigned int FPS);
-	void	startIMGUIDraw();
-	void	completeIMGUIDraw();
+	//void	initIMGUI(HWND hwnd);
+	//void	IMGUIDraw(const unsigned int FPS);
+	//void	startIMGUIDraw();
+	//void	completeIMGUIDraw();
 	void	CentreMouseInWindow(HWND hWnd);
-	void	DrawVersionWindow(const unsigned int FPS);
-	void	DrawHideAllWindows();
-	void	DrawLightUpdateWindow();
-	void	DrawObjectMovementWindow();
-	void	DrawObjectSelectionWindow();
 
 private: // properties
+
+	ImGuiRendering* m_imguiRenderer = nullptr;
 	std::unordered_map<UINT8, bool > inputs;
-	bool showWindows = false;
-	Cube* m_selectedObject = nullptr;
 	std::vector<XMVECTOR> m_controlPoints = {
 	XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f),  // Initial velocity
 	XMVectorSet(0.0f,  0.0f, 5.0f, 0.0f),
@@ -91,6 +88,7 @@ private: // properties
 
 	Microsoft::WRL::ComPtr <ID3D11VertexShader>		m_pVertexShader;
 	Microsoft::WRL::ComPtr <ID3D11PixelShader>		m_pPixelShader;
+	Microsoft::WRL::ComPtr <ID3D11PixelShader>		m_pSolidPixelShader;
 	Microsoft::WRL::ComPtr <ID3D11InputLayout>		m_pVertexLayout;
 
 	Scene* m_pScene;

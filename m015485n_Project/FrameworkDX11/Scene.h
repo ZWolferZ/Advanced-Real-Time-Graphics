@@ -18,10 +18,8 @@
 #include "constants.h"
 #include "Camera.h"
 #include <d3d11_1.h>
-#include "Cube.h"
+#include "GameObject.h"
 #include <vector>
-
-typedef vector<Cube*> vecTypeDrawables;
 
 class Scene
 {
@@ -30,16 +28,21 @@ public:
 	~Scene() = default;
 
 	HRESULT		init(HWND hwnd, const Microsoft::WRL::ComPtr<ID3D11Device>& device, const Microsoft::WRL::ComPtr<ID3D11DeviceContext>& context);
+	void CreateGameObjects();
 	void		cleanUp();
 	Camera* getCamera() { return m_pCamera; }
 
 	void		update(const float deltaTime);
 
+	void SetPixelShaders(const vector<Microsoft::WRL::ComPtr <ID3D11PixelShader>>& pixelShaders) { m_pixelShaders = pixelShaders; }
+
 	const LightPropertiesConstantBuffer& getLightProperties() { return m_lightProperties; }
 
 	void setupLightProperties();
-	void updateLightProperties(unsigned int index, const Light& light);
-	vecTypeDrawables		m_vecDrawables;
+	void UpdateLightProperties(unsigned int index, const Light& light);
+	void UpdateLightBuffer();
+	vector<GameObject*>		m_vecDrawables;
+
 private:
 	Camera* m_pCamera;
 
@@ -47,7 +50,7 @@ private:
 	Microsoft::WRL::ComPtr <ID3D11DeviceContext>	m_pImmediateContext;
 	Microsoft::WRL::ComPtr <ID3D11Buffer>			m_pConstantBuffer;
 	Microsoft::WRL::ComPtr <ID3D11Buffer>			m_pLightConstantBuffer;
+	vector<Microsoft::WRL::ComPtr <ID3D11PixelShader>> m_pixelShaders;
 
-	
 	LightPropertiesConstantBuffer m_lightProperties;
 };

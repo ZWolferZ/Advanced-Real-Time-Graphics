@@ -4,10 +4,6 @@
 #include <d3dcompiler.h>
 #include <string>
 
-#include "imgui/imgui.h"
-#include "imgui/imgui_impl_win32.h"
-#include "imgui/imgui_impl_dx11.h"
-
 #include "globals.h"
 
 #pragma region Class lifetime
@@ -17,9 +13,8 @@ HRESULT DX11Renderer::init(HWND hwnd)
 	initDevice(hwnd);
 
 	m_pScene = new Scene;
-	m_pScene->init(hwnd, m_pd3dDevice, m_pImmediateContext);
 
-	initIMGUI(hwnd);
+	m_imguiRenderer = new ImGuiRendering(hwnd, m_pd3dDevice.Get(), m_pImmediateContext.Get());
 
 	// Compile the vertex shader
 	ID3DBlob* pVSBlob = nullptr;
@@ -71,9 +66,23 @@ HRESULT DX11Renderer::init(HWND hwnd)
 	// Create the pixel shader
 	hr = m_pd3dDevice->CreatePixelShader(pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize(), nullptr, &m_pPixelShader);
 
+	// Compile the pixel shader
+	hr = compileShaderFromFile(L"shader.fx", "PSSolid", "ps_4_0", &pPSBlob);
+	if (FAILED(hr))
+	{
+		MessageBox(nullptr,
+			L"The FX file cannot be compiled.  Please run this executable from the directory that contains the FX file.", L"Error", MB_OK);
+		return hr;
+	}
+
+	// Create the pixel shader
+	hr = m_pd3dDevice->CreatePixelShader(pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize(), nullptr, &m_pSolidPixelShader);
+
 	pPSBlob->Release();
 	if (FAILED(hr))
 		return hr;
+	m_pScene->SetPixelShaders({ m_pPixelShader, m_pSolidPixelShader });
+	m_pScene->init(hwnd, m_pd3dDevice, m_pImmediateContext);
 
 	return hr;
 }
@@ -286,9 +295,7 @@ void DX11Renderer::cleanUp()
 {
 	cleanupDevice();
 
-	ImGui_ImplDX11_Shutdown();
-	ImGui_ImplWin32_Shutdown();
-	ImGui::DestroyContext();
+	m_imguiRenderer->ShutDownImGui();
 
 	m_pScene->cleanUp();
 	delete m_pScene;
@@ -355,23 +362,6 @@ HRESULT DX11Renderer::compileShaderFromFile(const WCHAR* szFileName, LPCSTR szEn
 	if (pErrorBlob) pErrorBlob->Release();
 
 	return S_OK;
-}
-
-void DX11Renderer::initIMGUI(HWND hwnd)
-{
-	// Setup Dear ImGui context
-	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO();
-	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
-	//io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // IF using Docking Branch
-
-	// Setup Platform/Renderer backends
-	ImGui_ImplWin32_Init(hwnd);
-	ImGui_ImplDX11_Init(m_pd3dDevice.Get(), m_pImmediateContext.Get());
-
-	io.IniFilename = nullptr;
 }
 
 void DX11Renderer::input(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -487,205 +477,6 @@ void DX11Renderer::CentreMouseInWindow(HWND hWnd)
 	SetCursorPos(center.x, center.y);
 }
 
-void DX11Renderer::DrawVersionWindow(const unsigned int FPS)
-{
-	ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
-	ImGui::Begin("LucyLabs DX11 Renderer", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-	ImGui::Text("ImGUI version: (%s)", IMGUI_VERSION);
-	ImGui::Text("Application Runtime (%f)", m_totalTime);
-	ImGui::Text("FPS %d", FPS);
-	ImGui::End();
-}
-
-void DX11Renderer::DrawHideAllWindows()
-{
-	ImGui::SetNextWindowPos(ImVec2(1100, 650), ImGuiCond_FirstUseEver);
-	ImGui::Begin("Show/Hide UI", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-	ImGui::Checkbox("Hide All Windows", &showWindows);
-	ImGui::End();
-}
-
-void DX11Renderer::DrawLightUpdateWindow()
-{
-	ImGui::SetNextWindowPos(ImVec2(10, 150), ImGuiCond_FirstUseEver);
-	ImGui::Begin("Light Movement Update Window", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-
-	for (unsigned int i = 0; i < MAX_LIGHTS; i++)
-	{
-		ImGui::Separator();
-
-		Light pLight = m_pScene->getLightProperties().Lights[i];
-		bool lightEnabled = pLight.Enabled;
-		ImGui::Text("Light %d", i);
-
-		if (ImGui::Checkbox(("Light " + std::to_string(i) + " Enable").c_str(), &lightEnabled))
-		{
-			lightEnabled ? pLight.Enabled = 1 : pLight.Enabled = 0;
-		}
-
-		float lightPos[3] = { pLight.Position.x, pLight.Position.y, pLight.Position.z };
-		if (ImGui::DragFloat3(("Light " + std::to_string(i) + " Position").c_str(), lightPos, 0.1f))
-		{
-			pLight.Position = XMFLOAT4(lightPos[0], lightPos[1], lightPos[2], 1);
-		}
-		float lightColor[3] = { pLight.Color.x, pLight.Color.y, pLight.Color.z };
-		if (ImGui::ColorEdit3(("Light " + std::to_string(i) + " Color").c_str(), lightColor))
-		{
-			pLight.Color = XMFLOAT4(lightColor[0], lightColor[1], lightColor[2], 1);
-		}
-
-		/*	float spotAngle = pLight.SpotAngle;
-
-			if (ImGui::SliderFloat(("Light " + std::to_string(i) + " Spot Angle").c_str(), &spotAngle, 0.0f, 90.0f))
-			{
-				pLight.SpotAngle = XMConvertToRadians(spotAngle);
-			}*/
-
-		float constantAttenuation = pLight.ConstantAttenuation;
-		if (ImGui::SliderFloat(("Light " + std::to_string(i) + " Constant Attenuation").c_str(), &constantAttenuation, 0.1f, 1.0f))
-		{
-			pLight.ConstantAttenuation = constantAttenuation;
-		}
-		float linearAttenuation = pLight.LinearAttenuation;
-		if (ImGui::SliderFloat(("Light " + std::to_string(i) + " Linear Attenuation").c_str(), &linearAttenuation, 0.1f, 1.0f))
-		{
-			pLight.LinearAttenuation = linearAttenuation;
-		}
-		float quadraticAttenuation = pLight.QuadraticAttenuation;
-		if (ImGui::SliderFloat(("Light " + std::to_string(i) + " Quadratic Attenuation").c_str(), &quadraticAttenuation, 0.1f, 1.0f))
-		{
-			pLight.QuadraticAttenuation = quadraticAttenuation;
-		}
-		ImGui::Separator();
-		m_pScene->updateLightProperties(i, pLight);
-	}
-
-	ImGui::End();
-}
-
-void DX11Renderer::DrawObjectMovementWindow()
-{
-	if (m_selectedObject != nullptr)
-	{
-		ImGui::SetNextWindowPos(ImVec2(930, 10), ImGuiCond_FirstUseEver);
-		ImGui::Begin("Object Movement Window", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-
-		ImGui::Text("Manipulate object:");
-		ImGui::Text("Selected Object: %s", m_selectedObject->GetObjectName().c_str());
-		ImGui::Separator();
-
-		XMFLOAT3 position = m_selectedObject->getPosition();
-		if (ImGui::DragFloat3("Position", reinterpret_cast<float*>(&position), 0.005f))
-		{
-			m_selectedObject->setPosition(position);
-		}
-
-		XMFLOAT3 rotation = m_selectedObject->getRotation();
-		if (ImGui::DragFloat3("Rotation", reinterpret_cast<float*>(&rotation), 0.5f, -361, 361))
-		{
-			m_selectedObject->setRotate(rotation);
-		}
-
-		XMFLOAT3 scale = m_selectedObject->getScale();
-		if (ImGui::DragFloat3("Scale", reinterpret_cast<float*>(&scale), 0.01f, -INFINITY, INFINITY))
-		{
-			m_selectedObject->setScale(scale);
-		}
-
-		ImGui::Text("(Drag the box or enter a number)");
-		ImGui::Separator();
-
-		ImGui::Text("Auto Rotate:");
-
-		ImGui::SliderFloat("Rotation Speed", &m_selectedObject->m_autoRotationSpeed, 0.0f, 360.0f);
-
-		ImGui::Checkbox("Auto Rotate (X+)", &m_selectedObject->m_autoRotateX);
-
-		ImGui::Checkbox("Auto Rotate (Y+)", &m_selectedObject->m_autoRotateY);
-
-		ImGui::Checkbox("Auto Rotate (Z+)", &m_selectedObject->m_autoRotateZ);
-
-		ImGui::Separator();
-
-		if (ImGui::Button("Reset Transform"))
-		{
-			m_selectedObject->resetTransform();
-		}
-
-		ImGui::End();
-	}
-}
-
-void DX11Renderer::DrawObjectSelectionWindow()
-{
-	ImGui::SetNextWindowPos(ImVec2(250, 10), ImGuiCond_FirstUseEver);
-	ImGui::Begin("Object Selection", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-
-	ImGui::Text("Choose an object to select!");
-	ImGui::Separator();
-
-	for (auto dgo : m_pScene->m_vecDrawables)
-	{
-		bool isSelected = (m_selectedObject == dgo);
-
-		if (ImGui::Selectable(dgo->GetObjectName().c_str(), isSelected))
-		{
-			if (isSelected)
-			{
-				m_selectedObject = nullptr;
-			}
-			else
-			{
-				m_selectedObject = dgo;
-			}
-		}
-	}
-
-	ImGui::End();
-}
-
-void DX11Renderer::IMGUIDraw(const unsigned int FPS)
-{
-	// Start the Dear ImGui frame
-	startIMGUIDraw();
-
-	// YOU will want to modify this for your own debug, controls etc - comment it out to hide the window
-
-	DrawHideAllWindows();
-
-	if (showWindows)
-	{
-		DrawVersionWindow(FPS);
-		DrawLightUpdateWindow();
-		DrawObjectSelectionWindow();
-		DrawObjectMovementWindow();
-	}
-
-	// example usage
-	/*if (ImGui::RadioButton("Single threaded CPU", g_ttype == use_cpu_singlethread)) g_ttype = use_cpu_singlethread;
-	if (ImGui::RadioButton("Multi threaded CPU", g_ttype == use_cpu_multithread)) g_ttype = use_cpu_multithread;
-	if (ImGui::RadioButton("GPU", g_ttype == use_gpu)) g_ttype = use_gpu;
-
-	ImGui::Spacing();
-
-	ImGui::SliderInt("Number of Cubes", &g_cube_count, 2, max_number_of_boxes);*/
-	completeIMGUIDraw();
-}
-
-void DX11Renderer::startIMGUIDraw()
-{
-	ImGui_ImplDX11_NewFrame();
-	ImGui_ImplWin32_NewFrame();
-	ImGui::NewFrame();
-}
-
-void DX11Renderer::completeIMGUIDraw()
-{
-	ImGui::Render();
-
-	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-}
-
 void DX11Renderer::update(const float deltaTime)
 {
 	updateKeyInputs();
@@ -714,7 +505,7 @@ void DX11Renderer::update(const float deltaTime)
 
 	m_pScene->update(deltaTime);
 
-	IMGUIDraw(FPS);
+	m_imguiRenderer->ImGuiDrawAllWindows(FPS, m_totalTime, *m_pScene);
 
 	// Present our back buffer to our front buffer
 	m_pSwapChain->Present(0, 0);

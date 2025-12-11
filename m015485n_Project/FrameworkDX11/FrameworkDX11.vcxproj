@@ -360,10 +360,11 @@
     <ClInclude Include="Camera.h" />
     <ClInclude Include="constants.h" />
     <ClInclude Include="DDSTextureLoader.h" />
-    <ClInclude Include="Cube.h" />
+    <ClInclude Include="GameObject.h" />
     <ClInclude Include="DX11App.h" />
     <ClInclude Include="DX11Renderer.h" />
     <ClInclude Include="globals.h" />
+    <ClInclude Include="ImGuiRendering.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="imgui\imconfig.h" />
     <ClInclude Include="imgui\imgui.h" />
@@ -381,9 +382,10 @@
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="DDSTextureLoader.cpp" />
-    <ClCompile Include="Cube.cpp" />
+    <ClCompile Include="GameObject.cpp" />
     <ClCompile Include="DX11App.cpp" />
     <ClCompile Include="DX11Renderer.cpp" />
+    <ClCompile Include="ImGuiRendering.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="imgui\imgui.cpp" />
     <ClCompile Include="imgui\imgui_demo.cpp" />

@@ -45,10 +45,11 @@ public:
 	void	setPosition(const XMFLOAT3 position) { m_position = position; }
 	void	setScale(const XMFLOAT3 scale) { m_scale = scale; }
 	void	setRotate(const XMFLOAT3 rotation) { m_rotation = rotation; }
-	
+
 	XMFLOAT3	getPosition() { return m_position; }
 	XMFLOAT3	getScale() { return m_scale; }
 	XMFLOAT3	getRotation() { return { m_rotation }; }
+	void SetPixelShader(Microsoft::WRL::ComPtr <ID3D11PixelShader> pixelShader) { m_pixelShader = pixelShader; }
 
 	void	resetTransform() { setPosition(m_orginalPosition); setScale(m_orginalScale); setRotate(m_orginalRotation); }
 
@@ -57,7 +58,6 @@ public:
 	bool m_autoRotateZ = false;
 
 	float m_autoRotationSpeed = 50.0f;
-
 
 protected:
 
@@ -74,11 +74,11 @@ protected:
 	Microsoft::WRL::ComPtr < ID3D11Buffer>						m_materialConstantBuffer = nullptr;
 	XMFLOAT3													m_position;
 	XMFLOAT3													m_orginalPosition;
-	XMFLOAT3													m_scale = XMFLOAT3(1,1,1);
+	XMFLOAT3													m_scale = XMFLOAT3(1, 1, 1);
 	XMFLOAT3													m_orginalScale = XMFLOAT3(1, 1, 1);
 	XMFLOAT3													m_rotation;
 	XMFLOAT3													m_orginalRotation;
 	unsigned int												m_vertexCount = 0;
 
-	
+	Microsoft::WRL::ComPtr <ID3D11PixelShader> m_pixelShader = nullptr;
 };

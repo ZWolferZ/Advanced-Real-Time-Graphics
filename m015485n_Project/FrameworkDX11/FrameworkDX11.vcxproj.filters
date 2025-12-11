@@ -28,7 +28,7 @@
     <ClCompile Include="DDSTextureLoader.cpp">
       <Filter>Graphics</Filter>
     </ClCompile>
-    <ClCompile Include="Cube.cpp">
+    <ClCompile Include="GameObject.cpp">
       <Filter>Graphics</Filter>
     </ClCompile>
     <ClCompile Include="DX11App.cpp">
@@ -44,6 +44,9 @@
       <Filter>Graphics</Filter>
     </ClCompile>
     <ClCompile Include="IRenderable.cpp">
+      <Filter>Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="ImGuiRendering.cpp">
       <Filter>Graphics</Filter>
     </ClCompile>
   </ItemGroup>
@@ -78,7 +81,7 @@
     <ClInclude Include="DDSTextureLoader.h">
       <Filter>Graphics</Filter>
     </ClInclude>
-    <ClInclude Include="Cube.h">
+    <ClInclude Include="GameObject.h">
       <Filter>Graphics</Filter>
     </ClInclude>
     <ClInclude Include="DX11App.h">
@@ -107,6 +110,9 @@
     </ClInclude>
     <ClInclude Include="globals.h">
       <Filter>App</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGuiRendering.h">
+      <Filter>Graphics</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

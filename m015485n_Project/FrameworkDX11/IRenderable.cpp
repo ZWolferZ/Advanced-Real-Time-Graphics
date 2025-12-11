@@ -1,6 +1,5 @@
 #include "IRenderable.h"
 
-
 IRenderable::IRenderable()
 {
 	m_vertexBuffer = nullptr;
@@ -47,16 +46,17 @@ void IRenderable::update(const float deltaTime, ID3D11DeviceContext* pContext)
 		m_rotation.z += m_autoRotationSpeed * deltaTime;
 	}
 
-
 	XMMATRIX translate = XMMatrixTranslation(m_position.x, m_position.y, m_position.z);
 	XMMATRIX scale = XMMatrixScaling(m_scale.x, m_scale.y, m_scale.z);
 	XMMATRIX rotation = XMMatrixRotationX(XMConvertToRadians(m_rotation.x)) * XMMatrixRotationY(XMConvertToRadians(m_rotation.y)) * XMMatrixRotationZ(XMConvertToRadians(m_rotation.z));
-	XMMATRIX world = scale * rotation * translate  ;
+	XMMATRIX world = scale * rotation * translate;
 	XMStoreFloat4x4(&m_world, world);
 }
 
-void IRenderable::draw(ID3D11DeviceContext* pContext, Camera* camera,  ID3D11Buffer* m_pConstantBuffer)
+void IRenderable::draw(ID3D11DeviceContext* pContext, Camera* camera, ID3D11Buffer* m_pConstantBuffer)
 {
+	pContext->PSSetShader(m_pixelShader.Get(), nullptr, 0);
+
 	ConstantBuffer cb;
 	cb.mView = XMMatrixTranspose(camera->GetViewMatrix());
 	cb.mProjection = XMMatrixTranspose(camera->GetProjectionMatrix());

@@ -26,11 +26,11 @@
 
 using namespace DirectX;
 
-class Cube : public IRenderable
+class GameObject : public IRenderable
 {
 public:
-	Cube(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, string ObjectName);
-	~Cube();
+	GameObject(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, string ObjectName, vector<GameObject*>& drawList, ID3D11Device* m_pd3dDevice, ID3D11DeviceContext* m_pImmediateContext, Microsoft::WRL::ComPtr <ID3D11PixelShader> pixelShader);
+	~GameObject();
 
 	string GetObjectName() { return objectName; }
 

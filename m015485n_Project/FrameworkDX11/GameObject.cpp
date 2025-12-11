@@ -1,4 +1,4 @@
-#include "Cube.h"
+#include "GameObject.h"
 #include "DDSTextureLoader.h"
 
 using namespace std;
@@ -6,7 +6,7 @@ using namespace DirectX;
 
 constexpr int NUM_VERTICES = 36;
 
-Cube::Cube(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, string ObjectName)
+GameObject::GameObject(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, string ObjectName, vector<GameObject*>& drawList, ID3D11Device* m_pd3dDevice, ID3D11DeviceContext* m_pImmediateContext, Microsoft::WRL::ComPtr <ID3D11PixelShader> pixelShader)
 {
 	m_vertexCount = NUM_VERTICES;
 	setPosition(Position);
@@ -16,13 +16,23 @@ Cube::Cube(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, string ObjectNa
 	m_orginalRotation = Rotation;
 	m_orginalScale = Scale;
 	objectName = ObjectName;
+	m_pixelShader = pixelShader;
+
+	HRESULT hr = GameObject::initMesh(m_pd3dDevice, m_pImmediateContext);
+	drawList.push_back(this);
+
+	if (FAILED(hr))
+	{
+		MessageBox(nullptr,
+			L"Failed to init mesh in game object.", L"Error", MB_OK);
+	}
 }
 
-Cube::~Cube()
+GameObject::~GameObject()
 {
 }
 
-HRESULT Cube::initMesh(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pContext)
+HRESULT GameObject::initMesh(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pContext)
 {
 	// Create index buffer
 	WORD indices[] =
