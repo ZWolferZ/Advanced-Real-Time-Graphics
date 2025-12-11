@@ -35,8 +35,8 @@ public:
 	void		update(const float deltaTime);
 
 	void SetPixelShaders(const vector<Microsoft::WRL::ComPtr <ID3D11PixelShader>>& pixelShaders) { m_pixelShaders = pixelShaders; }
-
-	const LightPropertiesConstantBuffer& getLightProperties() { return m_lightProperties; }
+	vector<Microsoft::WRL::ComPtr <ID3D11PixelShader>>& GetPixelShaders() { return m_pixelShaders; }
+	LightPropertiesConstantBuffer& getLightProperties() { return m_lightProperties; }
 
 	void setupLightProperties();
 	void UpdateLightProperties(unsigned int index, const Light& light);

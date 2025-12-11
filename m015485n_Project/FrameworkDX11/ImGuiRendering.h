@@ -20,13 +20,17 @@ public:
 private:
 	void	DrawVersionWindow(const unsigned int FPS, float totalAppTime);
 	void	DrawHideAllWindows();
+	void	DrawSelectLightWindow();
 	void	DrawLightUpdateWindow();
 	void	DrawObjectMovementWindow();
 	void	DrawObjectSelectionWindow();
+	void	DrawPixelShaderSelectionWindow();
 	void	StartIMGUIDraw();
 	void	CompleteIMGUIDraw();
 
 	bool showWindows = false;
 	Scene* m_currentScene = nullptr;
 	GameObject* m_selectedObject = nullptr;
+	Light* m_selectedLight = nullptr;
+	int lightIndex = 0;
 };

@@ -35,9 +35,11 @@ void ImGuiRendering::ImGuiDrawAllWindows(const unsigned int FPS, float totalAppT
 	if (showWindows)
 	{
 		DrawVersionWindow(FPS, totalAppTime);
+		DrawSelectLightWindow();
 		DrawLightUpdateWindow();
 		DrawObjectSelectionWindow();
 		DrawObjectMovementWindow();
+		DrawPixelShaderSelectionWindow();
 	}
 
 	CompleteIMGUIDraw();
@@ -61,33 +63,61 @@ void ImGuiRendering::DrawHideAllWindows()
 	ImGui::End();
 }
 
+void ImGuiRendering::DrawSelectLightWindow()
+{
+	ImGui::SetNextWindowPos(ImVec2(250, 10), ImGuiCond_FirstUseEver);
+	ImGui::Begin("Light Selection", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+
+	ImGui::Text("Choose an light to select!");
+	ImGui::Separator();
+
+	for (unsigned int i = 0; i < MAX_LIGHTS; ++i)
+	{
+		Light& light = m_currentScene->getLightProperties().Lights[i];
+		bool isSelected = (m_selectedLight == &light);
+
+		if (ImGui::Selectable(("Light " + std::to_string(i)).c_str(), isSelected))
+		{
+			if (isSelected)
+			{
+				m_selectedLight = nullptr;
+			}
+			else
+			{
+				m_selectedLight = &light;
+				lightIndex = i;
+			}
+		}
+	}
+
+	ImGui::End();
+}
+
 void ImGuiRendering::DrawLightUpdateWindow()
 {
-	ImGui::SetNextWindowPos(ImVec2(10, 150), ImGuiCond_FirstUseEver);
-	ImGui::Begin("Light Movement Update Window", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-
-	for (unsigned int i = 0; i < MAX_LIGHTS; i++)
+	if (m_selectedLight != nullptr)
 	{
+		ImGui::SetNextWindowPos(ImVec2(10, 150), ImGuiCond_FirstUseEver);
+		ImGui::Begin("Light Movement Update Window", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 		ImGui::Separator();
 
-		Light pLight = m_currentScene->getLightProperties().Lights[i];
-		bool lightEnabled = pLight.Enabled;
-		ImGui::Text("Light %d", i);
+		bool lightEnabled = m_selectedLight->Enabled;
+		ImGui::Text("Light %d", lightIndex);
 
-		if (ImGui::Checkbox(("Light " + std::to_string(i) + " Enable").c_str(), &lightEnabled))
+		if (ImGui::Checkbox(("Light " + std::to_string(lightIndex) + " Enable").c_str(), &lightEnabled))
 		{
-			lightEnabled ? pLight.Enabled = 1 : pLight.Enabled = 0;
+			lightEnabled ? m_selectedLight->Enabled = 1 : m_selectedLight->Enabled = 0;
 		}
 
-		float lightPos[3] = { pLight.Position.x, pLight.Position.y, pLight.Position.z };
-		if (ImGui::DragFloat3(("Light " + std::to_string(i) + " Position").c_str(), lightPos, 0.1f))
+		float lightPos[3] = { m_selectedLight->Position.x, m_selectedLight->Position.y, m_selectedLight->Position.z };
+		if (ImGui::DragFloat3(("Light " + std::to_string(lightIndex) + " Position").c_str(), lightPos, 0.1f))
 		{
-			pLight.Position = XMFLOAT4(lightPos[0], lightPos[1], lightPos[2], 1);
+			m_selectedLight->Position = XMFLOAT4(lightPos[0], lightPos[1], lightPos[2], 1);
 		}
-		float lightColor[3] = { pLight.Color.x, pLight.Color.y, pLight.Color.z };
-		if (ImGui::ColorEdit3(("Light " + std::to_string(i) + " Color").c_str(), lightColor))
+		float lightColor[3] = { m_selectedLight->Color.x, m_selectedLight->Color.y, m_selectedLight->Color.z };
+		if (ImGui::ColorEdit3(("Light " + std::to_string(lightIndex) + " Color").c_str(), lightColor))
 		{
-			pLight.Color = XMFLOAT4(lightColor[0], lightColor[1], lightColor[2], 1);
+			m_selectedLight->Color = XMFLOAT4(lightColor[0], lightColor[1], lightColor[2], 1);
 		}
 
 		/*	float spotAngle = pLight.SpotAngle;
@@ -97,26 +127,25 @@ void ImGuiRendering::DrawLightUpdateWindow()
 				pLight.SpotAngle = XMConvertToRadians(spotAngle);
 			}*/
 
-		float constantAttenuation = pLight.ConstantAttenuation;
-		if (ImGui::SliderFloat(("Light " + std::to_string(i) + " Constant Attenuation").c_str(), &constantAttenuation, 0.1f, 1.0f))
+		float constantAttenuation = m_selectedLight->ConstantAttenuation;
+		if (ImGui::SliderFloat(("Light " + std::to_string(lightIndex) + " Constant Attenuation").c_str(), &constantAttenuation, 0.1f, 1.0f))
 		{
-			pLight.ConstantAttenuation = constantAttenuation;
+			m_selectedLight->ConstantAttenuation = constantAttenuation;
 		}
-		float linearAttenuation = pLight.LinearAttenuation;
-		if (ImGui::SliderFloat(("Light " + std::to_string(i) + " Linear Attenuation").c_str(), &linearAttenuation, 0.1f, 1.0f))
+		float linearAttenuation = m_selectedLight->LinearAttenuation;
+		if (ImGui::SliderFloat(("Light " + std::to_string(lightIndex) + " Linear Attenuation").c_str(), &linearAttenuation, 0.1f, 1.0f))
 		{
-			pLight.LinearAttenuation = linearAttenuation;
+			m_selectedLight->LinearAttenuation = linearAttenuation;
 		}
-		float quadraticAttenuation = pLight.QuadraticAttenuation;
-		if (ImGui::SliderFloat(("Light " + std::to_string(i) + " Quadratic Attenuation").c_str(), &quadraticAttenuation, 0.1f, 1.0f))
+		float quadraticAttenuation = m_selectedLight->QuadraticAttenuation;
+		if (ImGui::SliderFloat(("Light " + std::to_string(lightIndex) + " Quadratic Attenuation").c_str(), &quadraticAttenuation, 0.1f, 1.0f))
 		{
-			pLight.QuadraticAttenuation = quadraticAttenuation;
+			m_selectedLight->QuadraticAttenuation = quadraticAttenuation;
 		}
 		ImGui::Separator();
-		m_currentScene->UpdateLightProperties(i, pLight);
+		m_currentScene->UpdateLightProperties(lightIndex, *m_selectedLight);
+		ImGui::End();
 	}
-
-	ImGui::End();
 }
 
 void ImGuiRendering::DrawObjectMovementWindow()
@@ -174,7 +203,8 @@ void ImGuiRendering::DrawObjectMovementWindow()
 
 void ImGuiRendering::DrawObjectSelectionWindow()
 {
-	ImGui::SetNextWindowPos(ImVec2(250, 10), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowPos(ImVec2(465, 10), ImGuiCond_FirstUseEver);
+
 	ImGui::Begin("Object Selection", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 
 	ImGui::Text("Choose an object to select!");
@@ -198,6 +228,30 @@ void ImGuiRendering::DrawObjectSelectionWindow()
 	}
 
 	ImGui::End();
+}
+
+void ImGuiRendering::DrawPixelShaderSelectionWindow()
+{
+	if (m_selectedObject != nullptr)
+	{
+		ImGui::SetNextWindowPos(ImVec2(930, 320), ImGuiCond_FirstUseEver);
+		ImGui::Begin("Pixel Shader Selection", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+		ImGui::Text("Select Pixel Shader for Each Object!");
+		ImGui::Separator();
+		ImGui::Text("Selected Object: %s", m_selectedObject->GetObjectName().c_str());
+		ImGui::Separator();
+		auto& pixelShaders = m_currentScene->GetPixelShaders();
+		for (unsigned int i = 0; i < pixelShaders.size(); i++)
+		{
+			std::string shaderLabel = "Pixel Shader " + std::to_string(i);
+			bool isSelected = (m_selectedObject->GetPixelShader().Get() == pixelShaders[i].Get());
+			if (ImGui::Selectable(shaderLabel.c_str(), isSelected))
+			{
+				m_selectedObject->SetPixelShader(pixelShaders[i]);
+			}
+		}
+		ImGui::End();
+	}
 }
 
 void ImGuiRendering::StartIMGUIDraw()

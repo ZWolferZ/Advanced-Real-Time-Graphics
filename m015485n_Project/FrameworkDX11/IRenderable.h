@@ -51,6 +51,7 @@ public:
 	XMFLOAT3	getRotation() { return { m_rotation }; }
 	void SetPixelShader(Microsoft::WRL::ComPtr <ID3D11PixelShader> pixelShader) { m_pixelShader = pixelShader; }
 
+	Microsoft::WRL::ComPtr <ID3D11PixelShader> GetPixelShader() { return m_pixelShader; }
 	void	resetTransform() { setPosition(m_orginalPosition); setScale(m_orginalScale); setRotate(m_orginalRotation); }
 
 	bool m_autoRotateX = false;
