@@ -136,7 +136,7 @@ LightingResult DoPointLight(Light light, float3 pixelToLightVectorNormalised, fl
 
 }
 
-LightingResult ComputeLighting(float4 pixelToLightVectorNormalised, float4 pixelToEyeVectorNormalised, float distanceFromPixelToLight, float3 N)
+LightingResult ComputeLighting(float4 worldPos, float3 N)
 {
     LightingResult totalResult;
     totalResult.Diffuse = float4(0, 0, 0, 0);
@@ -148,6 +148,10 @@ LightingResult ComputeLighting(float4 pixelToLightVectorNormalised, float4 pixel
         LightingResult result;
         result.Diffuse = float4(0, 0, 0, 0);
         result.Specular = float4(0, 0, 0, 0);
+        
+        float4 pixelToLightVectorNormalised = normalize(Lights[i].Position - worldPos);
+        float4 pixelToEyeVectorNormalised = normalize(EyePosition - worldPos);
+        float distanceFromPixelToLight = length(worldPos - Lights[i].Position);
 
         if (!Lights[i].Enabled)
             continue;
@@ -193,11 +197,10 @@ PS_INPUT VS(VS_INPUT input)
 
 float4 PS(PS_INPUT IN) : SV_TARGET
 {
-    float4 pixelToLightVectorNormalised = normalize(Lights[0].Position - IN.worldPos);
-    float4 pixelToEyeVectorNormalised = normalize(EyePosition - IN.worldPos);
-    float distanceFromPixelToLight = length(IN.worldPos - Lights[0].Position);
+    
+  
 
-    LightingResult lit = ComputeLighting(pixelToLightVectorNormalised, pixelToEyeVectorNormalised, distanceFromPixelToLight, normalize(IN.Norm));
+    LightingResult lit = ComputeLighting(IN.worldPos, normalize(IN.Norm));
 
     float4 texColor = float4(1, 1, 1, 1);
 
