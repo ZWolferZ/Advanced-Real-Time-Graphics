@@ -30,7 +30,7 @@ public:
 	IRenderable();
 	virtual ~IRenderable();
 
-	virtual HRESULT	initMesh(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pContext) = 0;
+	virtual HRESULT	initCubeMesh(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pContext) = 0;
 	virtual void	update(const float deltaTime, ID3D11DeviceContext* pContext);
 	virtual void	draw(ID3D11DeviceContext* pContext, Camera* camera, ID3D11Buffer* m_pConstantBuffer);
 	virtual void	cleanup();

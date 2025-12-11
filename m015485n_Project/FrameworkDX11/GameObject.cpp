@@ -4,11 +4,8 @@
 using namespace std;
 using namespace DirectX;
 
-constexpr int NUM_VERTICES = 36;
-
 GameObject::GameObject(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, string ObjectName, vector<GameObject*>& drawList, ID3D11Device* m_pd3dDevice, ID3D11DeviceContext* m_pImmediateContext, Microsoft::WRL::ComPtr <ID3D11PixelShader> pixelShader)
 {
-	m_vertexCount = NUM_VERTICES;
 	setPosition(Position);
 	setRotate(Rotation);
 	setScale(Scale);
@@ -18,7 +15,7 @@ GameObject::GameObject(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, str
 	objectName = ObjectName;
 	m_pixelShader = pixelShader;
 
-	HRESULT hr = GameObject::initMesh(m_pd3dDevice, m_pImmediateContext);
+	HRESULT hr = GameObject::initCubeMesh(m_pd3dDevice, m_pImmediateContext);
 	drawList.push_back(this);
 
 	if (FAILED(hr))
@@ -32,7 +29,7 @@ GameObject::~GameObject()
 {
 }
 
-HRESULT GameObject::initMesh(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pContext)
+HRESULT GameObject::initCubeMesh(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pContext)
 {
 	// Create index buffer
 	WORD indices[] =
@@ -56,6 +53,7 @@ HRESULT GameObject::initMesh(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pCon
 		33,34,35
 	};
 
+	m_vertexCount = 36;
 	// Create vertex buffer
 	SimpleVertex vertices[] =
 	{
@@ -116,7 +114,7 @@ HRESULT GameObject::initMesh(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pCon
 
 	D3D11_BUFFER_DESC bd = {};
 	bd.Usage = D3D11_USAGE_DEFAULT;
-	bd.ByteWidth = sizeof(SimpleVertex) * NUM_VERTICES;
+	bd.ByteWidth = sizeof(SimpleVertex) * 36;
 	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	bd.CPUAccessFlags = 0;
 
@@ -128,7 +126,7 @@ HRESULT GameObject::initMesh(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pCon
 		return hr;
 
 	bd.Usage = D3D11_USAGE_DEFAULT;
-	bd.ByteWidth = sizeof(WORD) * NUM_VERTICES;        // 36 vertices needed for 12 triangles in a triangle list
+	bd.ByteWidth = sizeof(WORD) * 36;        // 36 vertices needed for 12 triangles in a triangle list
 	bd.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	bd.CPUAccessFlags = 0;
 	InitData.pSysMem = indices;
