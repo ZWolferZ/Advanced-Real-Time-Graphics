@@ -6,12 +6,16 @@ using namespace DirectX;
 
 constexpr int NUM_VERTICES = 36;
 
-Cube::Cube(XMFLOAT3 Position, pair<XMFLOAT3, float> Rotation, float scale)
+Cube::Cube(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, string ObjectName)
 {
 	m_vertexCount = NUM_VERTICES;
 	setPosition(Position);
-	setRotate(Rotation.first, Rotation.second);
-	setScale(scale);
+	setRotate(Rotation);
+	setScale(Scale);
+	m_orginalPosition = Position;
+	m_orginalRotation = Rotation;
+	m_orginalScale = Scale;
+	objectName = ObjectName;
 }
 
 Cube::~Cube()

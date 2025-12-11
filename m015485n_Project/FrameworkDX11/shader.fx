@@ -197,8 +197,6 @@ PS_INPUT VS(VS_INPUT input)
 
 float4 PS(PS_INPUT IN) : SV_TARGET
 {
-    
-  
 
     LightingResult lit = ComputeLighting(IN.worldPos, normalize(IN.Norm));
 

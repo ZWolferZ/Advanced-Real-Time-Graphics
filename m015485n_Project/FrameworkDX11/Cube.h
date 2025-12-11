@@ -22,16 +22,21 @@
 #include "wrl.h"
 #include "structures.h"
 #include "IRenderable.h"
+#include <string>
 
 using namespace DirectX;
 
 class Cube : public IRenderable
 {
 public:
-	Cube(XMFLOAT3 Position, pair<XMFLOAT3, float> Rotation, float scale);
+	Cube(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, string ObjectName);
 	~Cube();
+
+	string GetObjectName() { return objectName; }
 
 	HRESULT	initMesh(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pContext);
 
 private: // variables
+
+	string objectName = "null";
 };

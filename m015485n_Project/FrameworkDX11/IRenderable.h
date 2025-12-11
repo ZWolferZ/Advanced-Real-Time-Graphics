@@ -19,6 +19,8 @@
 #include <DirectXMath.h>
 #include "wrl.h"
 #include "structures.h"
+#include <utility>
+#include "Camera.h"
 
 using namespace DirectX;
 
@@ -30,7 +32,7 @@ public:
 
 	virtual HRESULT	initMesh(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pContext) = 0;
 	virtual void	update(const float deltaTime, ID3D11DeviceContext* pContext);
-	virtual void	draw(ID3D11DeviceContext* pContext);
+	virtual void	draw(ID3D11DeviceContext* pContext, Camera* camera, ID3D11Buffer* m_pConstantBuffer);
 	virtual void	cleanup();
 
 	const ID3D11Buffer* getVertexBuffer() const { return m_vertexBuffer.Get(); }
@@ -41,8 +43,21 @@ public:
 	ID3D11Buffer* getMaterialConstantBuffer() const { return m_materialConstantBuffer.Get(); }
 
 	void	setPosition(const XMFLOAT3 position) { m_position = position; }
-	void	setScale(const float scale) { m_scale = scale; }
-	void	setRotate(const XMFLOAT3 axis, const float angleRadians) { m_rotateAxis = axis; m_rotateAngleRadians = angleRadians; }
+	void	setScale(const XMFLOAT3 scale) { m_scale = scale; }
+	void	setRotate(const XMFLOAT3 rotation) { m_rotation = rotation; }
+	
+	XMFLOAT3	getPosition() { return m_position; }
+	XMFLOAT3	getScale() { return m_scale; }
+	XMFLOAT3	getRotation() { return { m_rotation }; }
+
+	void	resetTransform() { setPosition(m_orginalPosition); setScale(m_orginalScale); setRotate(m_orginalRotation); }
+
+	bool m_autoRotateX = false;
+	bool m_autoRotateY = false;
+	bool m_autoRotateZ = false;
+
+	float m_autoRotationSpeed = 50.0f;
+
 
 protected:
 
@@ -58,8 +73,12 @@ protected:
 
 	Microsoft::WRL::ComPtr < ID3D11Buffer>						m_materialConstantBuffer = nullptr;
 	XMFLOAT3													m_position;
-	float														m_scale = 1;
-	float														m_rotateAngleRadians = 0;
-	XMFLOAT3													m_rotateAxis = XMFLOAT3(0, 0, 0);
+	XMFLOAT3													m_orginalPosition;
+	XMFLOAT3													m_scale = XMFLOAT3(1,1,1);
+	XMFLOAT3													m_orginalScale = XMFLOAT3(1, 1, 1);
+	XMFLOAT3													m_rotation;
+	XMFLOAT3													m_orginalRotation;
 	unsigned int												m_vertexCount = 0;
+
+	
 };

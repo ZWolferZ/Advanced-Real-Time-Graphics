@@ -11,9 +11,21 @@ HRESULT Scene::init(HWND hwnd, const Microsoft::WRL::ComPtr<ID3D11Device>& devic
 	UINT height = rc.bottom - rc.top;
 
 	// CREATE A SIMPLE game object
-	Cube* go = new Cube(XMFLOAT3(0, 0, 0), std::pair(XMFLOAT3(0, 0, 0), 0.0f), 1);
+	Cube* go = new Cube(XMFLOAT3(0, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), "Cube 1");
 	HRESULT hr = go->initMesh(m_pd3dDevice.Get(), m_pImmediateContext.Get());
 	m_vecDrawables.push_back(go);
+
+	if (FAILED(hr))
+	{
+		MessageBox(nullptr,
+			L"Failed to init mesh in game object.", L"Error", MB_OK);
+		return hr;
+	}
+
+	// CREATE A SIMPLE game object
+	Cube* go2 = new Cube(XMFLOAT3(0, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), "Cube 2");
+	 hr = go2->initMesh(m_pd3dDevice.Get(), m_pImmediateContext.Get());
+	m_vecDrawables.push_back(go2);
 
 	if (FAILED(hr))
 	{
@@ -63,10 +75,17 @@ void Scene::cleanUp()
 
 void Scene::setupLightProperties()
 {
-	for (auto& i : m_lightProperties.Lights)
+	for (unsigned int i = 0; i < MAX_LIGHTS; i++)
 	{
 		Light light;
-		light.Enabled = static_cast<int>(true);
+		if (i == 1)
+		{
+			light.Enabled = static_cast<int>(false);
+		}
+		else
+		{
+			light.Enabled = static_cast<int>(true);
+		}
 		light.LightType = PointLight;
 		light.Color = XMFLOAT4(1, 1, 1, 1);
 		light.SpotAngle = XMConvertToRadians(45.0f);
@@ -75,11 +94,11 @@ void Scene::setupLightProperties()
 		light.QuadraticAttenuation = 1;
 
 		// set up the light
-		XMFLOAT4 LightPosition(m_pCamera->GetPosition().x, m_pCamera->GetPosition().y, m_pCamera->GetPosition().z, 1);
+		XMFLOAT4 LightPosition(0, 0, 1.5f, 1);
 		light.Position = LightPosition;
 
 		m_lightProperties.EyePosition = LightPosition;
-		i = light;
+		m_lightProperties.Lights[i] = light;
 	}
 }
 
@@ -90,13 +109,6 @@ void Scene::updateLightProperties(unsigned int index, const Light& light)
 
 void Scene::update(const float deltaTime)
 {
-	ConstantBuffer cb1;
-	cb1.mView = XMMatrixTranspose(getCamera()->GetViewMatrix());
-	cb1.mProjection = XMMatrixTranspose(getCamera()->GetProjectionMatrix());
-	cb1.vOutputColor = XMFLOAT4(0, 0, 0, 0);
-
-	Cube* cube = m_vecDrawables[0];
-
 	m_pImmediateContext->UpdateSubresource(m_pLightConstantBuffer.Get(), 0, nullptr, &m_lightProperties, 0, 0);
 	ID3D11Buffer* buf = m_pLightConstantBuffer.Get();
 	m_pImmediateContext->PSSetConstantBuffers(2, 1, &buf);
@@ -105,26 +117,10 @@ void Scene::update(const float deltaTime)
 	static float rotation = 0;
 	rotation += deltaTime;
 
-	for (unsigned int i = 0; i < 1; i++)
+	for (unsigned int i = 0; i < m_vecDrawables.size(); i++)
 	{
-		cube->setRotate(XMFLOAT3(0, 1, 0), rotation);
+		m_vecDrawables[i]->update(deltaTime, m_pImmediateContext.Get());
 
-		cube->update(deltaTime, m_pImmediateContext.Get());
-
-		// get the game object world transform
-		XMMATRIX cubeTransformMatrix = XMLoadFloat4x4(cube->getTransform());
-
-		// store world and the view / projection in a constant buffer for the vertex shader to use
-		cb1.mWorld = XMMatrixTranspose(cubeTransformMatrix);
-		m_pImmediateContext->UpdateSubresource(m_pConstantBuffer.Get(), 0, nullptr, &cb1, 0, 0);
-
-		// Render a cube
-		ID3D11Buffer* cb = m_pConstantBuffer.Get();
-		m_pImmediateContext->VSSetConstantBuffers(0, 1, &cb);
-
-		ID3D11Buffer* materialCB = cube->getMaterialConstantBuffer();
-		m_pImmediateContext->PSSetConstantBuffers(1, 1, &materialCB);
-
-		cube->draw(m_pImmediateContext.Get());
+		m_vecDrawables[i]->draw(m_pImmediateContext.Get(), getCamera(), m_pConstantBuffer.Get());
 	}
 }

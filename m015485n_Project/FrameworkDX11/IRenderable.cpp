@@ -1,5 +1,6 @@
 #include "IRenderable.h"
 
+
 IRenderable::IRenderable()
 {
 	m_vertexBuffer = nullptr;
@@ -18,16 +19,59 @@ IRenderable::~IRenderable()
 
 void IRenderable::update(const float deltaTime, ID3D11DeviceContext* pContext)
 {
-	XMMATRIX translate = XMMatrixTranslation(m_position.x, m_position.y, m_position.z);
-	XMMATRIX scale = XMMatrixScaling(m_scale, m_scale, m_scale);
-	XMMATRIX rotate = XMMatrixRotationAxis(XMLoadFloat3(&m_rotateAxis), m_rotateAngleRadians);
+	// Don't overflow the rotation
+	if (m_rotation.x > 360.0f) m_rotation.x = 0.0f;
 
-	XMMATRIX world = scale * translate * rotate;
+	if (m_rotation.x < -360.0f) m_rotation.x = 0.0f;
+
+	if (m_rotation.y > 360.0f) m_rotation.y = 0.0f;
+
+	if (m_rotation.y < -360.0f) m_rotation.y = 0.0f;
+
+	if (m_rotation.z > 360.0f) m_rotation.z = 0.0f;
+
+	if (m_rotation.z < -360.0f) m_rotation.z = 0.0f;
+
+	if (m_autoRotateX)
+	{
+		m_rotation.x += m_autoRotationSpeed * deltaTime;
+	}
+
+	if (m_autoRotateY)
+	{
+		m_rotation.y += m_autoRotationSpeed * deltaTime;
+	}
+
+	if (m_autoRotateZ)
+	{
+		m_rotation.z += m_autoRotationSpeed * deltaTime;
+	}
+
+
+	XMMATRIX translate = XMMatrixTranslation(m_position.x, m_position.y, m_position.z);
+	XMMATRIX scale = XMMatrixScaling(m_scale.x, m_scale.y, m_scale.z);
+	XMMATRIX rotation = XMMatrixRotationX(XMConvertToRadians(m_rotation.x)) * XMMatrixRotationY(XMConvertToRadians(m_rotation.y)) * XMMatrixRotationZ(XMConvertToRadians(m_rotation.z));
+	XMMATRIX world = scale * rotation * translate  ;
 	XMStoreFloat4x4(&m_world, world);
 }
 
-void IRenderable::draw(ID3D11DeviceContext* pContext)
+void IRenderable::draw(ID3D11DeviceContext* pContext, Camera* camera,  ID3D11Buffer* m_pConstantBuffer)
 {
+	ConstantBuffer cb;
+	cb.mView = XMMatrixTranspose(camera->GetViewMatrix());
+	cb.mProjection = XMMatrixTranspose(camera->GetProjectionMatrix());
+	cb.vOutputColor = XMFLOAT4(0, 0, 0, 0);
+
+	// store world and the view / projection in a constant buffer for the vertex shader to use
+	cb.mWorld = XMMatrixTranspose(XMLoadFloat4x4(getTransform()));
+	pContext->UpdateSubresource(m_pConstantBuffer, 0, nullptr, &cb, 0, 0);
+
+	// Render a cube
+	pContext->VSSetConstantBuffers(0, 1, &m_pConstantBuffer);
+
+	ID3D11Buffer* materialCB = getMaterialConstantBuffer();
+	pContext->PSSetConstantBuffers(1, 1, &materialCB);
+
 	// Set vertex buffer
 	UINT stride = sizeof(SimpleVertex);
 	UINT offset = 0;

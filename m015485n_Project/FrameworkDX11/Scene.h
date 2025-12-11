@@ -39,7 +39,7 @@ public:
 
 	void setupLightProperties();
 	void updateLightProperties(unsigned int index, const Light& light);
-
+	vecTypeDrawables		m_vecDrawables;
 private:
 	Camera* m_pCamera;
 
@@ -48,6 +48,6 @@ private:
 	Microsoft::WRL::ComPtr <ID3D11Buffer>			m_pConstantBuffer;
 	Microsoft::WRL::ComPtr <ID3D11Buffer>			m_pLightConstantBuffer;
 
-	vecTypeDrawables		m_vecDrawables;
+	
 	LightPropertiesConstantBuffer m_lightProperties;
 };

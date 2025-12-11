@@ -63,10 +63,13 @@ private: // methods
 	void	DrawVersionWindow(const unsigned int FPS);
 	void	DrawHideAllWindows();
 	void	DrawLightUpdateWindow();
+	void	DrawObjectMovementWindow();
+	void	DrawObjectSelectionWindow();
 
 private: // properties
 	std::unordered_map<UINT8, bool > inputs;
 	bool showWindows = false;
+	Cube* m_selectedObject = nullptr;
 	std::vector<XMVECTOR> m_controlPoints = {
 	XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f),  // Initial velocity
 	XMVectorSet(0.0f,  0.0f, 5.0f, 0.0f),
