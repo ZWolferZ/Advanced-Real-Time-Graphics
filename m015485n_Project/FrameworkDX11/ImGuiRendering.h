@@ -17,6 +17,8 @@ public:
 
 	void ImGuiDrawAllWindows(const unsigned int FPS, float totalAppTime, Scene& currentScene);
 
+	bool VSyncEnabled = true;
+
 private:
 	void	DrawVersionWindow(const unsigned int FPS, float totalAppTime);
 	void	DrawHideAllWindows();

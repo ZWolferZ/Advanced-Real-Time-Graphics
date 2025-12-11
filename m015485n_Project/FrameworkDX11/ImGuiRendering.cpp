@@ -52,6 +52,7 @@ void ImGuiRendering::DrawVersionWindow(const unsigned int FPS, float totalAppTim
 	ImGui::Text("ImGUI version: (%s)", IMGUI_VERSION);
 	ImGui::Text("Application Runtime (%f)", totalAppTime);
 	ImGui::Text("FPS %d", FPS);
+	ImGui::Checkbox("VSync Enabled", &VSyncEnabled);
 	ImGui::End();
 }
 

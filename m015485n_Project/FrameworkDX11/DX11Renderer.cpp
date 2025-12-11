@@ -508,5 +508,5 @@ void DX11Renderer::update(const float deltaTime)
 	m_imguiRenderer->ImGuiDrawAllWindows(FPS, m_totalTime, *m_pScene);
 
 	// Present our back buffer to our front buffer
-	m_pSwapChain->Present(0, 0);
+	m_pSwapChain->Present(m_imguiRenderer->VSyncEnabled, 0);
 }
