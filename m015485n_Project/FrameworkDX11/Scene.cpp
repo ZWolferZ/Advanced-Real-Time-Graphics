@@ -58,7 +58,7 @@ void Scene::LoadTextures()
 void Scene::CreateGameObjects()
 {
 	// CREATE A SIMPLE game object
-	GameObject* go = new GameObject(XMFLOAT3(-2, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), "Cube 1", m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Solid Pixel Shader"), GetTexture("tex2.dds"));
+	GameObject* go = new GameObject(XMFLOAT3(-2, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), "Cube 1", m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture("tex2.dds"));
 
 	// CREATE A SIMPLE game object
 	GameObject* go2 = new GameObject(XMFLOAT3(2, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), "Cube 2", m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture("stone.dds"), GetTexture("conenormal.dds"));
@@ -167,7 +167,13 @@ void Scene::Update(const float deltaTime)
 	for (unsigned int i = 0; i < m_vecDrawables.size(); i++)
 	{
 		m_vecDrawables[i]->Update(deltaTime, m_pImmediateContext.Get());
+	}
+}
 
+void Scene::Draw()
+{
+	for (unsigned int i = 0; i < m_vecDrawables.size(); i++)
+	{
 		m_vecDrawables[i]->Draw(m_pImmediateContext.Get(), GetCamera(), m_pConstantBuffer.Get());
 	}
 }

@@ -39,7 +39,6 @@ public:
 		XMStoreFloat4x4(&viewMatrix, XMMatrixIdentity());
 		constexpr float fovAngleY = XMConvertToRadians(90.0f);
 		XMStoreFloat4x4(&m_projectionMatrix, XMMatrixPerspectiveFovLH(fovAngleY, width / (FLOAT)height, 0.01f, 100.0f));
-
 	}
 
 #pragma endregion
@@ -58,15 +57,26 @@ public:
 
 	/// Gets the current view matrix.
 	/// @return The current view matrix as a XMMATRIX.
-	XMMATRIX GetViewMatrix() const
+	XMMATRIX GetViewMatrix()
 	{
 		UpdateViewMatrix();
 		return XMLoadFloat4x4(&viewMatrix);
 	}
 
-	XMMATRIX GetProjectionMatrix() const
+	XMFLOAT4X4 GetViewMatrixFloat4x4()
+	{
+		UpdateViewMatrix();
+		return viewMatrix;
+	}
+
+	XMMATRIX GetProjectionMatrix()
 	{
 		return XMLoadFloat4x4(&m_projectionMatrix);
+	}
+
+	XMFLOAT4X4 GetProjectionMatrixFloat4x4()
+	{
+		return m_projectionMatrix;
 	}
 #pragma endregion
 

@@ -1,4 +1,4 @@
-#include "ImGuiRendering.h"
+﻿#include "ImGuiRendering.h"
 
 ImGuiRendering::ImGuiRendering(HWND hwnd, ID3D11Device* m_pd3dDevice, ID3D11DeviceContext* m_pImmediateContext)
 {
@@ -24,9 +24,9 @@ void ImGuiRendering::ShutDownImGui()
 	ImGui::DestroyContext();
 }
 
-void ImGuiRendering::ImGuiDrawAllWindows(const unsigned int FPS, float totalAppTime, Scene& currentScene)
+void ImGuiRendering::ImGuiDrawAllWindows(const unsigned int FPS, float totalAppTime, Scene* currentScene)
 {
-	m_currentScene = &currentScene;
+	m_currentScene = currentScene;
 
 	StartIMGUIDraw();
 
@@ -40,6 +40,8 @@ void ImGuiRendering::ImGuiDrawAllWindows(const unsigned int FPS, float totalAppT
 		DrawObjectSelectionWindow();
 		DrawObjectMovementWindow();
 		DrawPixelShaderSelectionWindow();
+
+		DrawObjectGimzo();
 	}
 
 	CompleteIMGUIDraw();
@@ -86,6 +88,7 @@ void ImGuiRendering::DrawSelectLightWindow()
 			else
 			{
 				m_selectedLight = &light;
+				m_selectedObject = nullptr;
 				lightIndex = i;
 			}
 		}
@@ -202,6 +205,87 @@ void ImGuiRendering::DrawObjectMovementWindow()
 	}
 }
 
+void ImGuiRendering::DrawObjectGimzo()
+{
+	// Only one can be selected at a time, dw we are not doing the same math for both.
+
+	if (m_selectedObject != nullptr)
+	{
+		ImGui::SetNextWindowPos(ImVec2(680, 10), ImGuiCond_FirstUseEver);
+		ImGui::Begin("Object Gizmo Type Window", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+
+		ImGuizmo::SetOrthographic(false);
+
+		// THE ANSWER!!!!
+		ImGuizmo::SetDrawlist(ImGui::GetBackgroundDrawList());
+
+		ImGuizmo::SetRect(0, 0, ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y);
+
+		XMFLOAT4X4 object4x4 = *m_selectedObject->GetTransform();
+		XMMATRIX objectMatrix = XMLoadFloat4x4(&object4x4);
+
+		float objMat[16];
+		XMStoreFloat4x4(reinterpret_cast<XMFLOAT4X4*>(objMat), objectMatrix);
+
+		float view[16], proj[16];
+
+		XMFLOAT4X4 v = m_currentScene->GetCamera()->GetViewMatrixFloat4x4();
+		XMFLOAT4X4 p = m_currentScene->GetCamera()->GetProjectionMatrixFloat4x4();
+
+		XMStoreFloat4x4(reinterpret_cast<XMFLOAT4X4*>(view), XMLoadFloat4x4(&v));
+		XMStoreFloat4x4(reinterpret_cast<XMFLOAT4X4*>(proj), XMLoadFloat4x4(&p));
+
+		static ImGuizmo::OPERATION operation = ImGuizmo::TRANSLATE;
+		static ImGuizmo::MODE mode = ImGuizmo::LOCAL;
+
+		if (ImGui::RadioButton("Translate", operation == ImGuizmo::TRANSLATE)) operation = ImGuizmo::TRANSLATE; ImGui::SameLine();
+		if (ImGui::RadioButton("Rotate", operation == ImGuizmo::ROTATE)) operation = ImGuizmo::ROTATE; ImGui::SameLine();
+		if (ImGui::RadioButton("Scale", operation == ImGuizmo::SCALE)) operation = ImGuizmo::SCALE;
+
+		if (ImGuizmo::Manipulate(view, proj, operation, mode, objMat))
+		{
+			XMMATRIX newObjectMatrix = XMLoadFloat4x4(reinterpret_cast<XMFLOAT4X4*>(objMat));
+			m_selectedObject->SetTransform(newObjectMatrix);
+		}
+
+		ImGui::End();
+	}
+
+	if (m_selectedLight != nullptr)
+	{
+		ImGui::SetNextWindowPos(ImVec2(930, 10), ImGuiCond_FirstUseEver);
+		ImGuizmo::SetOrthographic(false);
+		// THE ANSWER!!!!
+		ImGuizmo::SetDrawlist(ImGui::GetBackgroundDrawList());
+		ImGuizmo::SetRect(0, 0, ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y);
+		XMFLOAT4X4 light4x4;
+		XMStoreFloat4x4(&light4x4, XMMatrixTranslation(m_selectedLight->Position.x, m_selectedLight->Position.y, m_selectedLight->Position.z));
+		XMMATRIX lightMatrix = XMLoadFloat4x4(&light4x4);
+		float lightMat[16];
+		XMStoreFloat4x4(reinterpret_cast<XMFLOAT4X4*>(lightMat), lightMatrix);
+		float view[16], proj[16];
+		XMFLOAT4X4 v = m_currentScene->GetCamera()->GetViewMatrixFloat4x4();
+		XMFLOAT4X4 p = m_currentScene->GetCamera()->GetProjectionMatrixFloat4x4();
+		XMStoreFloat4x4(reinterpret_cast<XMFLOAT4X4*>(view), XMLoadFloat4x4(&v));
+		XMStoreFloat4x4(reinterpret_cast<XMFLOAT4X4*>(proj), XMLoadFloat4x4(&p));
+
+		if (ImGuizmo::Manipulate(view, proj, ImGuizmo::TRANSLATE, ImGuizmo::LOCAL, lightMat))
+		{
+			XMMATRIX newLightMatrix = XMLoadFloat4x4(reinterpret_cast<XMFLOAT4X4*>(lightMat));
+
+			XMVECTOR lightPosVector, dummyVec;
+
+			// Cant just use nullptr for this, so I am just using a dummy vector
+
+			XMMatrixDecompose(&dummyVec, &dummyVec, &lightPosVector, newLightMatrix);
+
+			m_selectedLight->Position = XMFLOAT4(XMVectorGetX(lightPosVector), XMVectorGetY(lightPosVector), XMVectorGetZ(lightPosVector), 1.0f);
+
+			m_currentScene->UpdateLightProperties(lightIndex, *m_selectedLight);
+		}
+	}
+}
+
 void ImGuiRendering::DrawObjectSelectionWindow()
 {
 	ImGui::SetNextWindowPos(ImVec2(465, 10), ImGuiCond_FirstUseEver);
@@ -224,6 +308,7 @@ void ImGuiRendering::DrawObjectSelectionWindow()
 			else
 			{
 				m_selectedObject = dgo;
+				m_selectedLight = nullptr;
 			}
 		}
 	}
@@ -265,6 +350,8 @@ void ImGuiRendering::StartIMGUIDraw()
 	ImGui_ImplDX11_NewFrame();
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
+
+	ImGuizmo::BeginFrame();
 }
 
 void ImGuiRendering::CompleteIMGUIDraw()

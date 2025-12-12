@@ -39,6 +39,8 @@ public:
 	const ID3D11Buffer* GetIndexBuffer() const { return m_indexBuffer.Get(); }
 	const ID3D11ShaderResourceView* GetTextureResourceView() const { return m_textureResourceView.Get(); }
 	const XMFLOAT4X4* GetTransform() const { return &m_world; }
+	void SetTransform(XMMATRIX newTransform);
+
 	const ID3D11SamplerState* GetTextureSamplerState() const { return m_textureSampler.Get(); }
 	ID3D11Buffer* GetMaterialConstantBuffer() const { return m_materialConstantBuffer.Get(); }
 

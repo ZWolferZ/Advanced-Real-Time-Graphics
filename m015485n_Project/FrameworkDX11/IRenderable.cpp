@@ -99,7 +99,6 @@ void IRenderable::Draw(ID3D11DeviceContext* pContext, Camera* camera, ID3D11Buff
 		pContext->PSSetSamplers(0, 1, &ss);
 	}
 
-
 	// draw
 	pContext->DrawIndexed(m_vertexCount, 0, 0);
 }
@@ -109,12 +108,51 @@ void IRenderable::Cleanup()
 	// we are using com pointers so no release() necessary
 }
 
+void IRenderable::SetTransform(XMMATRIX newTransform)
+{
+	XMVECTOR scale, rotationQuat, translation;
+
+	// This gives the rotation as a quaternion, so I needed to convert it to Euler angles
+	XMMatrixDecompose(&scale, &rotationQuat, &translation, newTransform);
+
+	XMFLOAT3 scaleF;
+	XMFLOAT3 translationF;
+	XMFLOAT4 rotQ;
+	XMStoreFloat3(&scaleF, scale);
+	XMStoreFloat3(&translationF, translation);
+	XMStoreFloat4(&rotQ, rotationQuat);
+
+	float ysqr = rotQ.y * rotQ.y;
+
+	// Roll x-axis
+	float t0 = +2.0f * (rotQ.w * rotQ.x + rotQ.y * rotQ.z);
+	float t1 = +1.0f - 2.0f * (rotQ.x * rotQ.x + ysqr);
+	float roll = atan2f(t0, t1);
+
+	// Pitch y-axis
+	float t2 = +2.0f * (rotQ.w * rotQ.y - rotQ.z * rotQ.x);
+	t2 = t2 > 1.0f ? 1.0f : t2;
+	t2 = t2 < -1.0f ? -1.0f : t2;
+	float pitch = asinf(t2);
+
+	// Yaw z-axis
+	float t3 = +2.0f * (rotQ.w * rotQ.z + rotQ.x * rotQ.y);
+	float t4 = +1.0f - 2.0f * (ysqr + rotQ.z * rotQ.z);
+	float yaw = atan2f(t3, t4);
+
+	XMFLOAT3 rotationF(XMConvertToDegrees(roll), XMConvertToDegrees(pitch), XMConvertToDegrees(yaw));
+
+	// Set components
+	SetScale(scaleF);
+	SetRotate(rotationF);
+	SetPosition(translationF);
+}
+
 void IRenderable::CalculateModelVectors(SimpleVertex* vertices, int vertexCount)
 {
 	int faceCount, i, index;
 	SimpleVertex vertex1, vertex2, vertex3;
 	XMFLOAT3 tangent, binormal, normal;
-
 
 	// Calculate the number of faces in the model.
 	faceCount = vertexCount / 3;
@@ -190,7 +228,6 @@ void IRenderable::CalculateModelVectors(SimpleVertex* vertices, int vertexCount)
 		vertices[index - 3].BiNormal.y = binormal.y;
 		vertices[index - 3].BiNormal.z = binormal.z;
 	}
-
 }
 
 void IRenderable::CalculateTangentBinormal(SimpleVertex v0, SimpleVertex v1, SimpleVertex v2, XMFLOAT3& normal, XMFLOAT3& tangent, XMFLOAT3& binormal)
@@ -249,5 +286,4 @@ void IRenderable::CalculateTangentBinormal(SimpleVertex v0, SimpleVertex v1, Sim
 	XMStoreFloat3(&normal, vn);
 	XMStoreFloat3(&tangent, vt);
 	XMStoreFloat3(&binormal, vb);
-
 }

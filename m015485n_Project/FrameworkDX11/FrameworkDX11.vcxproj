@@ -365,6 +365,12 @@
     <ClInclude Include="DX11Renderer.h" />
     <ClInclude Include="globals.h" />
     <ClInclude Include="ImGuiRendering.h" />
+    <ClInclude Include="imgui\GraphEditor.h" />
+    <ClInclude Include="imgui\ImCurveEdit.h" />
+    <ClInclude Include="imgui\ImGradient.h" />
+    <ClInclude Include="imgui\ImGuizmo.h" />
+    <ClInclude Include="imgui\ImSequencer.h" />
+    <ClInclude Include="imgui\ImZoomSlider.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="imgui\imconfig.h" />
     <ClInclude Include="imgui\imgui.h" />
@@ -386,6 +392,11 @@
     <ClCompile Include="DX11App.cpp" />
     <ClCompile Include="DX11Renderer.cpp" />
     <ClCompile Include="ImGuiRendering.cpp" />
+    <ClCompile Include="imgui\GraphEditor.cpp" />
+    <ClCompile Include="imgui\ImCurveEdit.cpp" />
+    <ClCompile Include="imgui\ImGradient.cpp" />
+    <ClCompile Include="imgui\ImGuizmo.cpp" />
+    <ClCompile Include="imgui\ImSequencer.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="imgui\imgui.cpp" />
     <ClCompile Include="imgui\imgui_demo.cpp" />

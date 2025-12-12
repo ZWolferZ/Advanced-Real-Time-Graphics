@@ -36,6 +36,7 @@ public:
 	Camera* GetCamera() { return m_pCamera; }
 
 	void		Update(const float deltaTime);
+	void		Draw();
 
 	void PushBackPixelShaders(string name, Microsoft::WRL::ComPtr <ID3D11PixelShader>& pixelShader) { m_pixelShadersMap.push_back({ name, pixelShader }); }
 	Microsoft::WRL::ComPtr <ID3D11PixelShader>& GetPixelShader(const string& shaderToFind);

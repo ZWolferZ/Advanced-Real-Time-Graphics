@@ -3,6 +3,7 @@
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_win32.h"
 #include "imgui/imgui_impl_dx11.h"
+#include "imgui/ImGuizmo.h"
 #include "structures.h"
 #include <string>
 #include <d3d11_1.h>
@@ -15,7 +16,7 @@ public:
 
 	void ShutDownImGui();
 
-	void ImGuiDrawAllWindows(const unsigned int FPS, float totalAppTime, Scene& currentScene);
+	void ImGuiDrawAllWindows(const unsigned int FPS, float totalAppTime, Scene* currentScene);
 
 	bool VSyncEnabled = true;
 
@@ -25,6 +26,7 @@ private:
 	void	DrawSelectLightWindow();
 	void	DrawLightUpdateWindow();
 	void	DrawObjectMovementWindow();
+	void	DrawObjectGimzo();
 	void	DrawObjectSelectionWindow();
 	void	DrawPixelShaderSelectionWindow();
 	void	StartIMGUIDraw();
