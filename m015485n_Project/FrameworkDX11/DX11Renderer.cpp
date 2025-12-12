@@ -81,7 +81,9 @@ HRESULT DX11Renderer::init(HWND hwnd)
 	pPSBlob->Release();
 	if (FAILED(hr))
 		return hr;
-	m_pScene->SetPixelShaders({ m_pPixelShader, m_pSolidPixelShader });
+	m_pScene->PushBackPixelShaders("Solid Pixel Shader", m_pSolidPixelShader);
+	m_pScene->PushBackPixelShaders("Texture Pixel Shader", m_pPixelShader);
+
 	m_pScene->init(hwnd, m_pd3dDevice, m_pImmediateContext);
 
 	return hr;

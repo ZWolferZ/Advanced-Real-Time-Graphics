@@ -88,10 +88,7 @@ void IRenderable::draw(ID3D11DeviceContext* pContext, Camera* camera, ID3D11Buff
 	if (m_textureResourceView != nullptr)
 	{
 		ID3D11ShaderResourceView* srv = m_textureResourceView.Get();
-		ID3D11ShaderResourceView* srv2 = m_textureResourceView2.Get();
-
 		pContext->PSSetShaderResources(0, 1, &srv);
-		pContext->PSSetShaderResources(1, 1, &srv2);
 		ID3D11SamplerState* ss = m_textureSampler.Get();
 		pContext->PSSetSamplers(0, 1, &ss);
 	}

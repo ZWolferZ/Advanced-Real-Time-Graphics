@@ -68,7 +68,6 @@ protected:
 	Microsoft::WRL::ComPtr < ID3D11Buffer>						m_vertexBuffer = nullptr;
 	Microsoft::WRL::ComPtr < ID3D11Buffer>						m_indexBuffer = nullptr;
 	Microsoft::WRL::ComPtr < ID3D11ShaderResourceView>			m_textureResourceView = nullptr;
-	Microsoft::WRL::ComPtr < ID3D11ShaderResourceView>			m_textureResourceView2 = nullptr;
 
 	Microsoft::WRL::ComPtr < ID3D11SamplerState>				m_textureSampler = nullptr;
 

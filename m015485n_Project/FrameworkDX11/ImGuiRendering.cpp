@@ -241,16 +241,21 @@ void ImGuiRendering::DrawPixelShaderSelectionWindow()
 		ImGui::Separator();
 		ImGui::Text("Selected Object: %s", m_selectedObject->GetObjectName().c_str());
 		ImGui::Separator();
-		auto& pixelShaders = m_currentScene->GetPixelShaders();
-		for (unsigned int i = 0; i < pixelShaders.size(); i++)
+
+		auto& pixelShaders = m_currentScene->m_pixelShadersMap;
+
+		for (size_t i = 0; i < pixelShaders.size(); ++i)
 		{
-			std::string shaderLabel = "Pixel Shader " + std::to_string(i);
-			bool isSelected = (m_selectedObject->GetPixelShader().Get() == pixelShaders[i].Get());
-			if (ImGui::Selectable(shaderLabel.c_str(), isSelected))
+			const auto& shaderPair = pixelShaders[i];
+
+			bool isSelected = (m_selectedObject->GetPixelShader().Get() == shaderPair.second.Get());
+
+			if (ImGui::Selectable(shaderPair.first.c_str(), isSelected))
 			{
-				m_selectedObject->SetPixelShader(pixelShaders[i]);
+				m_selectedObject->SetPixelShader(shaderPair.second);
 			}
 		}
+
 		ImGui::End();
 	}
 }

@@ -4,7 +4,7 @@
 using namespace std;
 using namespace DirectX;
 
-GameObject::GameObject(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, string ObjectName, vector<GameObject*>& drawList, ID3D11Device* m_pd3dDevice, ID3D11DeviceContext* m_pImmediateContext, Microsoft::WRL::ComPtr <ID3D11PixelShader> pixelShader)
+GameObject::GameObject(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, string ObjectName, vector<GameObject*>& drawList, ID3D11Device* m_pd3dDevice, ID3D11DeviceContext* m_pImmediateContext, Microsoft::WRL::ComPtr <ID3D11PixelShader> pixelShader, Microsoft::WRL::ComPtr < ID3D11ShaderResourceView> texture)
 {
 	setPosition(Position);
 	setRotate(Rotation);
@@ -14,6 +14,7 @@ GameObject::GameObject(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, str
 	m_orginalScale = Scale;
 	objectName = ObjectName;
 	m_pixelShader = pixelShader;
+	m_textureResourceView = texture;
 
 	HRESULT hr = GameObject::initCubeMesh(m_pd3dDevice, m_pImmediateContext);
 	drawList.push_back(this);
@@ -132,15 +133,6 @@ HRESULT GameObject::initCubeMesh(ID3D11Device* pd3dDevice, ID3D11DeviceContext* 
 	InitData.pSysMem = indices;
 	Microsoft::WRL::ComPtr <ID3D11Buffer>* ibuf = &m_indexBuffer;
 	hr = pd3dDevice->CreateBuffer(&bd, &InitData, ibuf->GetAddressOf());
-	if (FAILED(hr))
-		return hr;
-
-	// load and setup textures
-	hr = CreateDDSTextureFromFile(pd3dDevice, L"Resources\\stone.dds", nullptr, m_textureResourceView.GetAddressOf());
-	if (FAILED(hr))
-		return hr;
-
-	hr = CreateDDSTextureFromFile(pd3dDevice, L"Resources\\tex2.dds", nullptr, m_textureResourceView2.GetAddressOf());
 	if (FAILED(hr))
 		return hr;
 

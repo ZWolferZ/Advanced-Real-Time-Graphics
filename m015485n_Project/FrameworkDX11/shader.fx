@@ -10,7 +10,6 @@ cbuffer ConstantBuffer : register(b0)
 };
 
 Texture2D txDiffuse : register(t0);
-Texture2D txDiffuse2 : register(t1);
 SamplerState samLinear : register(s0);
 
 #define MAX_LIGHTS 2
@@ -148,7 +147,7 @@ LightingResult ComputeLighting(float4 worldPos, float3 N)
         LightingResult result;
         result.Diffuse = float4(0, 0, 0, 0);
         result.Specular = float4(0, 0, 0, 0);
-        
+
         float4 pixelToLightVectorNormalised = normalize(Lights[i].Position - worldPos);
         float4 pixelToEyeVectorNormalised = normalize(EyePosition - worldPos);
         float distanceFromPixelToLight = length(worldPos - Lights[i].Position);
@@ -209,15 +208,7 @@ float4 PS(PS_INPUT IN) : SV_TARGET
 
     if (Material.UseTexture)
     {
-
-        if (IN.worldPos.x < 0)
-        {
-            texColor = txDiffuse2.Sample(samLinear, IN.Tex);
-        }
-        else
-        {
-            texColor = txDiffuse.Sample(samLinear, IN.Tex);
-        }
+    	texColor = txDiffuse.Sample(samLinear, IN.Tex);
     }
 
     float4 finalColor = (emissive + ambient + diffuse + specular) * texColor;

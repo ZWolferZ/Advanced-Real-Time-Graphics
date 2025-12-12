@@ -1,10 +1,14 @@
 #include "Scene.h"
 
+#include <iostream>
+
+#include "DDSTextureLoader.h"
+
 HRESULT Scene::init(HWND hwnd, const Microsoft::WRL::ComPtr<ID3D11Device>& device, const Microsoft::WRL::ComPtr<ID3D11DeviceContext>& context)
 {
 	m_pd3dDevice = device;
 	m_pImmediateContext = context;
-
+	LoadTextures();
 	CreateGameObjects();
 
 	RECT rc;
@@ -29,13 +33,35 @@ HRESULT Scene::init(HWND hwnd, const Microsoft::WRL::ComPtr<ID3D11Device>& devic
 	return S_OK;
 }
 
+void Scene::LoadTextures()
+{
+	for (const auto& entry : filesystem::directory_iterator(L"resources"))
+	{
+		if (!entry.is_regular_file()) continue;
+
+		if (entry.path().extension() != L".dds") continue;
+
+		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> textureResourceView;
+
+		HRESULT hr = CreateDDSTextureFromFile(m_pd3dDevice.Get(), entry.path().wstring().c_str(), nullptr, textureResourceView.GetAddressOf());
+
+		if (FAILED(hr))
+		{
+			MessageBox(nullptr, L"Failed to load texture", L"Error", MB_OK);
+			continue;
+		}
+
+		m_textureMap.push_back({ entry.path().filename().string(), textureResourceView });
+	}
+}
+
 void Scene::CreateGameObjects()
 {
 	// CREATE A SIMPLE game object
-	GameObject* go = new GameObject(XMFLOAT3(-2, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), "Cube 1", m_vecDrawables, m_pd3dDevice.Get(), m_pImmediateContext.Get(), m_pixelShaders[0]);
+	GameObject* go = new GameObject(XMFLOAT3(-2, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), "Cube 1", m_vecDrawables, m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Solid Pixel Shader"), GetTexture("stone.dds"));
 
 	// CREATE A SIMPLE game object
-	GameObject* go2 = new GameObject(XMFLOAT3(2, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), "Cube 2", m_vecDrawables, m_pd3dDevice.Get(), m_pImmediateContext.Get(), m_pixelShaders[1]);
+	GameObject* go2 = new GameObject(XMFLOAT3(2, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), "Cube 2", m_vecDrawables, m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture("tex2.dds"));
 }
 
 void Scene::cleanUp()
@@ -49,6 +75,31 @@ void Scene::cleanUp()
 	m_vecDrawables.clear();
 
 	delete m_pCamera;
+}
+
+Microsoft::WRL::ComPtr<ID3D11PixelShader>& Scene::GetPixelShader(const string& shaderToFind)
+{
+	for (auto& shaderPair : m_pixelShadersMap)
+	{
+		if (shaderPair.first == shaderToFind)
+		{
+			return shaderPair.second;
+		}
+	}
+	return m_pixelShadersMap[0].second;
+}
+
+Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& Scene::GetTexture(const string& textureToFind)
+{
+	for (auto& texturePair : m_textureMap)
+	{
+		if (texturePair.first == textureToFind)
+		{
+			return texturePair.second;
+		}
+	}
+
+	return m_textureMap[0].second;
 }
 
 void Scene::setupLightProperties()

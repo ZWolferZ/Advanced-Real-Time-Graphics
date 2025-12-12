@@ -20,6 +20,8 @@
 #include <d3d11_1.h>
 #include "GameObject.h"
 #include <vector>
+#include  <filesystem>
+#include <map>
 
 class Scene
 {
@@ -28,20 +30,23 @@ public:
 	~Scene() = default;
 
 	HRESULT		init(HWND hwnd, const Microsoft::WRL::ComPtr<ID3D11Device>& device, const Microsoft::WRL::ComPtr<ID3D11DeviceContext>& context);
+	void LoadTextures();
 	void CreateGameObjects();
 	void		cleanUp();
 	Camera* getCamera() { return m_pCamera; }
 
 	void		update(const float deltaTime);
 
-	void SetPixelShaders(const vector<Microsoft::WRL::ComPtr <ID3D11PixelShader>>& pixelShaders) { m_pixelShaders = pixelShaders; }
-	vector<Microsoft::WRL::ComPtr <ID3D11PixelShader>>& GetPixelShaders() { return m_pixelShaders; }
+	void PushBackPixelShaders(string name, Microsoft::WRL::ComPtr <ID3D11PixelShader>& pixelShader) { m_pixelShadersMap.push_back({ name, pixelShader }); }
+	Microsoft::WRL::ComPtr <ID3D11PixelShader>& GetPixelShader(const string& shaderToFind);
 	LightPropertiesConstantBuffer& getLightProperties() { return m_lightProperties; }
+	Microsoft::WRL::ComPtr < ID3D11ShaderResourceView>& GetTexture(const string& textureToFind);
 
 	void setupLightProperties();
 	void UpdateLightProperties(unsigned int index, const Light& light);
 	void UpdateLightBuffer();
 	vector<GameObject*>		m_vecDrawables;
+	vector<std::pair<string, Microsoft::WRL::ComPtr < ID3D11PixelShader>>> m_pixelShadersMap;
 
 private:
 	Camera* m_pCamera;
@@ -50,7 +55,6 @@ private:
 	Microsoft::WRL::ComPtr <ID3D11DeviceContext>	m_pImmediateContext;
 	Microsoft::WRL::ComPtr <ID3D11Buffer>			m_pConstantBuffer;
 	Microsoft::WRL::ComPtr <ID3D11Buffer>			m_pLightConstantBuffer;
-	vector<Microsoft::WRL::ComPtr <ID3D11PixelShader>> m_pixelShaders;
-
+	vector<std::pair<string, Microsoft::WRL::ComPtr < ID3D11ShaderResourceView>>> m_textureMap;
 	LightPropertiesConstantBuffer m_lightProperties;
 };
