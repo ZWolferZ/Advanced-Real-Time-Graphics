@@ -17,3 +17,5 @@ Skybox (Lock to camera, Stary Night Texture)
 Forum Post (ERA Template, from blackboard + Stage 4: Images/Video/Gif Output)
 
 Max Lights Buffer instead of constant
+
+Window Title Info (Copy Raytracing)
