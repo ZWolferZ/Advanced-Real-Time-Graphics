@@ -58,10 +58,15 @@ void Scene::LoadTextures()
 void Scene::CreateGameObjects()
 {
 	// CREATE A SIMPLE game object
-	GameObject* go = new GameObject(XMFLOAT3(-2, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), "Cube 1", m_vecDrawables, m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Solid Pixel Shader"), GetTexture("stone.dds"));
+	GameObject* go = new GameObject(XMFLOAT3(-2, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), "Cube 1", m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Solid Pixel Shader"), GetTexture("tex2.dds"));
 
 	// CREATE A SIMPLE game object
-	GameObject* go2 = new GameObject(XMFLOAT3(2, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), "Cube 2", m_vecDrawables, m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture("tex2.dds"));
+	GameObject* go2 = new GameObject(XMFLOAT3(2, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), "Cube 2", m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture("stone.dds"), GetTexture("conenormal.dds"));
+
+	go2->m_autoRotateY = true;
+
+	m_vecDrawables.push_back(go);
+	m_vecDrawables.push_back(go2);
 }
 
 void Scene::cleanUp()
@@ -111,12 +116,12 @@ void Scene::setupLightProperties()
 		light.LightType = PointLight;
 		light.Color = XMFLOAT4(1, 1, 1, 1);
 		light.SpotAngle = XMConvertToRadians(45.0f);
-		light.ConstantAttenuation = 1.0f;
-		light.LinearAttenuation = 1;
+		light.ConstantAttenuation = 0.1f;
+		light.LinearAttenuation = 0.1f;
 		light.QuadraticAttenuation = 1;
 
 		// set up the light
-		XMFLOAT4 LightPosition(0, 0, 1.5f, 1);
+		XMFLOAT4 LightPosition(0, 0, 1.2f, 1);
 
 		if (i == 1)
 		{

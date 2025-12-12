@@ -10,6 +10,7 @@ cbuffer ConstantBuffer : register(b0)
 };
 
 Texture2D txDiffuse : register(t0);
+Texture2D txNormalMap : register(t1);
 SamplerState samLinear : register(s0);
 
 #define MAX_LIGHTS 2
@@ -30,7 +31,8 @@ struct _Material
 //----------------------------------- (16 byte boundary)
     float SpecularPower; // 4 bytes
     bool UseTexture; // 4 bytes
-    float2 Padding; // 8 bytes
+    bool UseNormalMap; // 4 bytes
+    float Padding; // 8 bytes
 //----------------------------------- (16 byte boundary)
 }; // Total: // 80 bytes ( 5 * 16 )
 
@@ -73,6 +75,9 @@ struct VS_INPUT
     float4 Pos : POSITION;
     float3 Norm : NORMAL;
     float2 Tex : TEXCOORD0;
+    float3 Tangent : TANGENT;
+    float3 BiNormal : BINORMAL;
+
 };
 
 struct PS_INPUT
@@ -81,6 +86,9 @@ struct PS_INPUT
     float4 worldPos : TEXCOORD1;
     float3 Norm : NORMAL;
     float2 Tex : TEXCOORD0;
+    float3 LightTangentVector : LightTangentVector;
+    float3 EyeTangentVector : EyeTangentVector;
+    float3x3 TBN : MATRIX;
 };
 
 float4 DoDiffuse(Light light, float3 L, float3 N)
@@ -135,13 +143,14 @@ LightingResult DoPointLight(Light light, float3 pixelToLightVectorNormalised, fl
 
 }
 
-LightingResult ComputeLighting(float4 worldPos, float3 N)
+LightingResult ComputeLighting(float4 worldPos, float3 N, float3 pixelToLightVectorNormalised, float3 pixelToEyeVectorNormalised)
 {
     LightingResult totalResult;
     totalResult.Diffuse = float4(0, 0, 0, 0);
     totalResult.Specular = float4(0, 0, 0, 0);
 
-[unroll]
+
+  [unroll]
     for (int i = 0; i < MAX_LIGHTS; ++i)
     {
         LightingResult result;
@@ -180,11 +189,34 @@ PS_INPUT VS(VS_INPUT input)
     output.Pos = mul(output.Pos, View);
     output.Pos = mul(output.Pos, Projection);
 
-// multiply the normal by the world transform (to go from model space to world space)
-    output.Norm = mul(float4(input.Norm, 0), World).xyz;
-
     output.Tex = input.Tex;
 
+    
+    // multiply the normal by the world transform (to go from model space to world space)
+    output.Norm = mul(float4(input.Norm, 0), World).xyz;
+
+    float3 vertexToEye = EyePosition.xyz - output.worldPos.xyz;
+    float3 vertexToLight;
+   
+    [unroll]
+    for (int i = 0; i < MAX_LIGHTS; ++i)
+    {
+        vertexToLight =+ Lights[i].Position.xyz - output.worldPos.xyz;
+    }
+    
+    vertexToLight = saturate(vertexToLight);
+    
+
+    float3 T = normalize(mul(input.Tangent, (float3x3)World));
+    float3 B = normalize(mul(input.BiNormal, (float3x3) World));
+    float3 N = normalize(mul(input.Norm, (float3x3) World));
+    
+    float3x3 TBN = float3x3(T, B, N);
+    output.TBN = transpose(TBN);
+    
+    output.EyeTangentVector = mul(output.TBN,vertexToEye);
+    output.LightTangentVector = mul(output.TBN,vertexToLight);
+    
     return output;
 
 
@@ -196,8 +228,19 @@ PS_INPUT VS(VS_INPUT input)
 
 float4 PS(PS_INPUT IN) : SV_TARGET
 {
-
-    LightingResult lit = ComputeLighting(IN.worldPos, normalize(IN.Norm));
+    LightingResult lit;
+    if (Material.UseNormalMap)
+    {
+        float4 bumpMap = txNormalMap.Sample(samLinear, IN.Tex);
+        bumpMap = (bumpMap * 2.0f) - 1.0f;
+        bumpMap = float4(normalize(bumpMap.xyz), 1);
+        lit = ComputeLighting(IN.worldPos, bumpMap.xyz, normalize(IN.LightTangentVector), normalize(IN.EyeTangentVector));
+    }
+    else
+    {
+        lit = ComputeLighting(IN.worldPos, normalize(IN.Norm), normalize(IN.LightTangentVector), normalize(IN.EyeTangentVector));
+    }
+    
 
     float4 texColor = float4(1, 1, 1, 1);
 
@@ -206,13 +249,14 @@ float4 PS(PS_INPUT IN) : SV_TARGET
     float4 diffuse = Material.Diffuse * lit.Diffuse;
     float4 specular = Material.Specular * lit.Specular;
 
+    float4 finalColor = emissive + ambient + diffuse + specular;
     if (Material.UseTexture)
     {
     	texColor = txDiffuse.Sample(samLinear, IN.Tex);
+        finalColor *= texColor;
     }
 
-    float4 finalColor = (emissive + ambient + diffuse + specular) * texColor;
-
+    
     return finalColor;
 
 

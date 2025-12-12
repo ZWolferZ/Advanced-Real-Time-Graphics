@@ -4,7 +4,7 @@
 using namespace std;
 using namespace DirectX;
 
-GameObject::GameObject(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, string ObjectName, vector<GameObject*>& drawList, ID3D11Device* m_pd3dDevice, ID3D11DeviceContext* m_pImmediateContext, Microsoft::WRL::ComPtr <ID3D11PixelShader> pixelShader, Microsoft::WRL::ComPtr < ID3D11ShaderResourceView> texture)
+GameObject::GameObject(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, string ObjectName, ID3D11Device* m_pd3dDevice, ID3D11DeviceContext* m_pImmediateContext, Microsoft::WRL::ComPtr <ID3D11PixelShader> pixelShader, Microsoft::WRL::ComPtr < ID3D11ShaderResourceView> texture)
 {
 	setPosition(Position);
 	setRotate(Rotation);
@@ -15,9 +15,42 @@ GameObject::GameObject(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, str
 	objectName = ObjectName;
 	m_pixelShader = pixelShader;
 	m_textureResourceView = texture;
+	m_material.Material.UseTexture = true;
+	m_material.Material.Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	m_material.Material.Specular = XMFLOAT4(0.2f, 0.2f, 0.2f, 1.0f);
+	m_material.Material.SpecularPower = 128.0f;
+
 
 	HRESULT hr = GameObject::initCubeMesh(m_pd3dDevice, m_pImmediateContext);
-	drawList.push_back(this);
+	
+
+	if (FAILED(hr))
+	{
+		MessageBox(nullptr,
+			L"Failed to init mesh in game object.", L"Error", MB_OK);
+	}
+}
+
+GameObject::GameObject(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, string ObjectName, ID3D11Device* m_pd3dDevice, ID3D11DeviceContext* m_pImmediateContext, Microsoft::WRL::ComPtr <ID3D11PixelShader> pixelShader, Microsoft::WRL::ComPtr < ID3D11ShaderResourceView> texture, Microsoft::WRL::ComPtr < ID3D11ShaderResourceView> normalMap)
+{
+	setPosition(Position);
+	setRotate(Rotation);
+	setScale(Scale);
+	m_orginalPosition = Position;
+	m_orginalRotation = Rotation;
+	m_orginalScale = Scale;
+	objectName = ObjectName;
+	m_pixelShader = pixelShader;
+	m_textureResourceView = texture;
+	m_normalMapResourceView = normalMap;
+	m_material.Material.UseTexture = true;
+	m_material.Material.UseNormalMap = true;
+	m_material.Material.Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	m_material.Material.Specular = XMFLOAT4(0.2f, 0.2f, 0.2f, 1.0f);
+	m_material.Material.SpecularPower = 128.0f;
+
+	HRESULT hr = GameObject::initCubeMesh(m_pd3dDevice, m_pImmediateContext);
+	
 
 	if (FAILED(hr))
 	{
@@ -113,6 +146,8 @@ HRESULT GameObject::initCubeMesh(ID3D11Device* pd3dDevice, ID3D11DeviceContext* 
 		{ XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT2(0.0f, 0.0f) }, // 22
 	};
 
+	CalculateModelVectors(vertices, 36);
+
 	D3D11_BUFFER_DESC bd = {};
 	bd.Usage = D3D11_USAGE_DEFAULT;
 	bd.ByteWidth = sizeof(SimpleVertex) * 36;
@@ -147,10 +182,8 @@ HRESULT GameObject::initCubeMesh(ID3D11Device* pd3dDevice, ID3D11DeviceContext* 
 	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
 	hr = pd3dDevice->CreateSamplerState(&sampDesc, &m_textureSampler);
 
-	m_material.Material.Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-	m_material.Material.Specular = XMFLOAT4(0.2f, 0.2f, 0.2f, 1.0f);
-	m_material.Material.SpecularPower = 128.0f;
-	m_material.Material.UseTexture = true;
+	
+
 
 	// Create the material constant buffer
 	bd.Usage = D3D11_USAGE_DEFAULT;

@@ -13,6 +13,9 @@ struct SimpleVertex
 	XMFLOAT3 Pos;
 	XMFLOAT3 Normal;
 	XMFLOAT2 TexCoord;
+	XMFLOAT3 Tangent;
+	XMFLOAT3 BiNormal;
+
 };
 
 struct ConstantBuffer
@@ -32,10 +35,10 @@ struct _Material
 		, Specular(1.0f, 1.0f, 1.0f, 1.0f)
 		, SpecularPower(128.0f)
 		, UseTexture(false)
+		, UseNormalMap(false)
 
 	{
-		Padding[0] = 0;
-		Padding[1] = 0;
+		Padding = 0;
 	}
 
 	DirectX::XMFLOAT4   Emissive;
@@ -49,8 +52,10 @@ struct _Material
 	float               SpecularPower;
 	// Add some padding complete the 16 byte boundary.
 	int                 UseTexture;
+
+	int					UseNormalMap;
 	// Add some padding to complete the 16 byte boundary.
-	float               Padding[2];
+	float               Padding;
 	//----------------------------------- (16 byte boundary)
 }; // Total:                                80 bytes (5 * 16)
 

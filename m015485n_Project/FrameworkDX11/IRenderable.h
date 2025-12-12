@@ -54,6 +54,10 @@ public:
 	Microsoft::WRL::ComPtr <ID3D11PixelShader> GetPixelShader() { return m_pixelShader; }
 	void	resetTransform() { setPosition(m_orginalPosition); setScale(m_orginalScale); setRotate(m_orginalRotation); }
 
+	void CalculateModelVectors(SimpleVertex* vertices, int vertexCount);
+
+	void CalculateTangentBinormal(SimpleVertex v0, SimpleVertex v1, SimpleVertex v2, XMFLOAT3& normal, XMFLOAT3& tangent, XMFLOAT3& binormal);
+
 	bool m_autoRotateX = false;
 	bool m_autoRotateY = false;
 	bool m_autoRotateZ = false;
@@ -68,6 +72,7 @@ protected:
 	Microsoft::WRL::ComPtr < ID3D11Buffer>						m_vertexBuffer = nullptr;
 	Microsoft::WRL::ComPtr < ID3D11Buffer>						m_indexBuffer = nullptr;
 	Microsoft::WRL::ComPtr < ID3D11ShaderResourceView>			m_textureResourceView = nullptr;
+	Microsoft::WRL::ComPtr < ID3D11ShaderResourceView>			m_normalMapResourceView = nullptr;
 
 	Microsoft::WRL::ComPtr < ID3D11SamplerState>				m_textureSampler = nullptr;
 
