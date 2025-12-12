@@ -29,20 +29,20 @@ public:
 	Scene() = default;
 	~Scene() = default;
 
-	HRESULT		init(HWND hwnd, const Microsoft::WRL::ComPtr<ID3D11Device>& device, const Microsoft::WRL::ComPtr<ID3D11DeviceContext>& context);
+	HRESULT		Init(HWND hwnd, const Microsoft::WRL::ComPtr<ID3D11Device>& device, const Microsoft::WRL::ComPtr<ID3D11DeviceContext>& context);
 	void LoadTextures();
 	void CreateGameObjects();
-	void		cleanUp();
-	Camera* getCamera() { return m_pCamera; }
+	void		CleanUp();
+	Camera* GetCamera() { return m_pCamera; }
 
-	void		update(const float deltaTime);
+	void		Update(const float deltaTime);
 
 	void PushBackPixelShaders(string name, Microsoft::WRL::ComPtr <ID3D11PixelShader>& pixelShader) { m_pixelShadersMap.push_back({ name, pixelShader }); }
 	Microsoft::WRL::ComPtr <ID3D11PixelShader>& GetPixelShader(const string& shaderToFind);
 	LightPropertiesConstantBuffer& getLightProperties() { return m_lightProperties; }
 	Microsoft::WRL::ComPtr < ID3D11ShaderResourceView>& GetTexture(const string& textureToFind);
 
-	void setupLightProperties();
+	void SetupLightProperties();
 	void UpdateLightProperties(unsigned int index, const Light& light);
 	void UpdateLightBuffer();
 	vector<GameObject*>		m_vecDrawables;

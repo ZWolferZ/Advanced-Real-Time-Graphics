@@ -6,9 +6,9 @@ using namespace DirectX;
 
 GameObject::GameObject(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, string ObjectName, ID3D11Device* m_pd3dDevice, ID3D11DeviceContext* m_pImmediateContext, Microsoft::WRL::ComPtr <ID3D11PixelShader> pixelShader, Microsoft::WRL::ComPtr < ID3D11ShaderResourceView> texture)
 {
-	setPosition(Position);
-	setRotate(Rotation);
-	setScale(Scale);
+	SetPosition(Position);
+	SetRotate(Rotation);
+	SetScale(Scale);
 	m_orginalPosition = Position;
 	m_orginalRotation = Rotation;
 	m_orginalScale = Scale;
@@ -20,9 +20,7 @@ GameObject::GameObject(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, str
 	m_material.Material.Specular = XMFLOAT4(0.2f, 0.2f, 0.2f, 1.0f);
 	m_material.Material.SpecularPower = 128.0f;
 
-
-	HRESULT hr = GameObject::initCubeMesh(m_pd3dDevice, m_pImmediateContext);
-	
+	HRESULT hr = GameObject::InitCubeMesh(m_pd3dDevice, m_pImmediateContext);
 
 	if (FAILED(hr))
 	{
@@ -33,9 +31,9 @@ GameObject::GameObject(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, str
 
 GameObject::GameObject(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, string ObjectName, ID3D11Device* m_pd3dDevice, ID3D11DeviceContext* m_pImmediateContext, Microsoft::WRL::ComPtr <ID3D11PixelShader> pixelShader, Microsoft::WRL::ComPtr < ID3D11ShaderResourceView> texture, Microsoft::WRL::ComPtr < ID3D11ShaderResourceView> normalMap)
 {
-	setPosition(Position);
-	setRotate(Rotation);
-	setScale(Scale);
+	SetPosition(Position);
+	SetRotate(Rotation);
+	SetScale(Scale);
 	m_orginalPosition = Position;
 	m_orginalRotation = Rotation;
 	m_orginalScale = Scale;
@@ -49,8 +47,7 @@ GameObject::GameObject(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, str
 	m_material.Material.Specular = XMFLOAT4(0.2f, 0.2f, 0.2f, 1.0f);
 	m_material.Material.SpecularPower = 128.0f;
 
-	HRESULT hr = GameObject::initCubeMesh(m_pd3dDevice, m_pImmediateContext);
-	
+	HRESULT hr = GameObject::InitCubeMesh(m_pd3dDevice, m_pImmediateContext);
 
 	if (FAILED(hr))
 	{
@@ -63,7 +60,7 @@ GameObject::~GameObject()
 {
 }
 
-HRESULT GameObject::initCubeMesh(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pContext)
+HRESULT GameObject::InitCubeMesh(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pContext)
 {
 	// Create index buffer
 	WORD indices[] =
@@ -181,9 +178,6 @@ HRESULT GameObject::initCubeMesh(ID3D11Device* pd3dDevice, ID3D11DeviceContext* 
 	sampDesc.MinLOD = 0;
 	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
 	hr = pd3dDevice->CreateSamplerState(&sampDesc, &m_textureSampler);
-
-	
-
 
 	// Create the material constant buffer
 	bd.Usage = D3D11_USAGE_DEFAULT;

@@ -8,9 +8,9 @@
 
 #pragma region Class lifetime
 
-HRESULT DX11Renderer::init(HWND hwnd)
+HRESULT DX11Renderer::Init(HWND hwnd)
 {
-	initDevice(hwnd);
+	InitDevice(hwnd);
 
 	m_pScene = new Scene;
 
@@ -18,7 +18,7 @@ HRESULT DX11Renderer::init(HWND hwnd)
 
 	// Compile the vertex shader
 	ID3DBlob* pVSBlob = nullptr;
-	HRESULT hr = DX11Renderer::compileShaderFromFile(L"shader.fx", "VS", "vs_4_0", &pVSBlob);
+	HRESULT hr = DX11Renderer::CompileShaderFromFile(L"shader.fx", "VS", "vs_4_0", &pVSBlob);
 	if (FAILED(hr))
 	{
 		MessageBox(nullptr,
@@ -57,7 +57,7 @@ HRESULT DX11Renderer::init(HWND hwnd)
 
 	// Compile the pixel shader
 	ID3DBlob* pPSBlob = nullptr;
-	hr = compileShaderFromFile(L"shader.fx", "PS", "ps_4_0", &pPSBlob);
+	hr = CompileShaderFromFile(L"shader.fx", "PS", "ps_4_0", &pPSBlob);
 	if (FAILED(hr))
 	{
 		MessageBox(nullptr,
@@ -69,7 +69,7 @@ HRESULT DX11Renderer::init(HWND hwnd)
 	hr = m_pd3dDevice->CreatePixelShader(pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize(), nullptr, &m_pPixelShader);
 
 	// Compile the pixel shader
-	hr = compileShaderFromFile(L"shader.fx", "PSSolid", "ps_4_0", &pPSBlob);
+	hr = CompileShaderFromFile(L"shader.fx", "PSSolid", "ps_4_0", &pPSBlob);
 	if (FAILED(hr))
 	{
 		MessageBox(nullptr,
@@ -86,12 +86,12 @@ HRESULT DX11Renderer::init(HWND hwnd)
 	m_pScene->PushBackPixelShaders("Solid Pixel Shader", m_pSolidPixelShader);
 	m_pScene->PushBackPixelShaders("Texture Pixel Shader", m_pPixelShader);
 
-	m_pScene->init(hwnd, m_pd3dDevice, m_pImmediateContext);
+	m_pScene->Init(hwnd, m_pd3dDevice, m_pImmediateContext);
 
 	return hr;
 }
 
-HRESULT DX11Renderer::initDevice(HWND hwnd)
+HRESULT DX11Renderer::InitDevice(HWND hwnd)
 {
 	HRESULT hr = S_OK;
 
@@ -295,17 +295,17 @@ HRESULT DX11Renderer::initDevice(HWND hwnd)
 	return S_OK;
 }
 
-void DX11Renderer::cleanUp()
+void DX11Renderer::CleanUp()
 {
-	cleanupDevice();
+	CleanupDevice();
 
 	m_imguiRenderer->ShutDownImGui();
 
-	m_pScene->cleanUp();
+	m_pScene->CleanUp();
 	delete m_pScene;
 }
 
-void DX11Renderer::cleanupDevice()
+void DX11Renderer::CleanupDevice()
 {
 	// Remove any bound render target or depth/stencil buffer
 	ID3D11RenderTargetView* nullViews[] = { nullptr };
@@ -335,7 +335,7 @@ void DX11Renderer::cleanupDevice()
 //
 // With VS 11, we could load up prebuilt .cso files instead...
 //--------------------------------------------------------------------------------------
-HRESULT DX11Renderer::compileShaderFromFile(const WCHAR* szFileName, LPCSTR szEntryPoint, LPCSTR szShaderModel, ID3DBlob** ppBlobOut)
+HRESULT DX11Renderer::CompileShaderFromFile(const WCHAR* szFileName, LPCSTR szEntryPoint, LPCSTR szShaderModel, ID3DBlob** ppBlobOut)
 {
 	HRESULT hr = S_OK;
 
@@ -368,7 +368,7 @@ HRESULT DX11Renderer::compileShaderFromFile(const WCHAR* szFileName, LPCSTR szEn
 	return S_OK;
 }
 
-void DX11Renderer::input(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+void DX11Renderer::Input(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	static bool mouseDown = false;
 
@@ -428,7 +428,7 @@ void DX11Renderer::input(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 		// Update the camera with the delta
 		// (You may need to convert POINT to POINTS or use the deltas as is)
-		m_pScene->getCamera()->UpdateLookAt({ static_cast<short>(delta.x), static_cast<short>(delta.y) });
+		m_pScene->GetCamera()->UpdateLookAt({ static_cast<short>(delta.x), static_cast<short>(delta.y) });
 
 		// Recenter the cursor
 		SetCursorPos(windowCenter.x, windowCenter.y);
@@ -442,23 +442,23 @@ void DX11Renderer::input(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	}
 }
 
-void DX11Renderer::updateKeyInputs()
+void DX11Renderer::UpdateKeyInputs()
 {
-	if (inputs['W'] == true) m_pScene->getCamera()->MoveForward(m_pScene->getCamera()->m_cameraMoveSpeed * m_currentDeltaTime);
-	if (inputs['A'] == true) m_pScene->getCamera()->StrafeLeft(m_pScene->getCamera()->m_cameraMoveSpeed * m_currentDeltaTime);
-	if (inputs['S'] == true) m_pScene->getCamera()->MoveBackward(m_pScene->getCamera()->m_cameraMoveSpeed * m_currentDeltaTime);
-	if (inputs['D'] == true) m_pScene->getCamera()->StrafeRight(m_pScene->getCamera()->m_cameraMoveSpeed * m_currentDeltaTime);
-	if (inputs['E'] == true) m_pScene->getCamera()->MoveUp(m_pScene->getCamera()->m_cameraMoveSpeed * m_currentDeltaTime);
-	if (inputs[VK_SPACE] == true) m_pScene->getCamera()->MoveUp(m_pScene->getCamera()->m_cameraMoveSpeed * m_currentDeltaTime);
-	if (inputs['Q'] == true) m_pScene->getCamera()->MoveDown(m_pScene->getCamera()->m_cameraMoveSpeed * m_currentDeltaTime);
-	if (inputs[VK_SHIFT] == true) m_pScene->getCamera()->MoveDown(m_pScene->getCamera()->m_cameraMoveSpeed * m_currentDeltaTime);
-	if (inputs[VK_NUMPAD8] == true) m_pScene->getCamera()->RotatePitch(-m_pScene->getCamera()->m_cameraRotateSpeed * m_currentDeltaTime);
-	if (inputs[VK_NUMPAD5] == true) m_pScene->getCamera()->RotatePitch(m_pScene->getCamera()->m_cameraRotateSpeed * m_currentDeltaTime);
-	if (inputs[VK_NUMPAD4] == true) m_pScene->getCamera()->RotateYaw(-m_pScene->getCamera()->m_cameraRotateSpeed * m_currentDeltaTime);
-	if (inputs[VK_NUMPAD6] == true) m_pScene->getCamera()->RotateYaw(m_pScene->getCamera()->m_cameraRotateSpeed * m_currentDeltaTime);
-	if (inputs[VK_NUMPAD9] == true) m_pScene->getCamera()->RotateRoll(-m_pScene->getCamera()->m_cameraRotateSpeed * m_currentDeltaTime);
-	if (inputs[VK_NUMPAD7] == true) m_pScene->getCamera()->RotateRoll(m_pScene->getCamera()->m_cameraRotateSpeed * m_currentDeltaTime);
-	if (inputs['R'] == true)  m_pScene->getCamera()->Reset();
+	if (inputs['W'] == true) m_pScene->GetCamera()->MoveForward(m_pScene->GetCamera()->m_cameraMoveSpeed * m_currentDeltaTime);
+	if (inputs['A'] == true) m_pScene->GetCamera()->StrafeLeft(m_pScene->GetCamera()->m_cameraMoveSpeed * m_currentDeltaTime);
+	if (inputs['S'] == true) m_pScene->GetCamera()->MoveBackward(m_pScene->GetCamera()->m_cameraMoveSpeed * m_currentDeltaTime);
+	if (inputs['D'] == true) m_pScene->GetCamera()->StrafeRight(m_pScene->GetCamera()->m_cameraMoveSpeed * m_currentDeltaTime);
+	if (inputs['E'] == true) m_pScene->GetCamera()->MoveUp(m_pScene->GetCamera()->m_cameraMoveSpeed * m_currentDeltaTime);
+	if (inputs[VK_SPACE] == true) m_pScene->GetCamera()->MoveUp(m_pScene->GetCamera()->m_cameraMoveSpeed * m_currentDeltaTime);
+	if (inputs['Q'] == true) m_pScene->GetCamera()->MoveDown(m_pScene->GetCamera()->m_cameraMoveSpeed * m_currentDeltaTime);
+	if (inputs[VK_SHIFT] == true) m_pScene->GetCamera()->MoveDown(m_pScene->GetCamera()->m_cameraMoveSpeed * m_currentDeltaTime);
+	if (inputs[VK_NUMPAD8] == true) m_pScene->GetCamera()->RotatePitch(-m_pScene->GetCamera()->m_cameraRotateSpeed * m_currentDeltaTime);
+	if (inputs[VK_NUMPAD5] == true) m_pScene->GetCamera()->RotatePitch(m_pScene->GetCamera()->m_cameraRotateSpeed * m_currentDeltaTime);
+	if (inputs[VK_NUMPAD4] == true) m_pScene->GetCamera()->RotateYaw(-m_pScene->GetCamera()->m_cameraRotateSpeed * m_currentDeltaTime);
+	if (inputs[VK_NUMPAD6] == true) m_pScene->GetCamera()->RotateYaw(m_pScene->GetCamera()->m_cameraRotateSpeed * m_currentDeltaTime);
+	if (inputs[VK_NUMPAD9] == true) m_pScene->GetCamera()->RotateRoll(-m_pScene->GetCamera()->m_cameraRotateSpeed * m_currentDeltaTime);
+	if (inputs[VK_NUMPAD7] == true) m_pScene->GetCamera()->RotateRoll(m_pScene->GetCamera()->m_cameraRotateSpeed * m_currentDeltaTime);
+	if (inputs['R'] == true)  m_pScene->GetCamera()->Reset();
 	if (inputs[27] == true)  PostQuitMessage(0);
 }
 
@@ -481,9 +481,9 @@ void DX11Renderer::CentreMouseInWindow(HWND hWnd)
 	SetCursorPos(center.x, center.y);
 }
 
-void DX11Renderer::update(const float deltaTime)
+void DX11Renderer::Update(const float deltaTime)
 {
-	updateKeyInputs();
+	UpdateKeyInputs();
 
 	static float timer = 0;
 	timer += deltaTime;
@@ -507,7 +507,7 @@ void DX11Renderer::update(const float deltaTime)
 	m_pImmediateContext->VSSetShader(m_pVertexShader.Get(), nullptr, 0);
 	m_pImmediateContext->PSSetShader(m_pPixelShader.Get(), nullptr, 0);
 
-	m_pScene->update(deltaTime);
+	m_pScene->Update(deltaTime);
 
 	m_imguiRenderer->ImGuiDrawAllWindows(FPS, m_totalTime, *m_pScene);
 

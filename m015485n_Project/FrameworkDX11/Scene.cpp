@@ -4,7 +4,7 @@
 
 #include "DDSTextureLoader.h"
 
-HRESULT Scene::init(HWND hwnd, const Microsoft::WRL::ComPtr<ID3D11Device>& device, const Microsoft::WRL::ComPtr<ID3D11DeviceContext>& context)
+HRESULT Scene::Init(HWND hwnd, const Microsoft::WRL::ComPtr<ID3D11Device>& device, const Microsoft::WRL::ComPtr<ID3D11DeviceContext>& context)
 {
 	m_pd3dDevice = device;
 	m_pImmediateContext = context;
@@ -28,7 +28,7 @@ HRESULT Scene::init(HWND hwnd, const Microsoft::WRL::ComPtr<ID3D11Device>& devic
 	if (FAILED(hr))
 		return hr;
 
-	setupLightProperties();
+	SetupLightProperties();
 
 	return S_OK;
 }
@@ -69,11 +69,11 @@ void Scene::CreateGameObjects()
 	m_vecDrawables.push_back(go2);
 }
 
-void Scene::cleanUp()
+void Scene::CleanUp()
 {
 	for (GameObject* obj : m_vecDrawables)
 	{
-		obj->cleanup();
+		obj->Cleanup();
 		delete obj;
 	}
 
@@ -107,17 +107,17 @@ Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& Scene::GetTexture(const string
 	return m_textureMap[0].second;
 }
 
-void Scene::setupLightProperties()
+void Scene::SetupLightProperties()
 {
 	for (unsigned int i = 0; i < MAX_LIGHTS; i++)
 	{
 		Light light;
 		light.Enabled = static_cast<int>(true);
 		light.LightType = PointLight;
-		light.Color = XMFLOAT4(1, 1, 1, 1);
+		light.Color = XMFLOAT4(0.0f, 0.765f, 1, 1);
 		light.SpotAngle = XMConvertToRadians(45.0f);
-		light.ConstantAttenuation = 0.1f;
-		light.LinearAttenuation = 0.1f;
+		light.ConstantAttenuation = 1.0f;
+		light.LinearAttenuation = 1.0f;
 		light.QuadraticAttenuation = 1;
 
 		// set up the light
@@ -125,8 +125,8 @@ void Scene::setupLightProperties()
 
 		if (i == 1)
 		{
-			light.Enabled = static_cast<int>(false);
-			LightPosition = { 0,0,-1.5f,1 };
+			light.Color = { 1.00f,0.00f,0.559f,1.0f };
+			LightPosition = { 3,0,1.5f,1 };
 		}
 
 		light.Position = LightPosition;
@@ -160,14 +160,14 @@ void Scene::UpdateLightBuffer()
 	m_pImmediateContext->PSSetConstantBuffers(2, 1, &buf);
 }
 
-void Scene::update(const float deltaTime)
+void Scene::Update(const float deltaTime)
 {
 	UpdateLightBuffer();
 
 	for (unsigned int i = 0; i < m_vecDrawables.size(); i++)
 	{
-		m_vecDrawables[i]->update(deltaTime, m_pImmediateContext.Get());
+		m_vecDrawables[i]->Update(deltaTime, m_pImmediateContext.Get());
 
-		m_vecDrawables[i]->draw(m_pImmediateContext.Get(), getCamera(), m_pConstantBuffer.Get());
+		m_vecDrawables[i]->Draw(m_pImmediateContext.Get(), GetCamera(), m_pConstantBuffer.Get());
 	}
 }

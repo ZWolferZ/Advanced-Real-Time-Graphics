@@ -86,9 +86,8 @@ struct PS_INPUT
     float4 worldPos : TEXCOORD1;
     float3 Norm : NORMAL;
     float2 Tex : TEXCOORD0;
-    float3 LightTangentVector : LightTangentVector;
     float3 EyeTangentVector : EyeTangentVector;
-    float3x3 TBN : MATRIX;
+    float3x3 TBN_Inv : MATRIX;
 };
 
 float4 DoDiffuse(Light light, float3 L, float3 N)
@@ -143,7 +142,12 @@ LightingResult DoPointLight(Light light, float3 pixelToLightVectorNormalised, fl
 
 }
 
-LightingResult ComputeLighting(float4 worldPos, float3 N, float3 pixelToLightVectorNormalised, float3 pixelToEyeVectorNormalised)
+float3 VectorToTangentSpace(float3 vectorV, float3x3 TBN_Inv)
+{
+    return normalize(mul(vectorV, TBN_Inv));
+}
+
+LightingResult ComputeLighting(float4 worldPos, float3 N, float3 pixelToEyeVectorNormalised, float3x3 TBN_Inv)
 {
     LightingResult totalResult;
     totalResult.Diffuse = float4(0, 0, 0, 0);
@@ -153,18 +157,20 @@ LightingResult ComputeLighting(float4 worldPos, float3 N, float3 pixelToLightVec
   [unroll]
     for (int i = 0; i < MAX_LIGHTS; ++i)
     {
+        if (!Lights[i].Enabled)
+            continue;
+
         LightingResult result;
         result.Diffuse = float4(0, 0, 0, 0);
         result.Specular = float4(0, 0, 0, 0);
 
-        float4 pixelToLightVectorNormalised = normalize(Lights[i].Position - worldPos);
-        float4 pixelToEyeVectorNormalised = normalize(EyePosition - worldPos);
+
         float distanceFromPixelToLight = length(worldPos - Lights[i].Position);
+        float3 vertexToLight = Lights[i].Position.xyz - worldPos.xyz;
+        vertexToLight = VectorToTangentSpace(vertexToLight, TBN_Inv);
 
-        if (!Lights[i].Enabled)
-            continue;
 
-        result = DoPointLight(Lights[i], pixelToLightVectorNormalised.xyz, pixelToEyeVectorNormalised.xyz, distanceFromPixelToLight, N);
+        result = DoPointLight(Lights[i], vertexToLight.xyz, pixelToEyeVectorNormalised.xyz, distanceFromPixelToLight, N);
 
         totalResult.Diffuse += result.Diffuse;
         totalResult.Specular += result.Specular;
@@ -177,6 +183,8 @@ LightingResult ComputeLighting(float4 worldPos, float3 N, float3 pixelToLightVec
 
 
 }
+
+
 
 //--------------------------------------------------------------------------------------
 // Vertex Shader
@@ -191,32 +199,29 @@ PS_INPUT VS(VS_INPUT input)
 
     output.Tex = input.Tex;
 
-    
+
     // multiply the normal by the world transform (to go from model space to world space)
     output.Norm = mul(float4(input.Norm, 0), World).xyz;
 
     float3 vertexToEye = EyePosition.xyz - output.worldPos.xyz;
-    float3 vertexToLight;
-   
-    [unroll]
-    for (int i = 0; i < MAX_LIGHTS; ++i)
-    {
-        vertexToLight =+ Lights[i].Position.xyz - output.worldPos.xyz;
-    }
-    
-    vertexToLight = saturate(vertexToLight);
-    
+
+
+
+
 
     float3 T = normalize(mul(input.Tangent, (float3x3)World));
     float3 B = normalize(mul(input.BiNormal, (float3x3) World));
     float3 N = normalize(mul(input.Norm, (float3x3) World));
-    
+
     float3x3 TBN = float3x3(T, B, N);
-    output.TBN = transpose(TBN);
-    
-    output.EyeTangentVector = mul(output.TBN,vertexToEye);
-    output.LightTangentVector = mul(output.TBN,vertexToLight);
-    
+    float3x3 TBN_Inv = transpose(TBN);
+
+    output.TBN_Inv = TBN_Inv;
+
+
+    output.EyeTangentVector = VectorToTangentSpace(vertexToEye, TBN_Inv);
+
+
     return output;
 
 
@@ -234,13 +239,13 @@ float4 PS(PS_INPUT IN) : SV_TARGET
         float4 bumpMap = txNormalMap.Sample(samLinear, IN.Tex);
         bumpMap = (bumpMap * 2.0f) - 1.0f;
         bumpMap = float4(normalize(bumpMap.xyz), 1);
-        lit = ComputeLighting(IN.worldPos, bumpMap.xyz, normalize(IN.LightTangentVector), normalize(IN.EyeTangentVector));
+        lit = ComputeLighting(IN.worldPos, bumpMap.xyz,  normalize(IN.EyeTangentVector),IN.TBN_Inv);
     }
     else
     {
-        lit = ComputeLighting(IN.worldPos, normalize(IN.Norm), normalize(IN.LightTangentVector), normalize(IN.EyeTangentVector));
+        lit = ComputeLighting(IN.worldPos, normalize(IN.Norm),  normalize(IN.EyeTangentVector),IN.TBN_Inv);
     }
-    
+
 
     float4 texColor = float4(1, 1, 1, 1);
 
@@ -256,7 +261,7 @@ float4 PS(PS_INPUT IN) : SV_TARGET
         finalColor *= texColor;
     }
 
-    
+
     return finalColor;
 
 

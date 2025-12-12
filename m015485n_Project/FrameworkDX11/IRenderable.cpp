@@ -13,10 +13,10 @@ IRenderable::IRenderable()
 
 IRenderable::~IRenderable()
 {
-	cleanup();
+	Cleanup();
 }
 
-void IRenderable::update(const float deltaTime, ID3D11DeviceContext* pContext)
+void IRenderable::Update(const float deltaTime, ID3D11DeviceContext* pContext)
 {
 	// Don't overflow the rotation
 	if (m_rotation.x > 360.0f) m_rotation.x = 0.0f;
@@ -53,7 +53,7 @@ void IRenderable::update(const float deltaTime, ID3D11DeviceContext* pContext)
 	XMStoreFloat4x4(&m_world, world);
 }
 
-void IRenderable::draw(ID3D11DeviceContext* pContext, Camera* camera, ID3D11Buffer* m_pConstantBuffer)
+void IRenderable::Draw(ID3D11DeviceContext* pContext, Camera* camera, ID3D11Buffer* m_pConstantBuffer)
 {
 	pContext->PSSetShader(m_pixelShader.Get(), nullptr, 0);
 
@@ -63,13 +63,13 @@ void IRenderable::draw(ID3D11DeviceContext* pContext, Camera* camera, ID3D11Buff
 	cb.vOutputColor = XMFLOAT4(0, 0, 0, 0);
 
 	// store world and the view / projection in a constant buffer for the vertex shader to use
-	cb.mWorld = XMMatrixTranspose(XMLoadFloat4x4(getTransform()));
+	cb.mWorld = XMMatrixTranspose(XMLoadFloat4x4(GetTransform()));
 	pContext->UpdateSubresource(m_pConstantBuffer, 0, nullptr, &cb, 0, 0);
 
 	// Render a cube
 	pContext->VSSetConstantBuffers(0, 1, &m_pConstantBuffer);
 
-	ID3D11Buffer* materialCB = getMaterialConstantBuffer();
+	ID3D11Buffer* materialCB = GetMaterialConstantBuffer();
 	pContext->PSSetConstantBuffers(1, 1, &materialCB);
 
 	// Set vertex buffer
@@ -104,7 +104,7 @@ void IRenderable::draw(ID3D11DeviceContext* pContext, Camera* camera, ID3D11Buff
 	pContext->DrawIndexed(m_vertexCount, 0, 0);
 }
 
-void IRenderable::cleanup()
+void IRenderable::Cleanup()
 {
 	// we are using com pointers so no release() necessary
 }

@@ -16,8 +16,7 @@
 #pragma once
 
 #include <d3d11_1.h>
-#include "constants.h"
-#include "Camera.h"
+
 #include "GameObject.h"
 
 #include <vector>
@@ -40,23 +39,23 @@ public:
 	DX11Renderer() = default;
 	~DX11Renderer() = default;
 
-	HRESULT init(HWND hwnd);
-	void	cleanUp();
+	HRESULT Init(HWND hwnd);
+	void	CleanUp();
 
-	void	update(const float deltaTime);
+	void	Update(const float deltaTime);
 
 	// a helper method - todo: move to a unique class to reduce dependency on Renderer
-	static HRESULT compileShaderFromFile(const WCHAR* szFileName, LPCSTR szEntryPoint, LPCSTR szShaderModel, ID3DBlob** ppBlobOut);
+	static HRESULT CompileShaderFromFile(const WCHAR* szFileName, LPCSTR szEntryPoint, LPCSTR szShaderModel, ID3DBlob** ppBlobOut);
 
-	void input(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
-	void updateKeyInputs();
+	void Input(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+	void UpdateKeyInputs();
 
 	float m_currentDeltaTime = 0.0f;
 	float m_totalTime = 0.0f;
 
 private: // methods
-	HRESULT initDevice(HWND hwnd);
-	void    cleanupDevice();
+	HRESULT InitDevice(HWND hwnd);
+	void    CleanupDevice();
 	//void	initIMGUI(HWND hwnd);
 	//void	IMGUIDraw(const unsigned int FPS);
 	//void	startIMGUIDraw();

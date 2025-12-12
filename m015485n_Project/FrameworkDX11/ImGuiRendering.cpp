@@ -160,22 +160,22 @@ void ImGuiRendering::DrawObjectMovementWindow()
 		ImGui::Text("Selected Object: %s", m_selectedObject->GetObjectName().c_str());
 		ImGui::Separator();
 
-		XMFLOAT3 position = m_selectedObject->getPosition();
+		XMFLOAT3 position = m_selectedObject->GetPosition();
 		if (ImGui::DragFloat3("Position", reinterpret_cast<float*>(&position), 0.005f))
 		{
-			m_selectedObject->setPosition(position);
+			m_selectedObject->SetPosition(position);
 		}
 
-		XMFLOAT3 rotation = m_selectedObject->getRotation();
+		XMFLOAT3 rotation = m_selectedObject->GetRotation();
 		if (ImGui::DragFloat3("Rotation", reinterpret_cast<float*>(&rotation), 0.5f, -361, 361))
 		{
-			m_selectedObject->setRotate(rotation);
+			m_selectedObject->SetRotate(rotation);
 		}
 
-		XMFLOAT3 scale = m_selectedObject->getScale();
+		XMFLOAT3 scale = m_selectedObject->GetScale();
 		if (ImGui::DragFloat3("Scale", reinterpret_cast<float*>(&scale), 0.01f, -INFINITY, INFINITY))
 		{
-			m_selectedObject->setScale(scale);
+			m_selectedObject->SetScale(scale);
 		}
 
 		ImGui::Text("(Drag the box or enter a number)");
@@ -195,7 +195,7 @@ void ImGuiRendering::DrawObjectMovementWindow()
 
 		if (ImGui::Button("Reset Transform"))
 		{
-			m_selectedObject->resetTransform();
+			m_selectedObject->ResetTransform();
 		}
 
 		ImGui::End();

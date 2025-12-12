@@ -23,7 +23,7 @@ HRESULT DX11App::init()
 {
 	m_pRenderer = new DX11Renderer();
 
-	HRESULT hr = m_pRenderer->init(m_hWnd);
+	HRESULT hr = m_pRenderer->Init(m_hWnd);
 
 	return hr;
 }
@@ -95,7 +95,7 @@ void DX11App::update()
 {
 	float t = calculateDeltaTime(); // NOT capped at 60 fps
 
-	m_pRenderer->update(t);
+	m_pRenderer->Update(t);
 }
 
 //--------------------------------------------------------------------------------------
@@ -106,7 +106,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	PAINTSTRUCT ps;
 	HDC hdc;
 
-	if (gThisApp->getRenderer()) gThisApp->getRenderer()->input(hWnd, message, wParam, lParam);
+	if (gThisApp->getRenderer()) gThisApp->getRenderer()->Input(hWnd, message, wParam, lParam);
 
 	switch (message)
 	{

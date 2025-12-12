@@ -30,29 +30,29 @@ public:
 	IRenderable();
 	virtual ~IRenderable();
 
-	virtual HRESULT	initCubeMesh(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pContext) = 0;
-	virtual void	update(const float deltaTime, ID3D11DeviceContext* pContext);
-	virtual void	draw(ID3D11DeviceContext* pContext, Camera* camera, ID3D11Buffer* m_pConstantBuffer);
-	virtual void	cleanup();
+	virtual HRESULT	InitCubeMesh(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pContext) = 0;
+	virtual void	Update(const float deltaTime, ID3D11DeviceContext* pContext);
+	virtual void	Draw(ID3D11DeviceContext* pContext, Camera* camera, ID3D11Buffer* m_pConstantBuffer);
+	virtual void	Cleanup();
 
-	const ID3D11Buffer* getVertexBuffer() const { return m_vertexBuffer.Get(); }
-	const ID3D11Buffer* getIndexBuffer() const { return m_indexBuffer.Get(); }
-	const ID3D11ShaderResourceView* getTextureResourceView() const { return m_textureResourceView.Get(); }
-	const XMFLOAT4X4* getTransform() const { return &m_world; }
-	const ID3D11SamplerState* getTextureSamplerState() const { return m_textureSampler.Get(); }
-	ID3D11Buffer* getMaterialConstantBuffer() const { return m_materialConstantBuffer.Get(); }
+	const ID3D11Buffer* GetVertexBuffer() const { return m_vertexBuffer.Get(); }
+	const ID3D11Buffer* GetIndexBuffer() const { return m_indexBuffer.Get(); }
+	const ID3D11ShaderResourceView* GetTextureResourceView() const { return m_textureResourceView.Get(); }
+	const XMFLOAT4X4* GetTransform() const { return &m_world; }
+	const ID3D11SamplerState* GetTextureSamplerState() const { return m_textureSampler.Get(); }
+	ID3D11Buffer* GetMaterialConstantBuffer() const { return m_materialConstantBuffer.Get(); }
 
-	void	setPosition(const XMFLOAT3 position) { m_position = position; }
-	void	setScale(const XMFLOAT3 scale) { m_scale = scale; }
-	void	setRotate(const XMFLOAT3 rotation) { m_rotation = rotation; }
+	void	SetPosition(const XMFLOAT3 position) { m_position = position; }
+	void	SetScale(const XMFLOAT3 scale) { m_scale = scale; }
+	void	SetRotate(const XMFLOAT3 rotation) { m_rotation = rotation; }
 
-	XMFLOAT3	getPosition() { return m_position; }
-	XMFLOAT3	getScale() { return m_scale; }
-	XMFLOAT3	getRotation() { return { m_rotation }; }
+	XMFLOAT3	GetPosition() { return m_position; }
+	XMFLOAT3	GetScale() { return m_scale; }
+	XMFLOAT3	GetRotation() { return { m_rotation }; }
 	void SetPixelShader(Microsoft::WRL::ComPtr <ID3D11PixelShader> pixelShader) { m_pixelShader = pixelShader; }
 
 	Microsoft::WRL::ComPtr <ID3D11PixelShader> GetPixelShader() { return m_pixelShader; }
-	void	resetTransform() { setPosition(m_orginalPosition); setScale(m_orginalScale); setRotate(m_orginalRotation); }
+	void	ResetTransform() { SetPosition(m_orginalPosition); SetScale(m_orginalScale); SetRotate(m_orginalRotation); }
 
 	void CalculateModelVectors(SimpleVertex* vertices, int vertexCount);
 

@@ -37,7 +37,7 @@ public:
 
 	string GetObjectName() { return objectName; }
 
-	HRESULT	initCubeMesh(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pContext);
+	HRESULT	InitCubeMesh(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pContext);
 
 private: // variables
 
