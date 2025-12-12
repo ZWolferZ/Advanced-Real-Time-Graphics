@@ -110,42 +110,42 @@ void IRenderable::Cleanup()
 
 void IRenderable::SetTransform(XMMATRIX newTransform)
 {
-	XMVECTOR scale, rotationQuat, translation;
+	XMVECTOR scaleVector, rotationQuatVector, translationVector;
 
 	// This gives the rotation as a quaternion, so I needed to convert it to Euler angles
-	XMMatrixDecompose(&scale, &rotationQuat, &translation, newTransform);
+	XMMatrixDecompose(&scaleVector, &rotationQuatVector, &translationVector, newTransform);
 
-	XMFLOAT3 scaleF;
-	XMFLOAT3 translationF;
-	XMFLOAT4 rotQ;
-	XMStoreFloat3(&scaleF, scale);
-	XMStoreFloat3(&translationF, translation);
-	XMStoreFloat4(&rotQ, rotationQuat);
+	XMFLOAT3 scale;
+	XMFLOAT3 translation;
+	XMFLOAT4 rotQuat;
+	XMStoreFloat3(&scale, scaleVector);
+	XMStoreFloat3(&translation, translationVector);
+	XMStoreFloat4(&rotQuat, rotationQuatVector);
 
-	float ysqr = rotQ.y * rotQ.y;
+	float ysqr = rotQuat.y * rotQuat.y;
 
 	// Roll x-axis
-	float t0 = +2.0f * (rotQ.w * rotQ.x + rotQ.y * rotQ.z);
-	float t1 = +1.0f - 2.0f * (rotQ.x * rotQ.x + ysqr);
+	float t0 = +2.0f * (rotQuat.w * rotQuat.x + rotQuat.y * rotQuat.z);
+	float t1 = +1.0f - 2.0f * (rotQuat.x * rotQuat.x + ysqr);
 	float roll = atan2f(t0, t1);
 
 	// Pitch y-axis
-	float t2 = +2.0f * (rotQ.w * rotQ.y - rotQ.z * rotQ.x);
+	float t2 = +2.0f * (rotQuat.w * rotQuat.y - rotQuat.z * rotQuat.x);
 	t2 = t2 > 1.0f ? 1.0f : t2;
 	t2 = t2 < -1.0f ? -1.0f : t2;
 	float pitch = asinf(t2);
 
 	// Yaw z-axis
-	float t3 = +2.0f * (rotQ.w * rotQ.z + rotQ.x * rotQ.y);
-	float t4 = +1.0f - 2.0f * (ysqr + rotQ.z * rotQ.z);
+	float t3 = +2.0f * (rotQuat.w * rotQuat.z + rotQuat.x * rotQuat.y);
+	float t4 = +1.0f - 2.0f * (ysqr + rotQuat.z * rotQuat.z);
 	float yaw = atan2f(t3, t4);
 
 	XMFLOAT3 rotationF(XMConvertToDegrees(roll), XMConvertToDegrees(pitch), XMConvertToDegrees(yaw));
 
 	// Set components
-	SetScale(scaleF);
+	SetScale(scale);
 	SetRotate(rotationF);
-	SetPosition(translationF);
+	SetPosition(translation);
 }
 
 void IRenderable::CalculateModelVectors(SimpleVertex* vertices, int vertexCount)
