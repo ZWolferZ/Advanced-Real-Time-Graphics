@@ -125,6 +125,7 @@ void Scene::setupLightProperties()
 
 		if (i == 1)
 		{
+			light.Enabled = static_cast<int>(false);
 			LightPosition = { 0,0,-1.5f,1 };
 		}
 
