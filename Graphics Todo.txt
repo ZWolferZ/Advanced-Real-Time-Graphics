@@ -8,8 +8,6 @@ Light Objects (hopefully a light Obj)
 
 Load OBJ Test Scene (like a big place)
 
-Normal Mapping.
-
 Skybox?
 
 Imgui Gizmos
