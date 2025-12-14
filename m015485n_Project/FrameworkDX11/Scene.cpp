@@ -80,7 +80,7 @@ void Scene::CreateGameObjects()
 	GameObject* go = new GameObject(XMFLOAT3(0, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), "Cube 1", m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture(m_textureMap, "stone.dds"), GetTexture(m_normalMapTextureMap, "conenormal.dds"));
 
 	// CREATE A SIMPLE game object
-	GameObject* go2 = new GameObject(XMFLOAT3(0, -1.5, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(10, 0.1, 10), "Floor 1", m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"));
+	GameObject* go2 = new GameObject(XMFLOAT3(0, -1.5, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(10, 0.1, 10), "Floor 1", m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture(m_textureMap, "Pathway.dds"), GetTexture(m_normalMapTextureMap, "PathwayNormal.dds"));
 
 	go->m_autoRotateX = true;
 	go->m_autoRotateY = true;
@@ -185,11 +185,11 @@ void Scene::SetupLightProperties()
 		light4.Enabled = static_cast<int>(true);
 		light4.LightType = SpotLight;
 		light4.Color = { 1.00f,1.00f,1.00f,1.0f };
-		light4.SpotAngle = XMConvertToRadians(0);
+		light4.SpotAngle = XMConvertToRadians(45);
 		light4.ConstantAttenuation = .1f;
 		light4.LinearAttenuation = .1f;
 		light4.QuadraticAttenuation = .1;
-		light4.Position = { 0, 5.0f,0,1 };
+		light4.Position = { 0, 4.0f,0,1 };
 		light4.Direction = { 0,-1,0,0 };
 		m_lightProperties.Lights[4] = light4;
 	}
@@ -247,6 +247,26 @@ void Scene::UpdateLightBuffer()
 
 void Scene::Update(const float deltaTime)
 {
+	static bool moveLightRight = true;
+
+	if (m_lightProperties.Lights[4].Position.x >= 5.0f)
+	{
+		moveLightRight = false;
+	}
+	else if (m_lightProperties.Lights[4].Position.x <= -5.0f)
+	{
+		moveLightRight = true;
+	}
+
+	if (moveLightRight)
+	{
+		m_lightProperties.Lights[4].Position.x += 2 * deltaTime;
+	}
+	else
+	{
+		m_lightProperties.Lights[4].Position.x -= 2 * deltaTime;
+	}
+
 	UpdateLightBuffer();
 
 	if (m_playCameraSplineAnimation)
