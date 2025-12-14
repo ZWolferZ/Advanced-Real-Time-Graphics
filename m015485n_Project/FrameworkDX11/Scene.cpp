@@ -249,6 +249,11 @@ void Scene::Update(const float deltaTime)
 {
 	UpdateLightBuffer();
 
+	if (m_playCameraSplineAnimation)
+	{
+		m_pCamera->CameraSplineAnimation(deltaTime, m_controlPoints, m_totalSplineAnimation);
+	}
+
 	for (unsigned int i = 0; i < m_vecDrawables.size(); i++)
 	{
 		m_vecDrawables[i]->Update(deltaTime, m_pImmediateContext.Get());

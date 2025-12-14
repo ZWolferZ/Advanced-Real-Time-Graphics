@@ -33,10 +33,12 @@ private:
 	void	DrawTextureSelectionWindow(ID3D11DeviceContext* pContext);
 	void	DrawNormalMapSelectionWindow(ID3D11DeviceContext* pContext);
 	void	DrawCameraStatsWindow();
+	void    DrawCameraSplineWindow();
 	void	StartIMGUIDraw();
 	void	CompleteIMGUIDraw();
 
 	bool showWindows = false;
+	bool showCameraSplineWindow = false;
 	Scene* m_currentScene = nullptr;
 	GameObject* m_selectedObject = nullptr;
 	Light* m_selectedLight = nullptr;

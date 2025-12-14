@@ -45,6 +45,8 @@ void ImGuiRendering::ImGuiDrawAllWindows(const unsigned int FPS, float totalAppT
 		DrawNormalMapSelectionWindow(pContext);
 		DrawCameraStatsWindow();
 
+		if (showCameraSplineWindow)DrawCameraSplineWindow();
+
 		DrawObjectGimzo();
 	}
 
@@ -554,7 +556,7 @@ void ImGuiRendering::DrawNormalMapSelectionWindow(ID3D11DeviceContext* pContext)
 void ImGuiRendering::DrawCameraStatsWindow()
 {
 	XMFLOAT3 cameraPosition = m_currentScene->GetCamera()->GetPosition();
-	ImGui::SetNextWindowPos(ImVec2(300, 525), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowPos(ImVec2(300, 505), ImGuiCond_FirstUseEver);
 	ImGui::Begin("Camera Statistics", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 	ImGui::Separator();
 	ImGui::Text("Camera Position: X - %.3f", cameraPosition.x);
@@ -568,13 +570,55 @@ void ImGuiRendering::DrawCameraStatsWindow()
 	}
 
 	ImGui::SliderFloat("Camera Move Speed", &m_currentScene->GetCamera()->m_cameraMoveSpeed, 0.5f, 4.0f);
-
+	ImGui::Checkbox("Show Camera Spline Window", &showCameraSplineWindow);
 	ImGui::Text("(Drag the box or enter a number)");
 	ImGui::Separator();
 	if (ImGui::Button("Reset Camera"))
 	{
 		m_currentScene->GetCamera()->Reset();
 	}
+
+	ImGui::End();
+}
+
+void ImGuiRendering::DrawCameraSplineWindow()
+{
+	ImGui::SetNextWindowPos(ImVec2(800, 300), ImGuiCond_FirstUseEver);
+	ImGui::Begin("Camera Spline Animation", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+
+	ImGui::Checkbox("Start / Stop Camera Animation", &m_currentScene->m_playCameraSplineAnimation);
+	ImGui::Separator();
+	ImGui::SliderFloat("Animation Duration", &m_currentScene->m_totalSplineAnimation, 1.0f, 10.0f);
+	ImGui::SliderFloat("Current Animation Time", &m_currentScene->GetCamera()->m_splineTransition, 0.0f, 0.98f);
+	ImGui::Separator();
+	if (ImGui::Button("Add Point"))
+	{
+		if (m_currentScene->m_controlPoints.size() < 10) m_currentScene->m_controlPoints.push_back(XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f));
+	}
+
+	if (ImGui::Button("Remove Point"))
+	{
+		if (m_currentScene->m_controlPoints.size() > 4) m_currentScene->m_controlPoints.erase(m_currentScene->m_controlPoints.end() - 1);
+	}
+
+	// Okay, IMGUI is pretty cool
+	for (size_t i = 0; i < m_currentScene->m_controlPoints.size(); i++)
+	{
+		XMFLOAT3 point;
+		XMStoreFloat3(&point, m_currentScene->m_controlPoints[i]);
+
+		string pointName = "Spline Point " + to_string(i);
+
+		if (i == 0) pointName = "Initial Velocity";
+
+		if (i == m_currentScene->m_controlPoints.size() - 1) pointName = "Final Velocity";
+
+		if (ImGui::DragFloat3(pointName.c_str(), reinterpret_cast<float*>(&point), 0.1f))
+		{
+			m_currentScene->m_controlPoints[i] = XMLoadFloat3(&point);
+		}
+	}
+	ImGui::Text("(Drag the box or enter a number)");
 
 	ImGui::End();
 }

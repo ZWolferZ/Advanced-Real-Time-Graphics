@@ -50,7 +50,14 @@ public:
 	vector<std::pair<string, Microsoft::WRL::ComPtr < ID3D11PixelShader>>> m_pixelShadersMap;
 	vector<std::pair<string, Microsoft::WRL::ComPtr < ID3D11ShaderResourceView>>> m_textureMap;
 	vector<std::pair<string, Microsoft::WRL::ComPtr < ID3D11ShaderResourceView>>> m_normalMapTextureMap;
-
+	bool m_playCameraSplineAnimation = false;
+	float m_totalSplineAnimation = 3.0f;
+	std::vector<XMVECTOR> m_controlPoints = {
+XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f),  // Initial velocity
+XMVectorSet(0.0f,  0.0f, 5.0f, 0.0f),
+XMVectorSet(5.0f,  0.0f, 5.0f, 0.0f),
+XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f)   // Final velocity
+	};
 private:
 	Camera* m_pCamera;
 

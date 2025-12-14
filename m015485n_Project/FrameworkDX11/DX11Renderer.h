@@ -66,12 +66,6 @@ private: // properties
 
 	ImGuiRendering* m_imguiRenderer = nullptr;
 	std::unordered_map<UINT8, bool > inputs;
-	std::vector<XMVECTOR> m_controlPoints = {
-	XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f),  // Initial velocity
-	XMVectorSet(0.0f,  0.0f, 5.0f, 0.0f),
-	XMVectorSet(1.0f,  0.0f, 5.0f, 0.0f),
-	XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f)   // Final velocity
-	};
 
 	D3D_DRIVER_TYPE									m_driverType = D3D_DRIVER_TYPE_NULL;
 	D3D_FEATURE_LEVEL								m_featureLevel = D3D_FEATURE_LEVEL_11_0;
