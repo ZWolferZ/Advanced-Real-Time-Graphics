@@ -41,13 +41,15 @@ public:
 	void PushBackPixelShaders(string name, Microsoft::WRL::ComPtr <ID3D11PixelShader>& pixelShader) { m_pixelShadersMap.push_back({ name, pixelShader }); }
 	Microsoft::WRL::ComPtr <ID3D11PixelShader>& GetPixelShader(const string& shaderToFind);
 	LightPropertiesConstantBuffer& getLightProperties() { return m_lightProperties; }
-	Microsoft::WRL::ComPtr < ID3D11ShaderResourceView>& GetTexture(const string& textureToFind);
+	Microsoft::WRL::ComPtr < ID3D11ShaderResourceView>& GetTexture(vector<std::pair<string, Microsoft::WRL::ComPtr < ID3D11ShaderResourceView>>>& mapToCheck, const string& textureToFind);
 
 	void SetupLightProperties();
 	void UpdateLightProperties(unsigned int index, const Light& light);
 	void UpdateLightBuffer();
 	vector<GameObject*>		m_vecDrawables;
 	vector<std::pair<string, Microsoft::WRL::ComPtr < ID3D11PixelShader>>> m_pixelShadersMap;
+	vector<std::pair<string, Microsoft::WRL::ComPtr < ID3D11ShaderResourceView>>> m_textureMap;
+	vector<std::pair<string, Microsoft::WRL::ComPtr < ID3D11ShaderResourceView>>> m_normalMapTextureMap;
 
 private:
 	Camera* m_pCamera;
@@ -56,6 +58,5 @@ private:
 	Microsoft::WRL::ComPtr <ID3D11DeviceContext>	m_pImmediateContext;
 	Microsoft::WRL::ComPtr <ID3D11Buffer>			m_pConstantBuffer;
 	Microsoft::WRL::ComPtr <ID3D11Buffer>			m_pLightConstantBuffer;
-	vector<std::pair<string, Microsoft::WRL::ComPtr < ID3D11ShaderResourceView>>> m_textureMap;
 	LightPropertiesConstantBuffer m_lightProperties;
 };

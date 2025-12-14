@@ -88,6 +88,7 @@ private: // properties
 	Microsoft::WRL::ComPtr <ID3D11VertexShader>		m_pVertexShader;
 	Microsoft::WRL::ComPtr <ID3D11PixelShader>		m_pPixelShader;
 	Microsoft::WRL::ComPtr <ID3D11PixelShader>		m_pSolidPixelShader;
+	Microsoft::WRL::ComPtr <ID3D11PixelShader>		m_pTextureUnLitPixelShader;
 	Microsoft::WRL::ComPtr <ID3D11InputLayout>		m_pVertexLayout;
 
 	Scene* m_pScene;

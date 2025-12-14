@@ -4,6 +4,30 @@
 using namespace std;
 using namespace DirectX;
 
+GameObject::GameObject(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, string ObjectName, ID3D11Device* m_pd3dDevice, ID3D11DeviceContext* m_pImmediateContext, Microsoft::WRL::ComPtr <ID3D11PixelShader> pixelShader)
+{
+	SetPosition(Position);
+	SetRotate(Rotation);
+	SetScale(Scale);
+	m_orginalPosition = Position;
+	m_orginalRotation = Rotation;
+	m_orginalScale = Scale;
+	objectName = ObjectName;
+	m_pixelShader = pixelShader;
+	m_material.Material.Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	m_material.Material.Specular = XMFLOAT4(0.2f, 0.2f, 0.2f, 1.0f);
+	m_material.Material.SpecularPower = 128.0f;
+	m_originalMaterial = m_material;
+
+	HRESULT hr = GameObject::InitCubeMesh(m_pd3dDevice, m_pImmediateContext);
+
+	if (FAILED(hr))
+	{
+		MessageBox(nullptr,
+			L"Failed to init mesh in game object.", L"Error", MB_OK);
+	}
+}
+
 GameObject::GameObject(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, string ObjectName, ID3D11Device* m_pd3dDevice, ID3D11DeviceContext* m_pImmediateContext, Microsoft::WRL::ComPtr <ID3D11PixelShader> pixelShader, Microsoft::WRL::ComPtr < ID3D11ShaderResourceView> texture)
 {
 	SetPosition(Position);
@@ -19,6 +43,7 @@ GameObject::GameObject(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, str
 	m_material.Material.Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 	m_material.Material.Specular = XMFLOAT4(0.2f, 0.2f, 0.2f, 1.0f);
 	m_material.Material.SpecularPower = 128.0f;
+	m_originalMaterial = m_material;
 
 	HRESULT hr = GameObject::InitCubeMesh(m_pd3dDevice, m_pImmediateContext);
 
@@ -46,6 +71,7 @@ GameObject::GameObject(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, str
 	m_material.Material.Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 	m_material.Material.Specular = XMFLOAT4(0.2f, 0.2f, 0.2f, 1.0f);
 	m_material.Material.SpecularPower = 128.0f;
+	m_originalMaterial = m_material;
 
 	HRESULT hr = GameObject::InitCubeMesh(m_pd3dDevice, m_pImmediateContext);
 

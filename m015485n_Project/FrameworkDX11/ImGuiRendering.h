@@ -16,7 +16,7 @@ public:
 
 	void ShutDownImGui();
 
-	void ImGuiDrawAllWindows(const unsigned int FPS, float totalAppTime, Scene* currentScene);
+	void ImGuiDrawAllWindows(const unsigned int FPS, float totalAppTime, Scene* currentScene, ID3D11DeviceContext* pContext);
 
 	bool VSyncEnabled = true;
 
@@ -26,9 +26,13 @@ private:
 	void	DrawSelectLightWindow();
 	void	DrawLightUpdateWindow();
 	void	DrawObjectMovementWindow();
+	void	DrawUpdateObjectMaterialBufferWindow(ID3D11DeviceContext* pContext);
 	void	DrawObjectGimzo();
 	void	DrawObjectSelectionWindow();
 	void	DrawPixelShaderSelectionWindow();
+	void	DrawTextureSelectionWindow(ID3D11DeviceContext* pContext);
+	void	DrawNormalMapSelectionWindow(ID3D11DeviceContext* pContext);
+	void	DrawCameraStatsWindow();
 	void	StartIMGUIDraw();
 	void	CompleteIMGUIDraw();
 

@@ -15,7 +15,6 @@ struct SimpleVertex
 	XMFLOAT2 TexCoord;
 	XMFLOAT3 Tangent;
 	XMFLOAT3 BiNormal;
-
 };
 
 struct ConstantBuffer
@@ -71,7 +70,7 @@ enum LightType
 	SpotLight = 2
 };
 
-#define MAX_LIGHTS 2
+#define MAX_LIGHTS 5
 
 struct Light
 {

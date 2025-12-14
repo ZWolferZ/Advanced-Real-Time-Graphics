@@ -38,11 +38,23 @@ public:
 	const ID3D11Buffer* GetVertexBuffer() const { return m_vertexBuffer.Get(); }
 	const ID3D11Buffer* GetIndexBuffer() const { return m_indexBuffer.Get(); }
 	const ID3D11ShaderResourceView* GetTextureResourceView() const { return m_textureResourceView.Get(); }
+	void SetTextureResourceView(Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> textureResourceView) { m_textureResourceView = textureResourceView; }
+	void SetTextureResourceView(std::nullptr_t) { m_textureResourceView.Reset(); }
+	const ID3D11ShaderResourceView* GetNormalMapResourceView() const { return m_normalMapResourceView.Get(); }
+	void SetNormalMapResourceView(Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> normalMapResourceView) { m_normalMapResourceView = normalMapResourceView; }
+	void SetNormalMapResourceView(std::nullptr_t) { m_normalMapResourceView.Reset(); }
 	const XMFLOAT4X4* GetTransform() const { return &m_world; }
 	void SetTransform(XMMATRIX newTransform);
 
 	const ID3D11SamplerState* GetTextureSamplerState() const { return m_textureSampler.Get(); }
 	ID3D11Buffer* GetMaterialConstantBuffer() const { return m_materialConstantBuffer.Get(); }
+	MaterialPropertiesConstantBuffer GetMaterialConstantBufferData() const { return m_material; }
+	MaterialPropertiesConstantBuffer GetOriginalMaterialConstantBufferData() const { return m_originalMaterial; }
+	void UpdateMaterialConstantBuffer(const MaterialPropertiesConstantBuffer& newMaterialBuffer, ID3D11DeviceContext* pContext)
+	{
+		m_material = newMaterialBuffer;
+		pContext->UpdateSubresource(m_materialConstantBuffer.Get(), 0, nullptr, &m_material, 0, 0);
+	}
 
 	void	SetPosition(const XMFLOAT3 position) { m_position = position; }
 	void	SetScale(const XMFLOAT3 scale) { m_scale = scale; }
@@ -70,6 +82,7 @@ protected:
 
 	XMFLOAT4X4													m_world;
 	MaterialPropertiesConstantBuffer							m_material;
+	MaterialPropertiesConstantBuffer							m_originalMaterial;
 
 	Microsoft::WRL::ComPtr < ID3D11Buffer>						m_vertexBuffer = nullptr;
 	Microsoft::WRL::ComPtr < ID3D11Buffer>						m_indexBuffer = nullptr;
