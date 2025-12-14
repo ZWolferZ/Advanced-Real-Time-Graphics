@@ -82,11 +82,18 @@ void Scene::CreateGameObjects()
 	// CREATE A SIMPLE game object
 	GameObject* go2 = new GameObject(XMFLOAT3(0, -1.5, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(10, 0.1, 10), "Floor 1", m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture(m_textureMap, "Pathway.dds"), GetTexture(m_normalMapTextureMap, "PathwayNormal.dds"));
 
+	GameObject* go3 = new GameObject(XMFLOAT3(0, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(-50, -50, -50), "Skybox", m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture UnLit Pixel Shader"), GetTexture(m_textureMap, "Stars.dds"));
+
 	go->m_autoRotateX = true;
 	go->m_autoRotateY = true;
 
+	go3->m_autoRotateX = true;
+	go3->m_autoRotateY = true;
+	go3->m_autoRotationSpeed = 1.5f;
+
 	m_vecDrawables.push_back(go);
 	m_vecDrawables.push_back(go2);
+	m_vecDrawables.push_back(go3);
 }
 
 void Scene::CleanUp()
@@ -276,6 +283,10 @@ void Scene::Update(const float deltaTime)
 
 	for (unsigned int i = 0; i < m_vecDrawables.size(); i++)
 	{
+		if (m_vecDrawables[i]->GetObjectName() == "Skybox")
+		{
+			m_vecDrawables[i]->SetPosition(GetCamera()->GetPosition());
+		}
 		m_vecDrawables[i]->Update(deltaTime, m_pImmediateContext.Get());
 	}
 }

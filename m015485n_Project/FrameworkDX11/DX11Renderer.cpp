@@ -510,8 +510,8 @@ void DX11Renderer::Update(const float deltaTime)
 	}
 
 	// Clear the back buffer
-	float blueish[4] = { 0.2, 0.2, 1, 1 };
-	m_pImmediateContext->ClearRenderTargetView(m_pRenderTargetView.Get(), blueish);
+	//float blueish[4] = { 0.2, 0.2, 1, 1 };
+	//m_pImmediateContext->ClearRenderTargetView(m_pRenderTargetView.Get(), blueish);
 
 	// Clear the depth buffer to 1.0 (max depth)
 	m_pImmediateContext->ClearDepthStencilView(m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
