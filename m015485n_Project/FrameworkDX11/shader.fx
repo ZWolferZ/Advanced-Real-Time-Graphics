@@ -398,16 +398,11 @@ float4 PS(PS_INPUT IN) : SV_TARGET
 }
 float4 PSTextureUnLit(PS_INPUT IN) : SV_TARGET
 {
-
-    float4 texColor = float4(1, 1, 1, 1);
-
-
-
-    float4 finalColor = Material.Ambient;
+    float4 finalColor;
     if (Material.UseTexture)
     {
-        texColor = txDiffuse.Sample(samLinear, IN.Tex);
-        finalColor *= texColor;
+        float4 texColor = txDiffuse.Sample(samLinear, IN.Tex);
+        finalColor = texColor;
     }
     else
     {

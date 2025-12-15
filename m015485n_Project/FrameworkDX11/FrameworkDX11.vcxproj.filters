@@ -147,6 +147,9 @@
     <ClInclude Include="imgui\ImZoomSlider.h">
       <Filter>Imgui</Filter>
     </ClInclude>
+    <ClInclude Include="WaveFrontReader.h">
+      <Filter>Graphics</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="App">

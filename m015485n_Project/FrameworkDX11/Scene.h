@@ -31,6 +31,7 @@ public:
 
 	HRESULT		Init(HWND hwnd, const Microsoft::WRL::ComPtr<ID3D11Device>& device, const Microsoft::WRL::ComPtr<ID3D11DeviceContext>& context);
 	void LoadTextures();
+	void LoadModels();
 	void CreateGameObjects();
 	void		CleanUp();
 	Camera* GetCamera() { return m_pCamera; }
@@ -39,6 +40,10 @@ public:
 	void		Draw();
 
 	void PushBackPixelShaders(string name, Microsoft::WRL::ComPtr <ID3D11PixelShader>& pixelShader) { m_pixelShadersMap.push_back({ name, pixelShader }); }
+	MeshData GetModelData(const string& modelToFind);
+	MeshData InitCubeMesh(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pContext);
+	MeshData LoadOBJMesh(ID3D11Device* device, const std::string& filename);
+
 	Microsoft::WRL::ComPtr <ID3D11PixelShader>& GetPixelShader(const string& shaderToFind);
 	LightPropertiesConstantBuffer& getLightProperties() { return m_lightProperties; }
 	Microsoft::WRL::ComPtr < ID3D11ShaderResourceView>& GetTexture(vector<std::pair<string, Microsoft::WRL::ComPtr < ID3D11ShaderResourceView>>>& mapToCheck, const string& textureToFind);
@@ -48,6 +53,8 @@ public:
 	std::vector<Light>& GetLights() { return m_lights; }
 	void AddLight();
 	vector<GameObject*>		m_vecDrawables;
+	vector<std::pair<string, MeshData>> m_models;
+
 	vector<std::pair<string, Microsoft::WRL::ComPtr < ID3D11PixelShader>>> m_pixelShadersMap;
 	vector<std::pair<string, Microsoft::WRL::ComPtr < ID3D11ShaderResourceView>>> m_textureMap;
 	vector<std::pair<string, Microsoft::WRL::ComPtr < ID3D11ShaderResourceView>>> m_normalMapTextureMap;

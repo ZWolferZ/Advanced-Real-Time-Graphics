@@ -30,13 +30,12 @@ public:
 	IRenderable();
 	virtual ~IRenderable();
 
-	virtual HRESULT	InitCubeMesh(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pContext) = 0;
 	virtual void	Update(const float deltaTime, ID3D11DeviceContext* pContext);
 	virtual void	Draw(ID3D11DeviceContext* pContext, Camera* camera, ID3D11Buffer* m_pConstantBuffer);
 	virtual void	Cleanup();
 
-	const ID3D11Buffer* GetVertexBuffer() const { return m_vertexBuffer.Get(); }
-	const ID3D11Buffer* GetIndexBuffer() const { return m_indexBuffer.Get(); }
+	const ID3D11Buffer* GetVertexBuffer() const { return m_meshData.VertexBuffer.Get(); }
+	const ID3D11Buffer* GetIndexBuffer() const { return m_meshData.IndexBuffer.Get(); }
 	const ID3D11ShaderResourceView* GetTextureResourceView() const { return m_textureResourceView.Get(); }
 	void SetTextureResourceView(Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> textureResourceView) { m_textureResourceView = textureResourceView; }
 	void SetTextureResourceView(std::nullptr_t) { m_textureResourceView.Reset(); }
@@ -68,10 +67,6 @@ public:
 	Microsoft::WRL::ComPtr <ID3D11PixelShader> GetPixelShader() { return m_pixelShader; }
 	void	ResetTransform() { SetPosition(m_orginalPosition); SetScale(m_orginalScale); SetRotate(m_orginalRotation); }
 
-	void CalculateModelVectors(SimpleVertex* vertices, int vertexCount);
-
-	void CalculateTangentBinormal(SimpleVertex v0, SimpleVertex v1, SimpleVertex v2, XMFLOAT3& normal, XMFLOAT3& tangent, XMFLOAT3& binormal);
-
 	bool m_autoRotateX = false;
 	bool m_autoRotateY = false;
 	bool m_autoRotateZ = false;
@@ -84,8 +79,7 @@ protected:
 	MaterialPropertiesConstantBuffer							m_material;
 	MaterialPropertiesConstantBuffer							m_originalMaterial;
 
-	Microsoft::WRL::ComPtr < ID3D11Buffer>						m_vertexBuffer = nullptr;
-	Microsoft::WRL::ComPtr < ID3D11Buffer>						m_indexBuffer = nullptr;
+	MeshData m_meshData;
 	Microsoft::WRL::ComPtr < ID3D11ShaderResourceView>			m_textureResourceView = nullptr;
 	Microsoft::WRL::ComPtr < ID3D11ShaderResourceView>			m_normalMapResourceView = nullptr;
 
@@ -98,7 +92,6 @@ protected:
 	XMFLOAT3													m_orginalScale = XMFLOAT3(1, 1, 1);
 	XMFLOAT3													m_rotation;
 	XMFLOAT3													m_orginalRotation;
-	unsigned int												m_vertexCount = 0;
 
 	Microsoft::WRL::ComPtr <ID3D11PixelShader> m_pixelShader = nullptr;
 };

@@ -1,9 +1,5 @@
-OBJ Loading + Obj Texture Loading
-
-Load OBJ Test Scene (Asteroids and Rocket Ship) 
-
-Fix Davids BiNormal and Tangent Calcuations;
-
 Forum Post (ERA Template, from blackboard + Stage 4: Images/Video/Gif Output)
 
 Window Title Info (Copy Raytracing)
+
+Add RyanLabs Logo (Make LucyLabs one?)

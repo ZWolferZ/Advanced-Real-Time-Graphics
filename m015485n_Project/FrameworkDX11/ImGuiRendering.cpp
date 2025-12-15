@@ -255,7 +255,7 @@ void ImGuiRendering::DrawUpdateObjectMaterialBufferWindow(ID3D11DeviceContext* p
 {
 	if (m_selectedObject != nullptr)
 	{
-		if (m_selectedObject->GetPixelShader() == m_currentScene->GetPixelShader("Solid Pixel Shader")) return;
+		if (m_selectedObject->GetPixelShader() == m_currentScene->GetPixelShader("Solid Pixel Shader") || m_selectedObject->GetPixelShader() == m_currentScene->GetPixelShader("Texture UnLit Pixel Shader")) return;
 
 		ImGui::SetNextWindowPos(ImVec2(930, 400), ImGuiCond_FirstUseEver);
 		ImGui::Begin("Object Material Buffer Window", nullptr, ImGuiWindowFlags_AlwaysAutoResize);

@@ -384,6 +384,7 @@
     <ClInclude Include="main.h" />
     <CLInclude Include="resource.h" />
     <ClInclude Include="structures.h" />
+    <ClInclude Include="WaveFrontReader.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />
