@@ -146,7 +146,7 @@ void Scene::SetupLightProperties()
 		light0.LinearAttenuation = 1.0f;
 		light0.QuadraticAttenuation = 1;
 		light0.Position = { 7.5f, 0.0f,-7.0f,1 };
-		m_lightProperties.Lights[0] = light0;
+		m_lights.push_back(light0);
 	}
 
 	{
@@ -159,7 +159,7 @@ void Scene::SetupLightProperties()
 		light1.LinearAttenuation = 1.0f;
 		light1.QuadraticAttenuation = 1;
 		light1.Position = { -7.5f, 0.0f,-7.0f,1 };
-		m_lightProperties.Lights[1] = light1;
+		m_lights.push_back(light1);
 	}
 	{
 		Light light2;
@@ -171,7 +171,7 @@ void Scene::SetupLightProperties()
 		light2.LinearAttenuation = 1.0f;
 		light2.QuadraticAttenuation = 1;
 		light2.Position = { -7.5f, 0.0f,7.0f,1 };
-		m_lightProperties.Lights[2] = light2;
+		m_lights.push_back(light2);
 	}
 
 	{
@@ -184,7 +184,7 @@ void Scene::SetupLightProperties()
 		light3.LinearAttenuation = 1.0f;
 		light3.QuadraticAttenuation = 1;
 		light3.Position = { 7.5f, 0.0f,7.0f,1 };
-		m_lightProperties.Lights[3] = light3;
+		m_lights.push_back(light3);
 	}
 
 	{
@@ -198,7 +198,7 @@ void Scene::SetupLightProperties()
 		light4.QuadraticAttenuation = .1;
 		light4.Position = { 0, 4.0f,0,1 };
 		light4.Direction = { 0,-1,0,0 };
-		m_lightProperties.Lights[4] = light4;
+		m_lights.push_back(light4);
 	}
 	//for (unsigned int i = 0; i < MAX_LIGHTS; i++)
 	//{
@@ -238,40 +238,105 @@ void Scene::SetupLightProperties()
 		MessageBox(nullptr,
 			L"Failed to create lighting buffer in scene.cpp", L"Error", MB_OK);
 	}
-}
 
-void Scene::UpdateLightProperties(unsigned int index, const Light& light)
-{
-	m_lightProperties.Lights[index] = light;
+	D3D11_BUFFER_DESC sbDesc = {};
+	sbDesc.Usage = D3D11_USAGE_DYNAMIC;
+	sbDesc.ByteWidth = sizeof(Light) * 128; // max you expect
+	sbDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	sbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	sbDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+	sbDesc.StructureByteStride = sizeof(Light);
+
+	hr = m_pd3dDevice->CreateBuffer(&sbDesc, nullptr, &m_lightStructuredBuffer);
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+	srvDesc.Buffer.FirstElement = 0;
+	srvDesc.Buffer.NumElements = 128;
+
+	hr = m_pd3dDevice->CreateShaderResourceView(
+		m_lightStructuredBuffer.Get(),
+		&srvDesc,
+		&m_lightSRV
+	);
 }
 
 void Scene::UpdateLightBuffer()
 {
-	m_pImmediateContext->UpdateSubresource(m_pLightConstantBuffer.Get(), 0, nullptr, &m_lightProperties, 0, 0);
-	ID3D11Buffer* buf = m_pLightConstantBuffer.Get();
-	m_pImmediateContext->PSSetConstantBuffers(2, 1, &buf);
+	D3D11_MAPPED_SUBRESOURCE mapped;
+	m_pImmediateContext->Map(
+		m_lightStructuredBuffer.Get(),
+		0,
+		D3D11_MAP_WRITE_DISCARD,
+		0,
+		&mapped
+	);
+
+	memcpy(mapped.pData, m_lights.data(), sizeof(Light) * m_lights.size());
+
+	m_pImmediateContext->Unmap(m_lightStructuredBuffer.Get(), 0);
+
+	LightPropertiesConstantBuffer globals = {};
+	globals.EyePosition = XMFLOAT4(
+		GetCamera()->GetPosition().x,
+		GetCamera()->GetPosition().y,
+		GetCamera()->GetPosition().z,
+		1.0f
+	);
+	//globals.GlobalAmbient = XMFLOAT4(0.1f, 0.1f, 0.1f, 1.0f);
+	globals.LightCount = static_cast<UINT>(m_lights.size());
+
+	m_pImmediateContext->UpdateSubresource(
+		m_pLightConstantBuffer.Get(),
+		0,
+		nullptr,
+		&globals,
+		0,
+		0
+	);
+
+	// Bind to PS
+	ID3D11Buffer* cb = m_pLightConstantBuffer.Get();
+	m_pImmediateContext->PSSetConstantBuffers(2, 1, &cb);
+
+	ID3D11ShaderResourceView* srv = m_lightSRV.Get();
+	m_pImmediateContext->PSSetShaderResources(2, 1, &srv);
+}
+
+void Scene::AddLight()
+{
+	Light light;
+	light.Enabled = static_cast<int>(true);
+	light.LightType = PointLight;
+	light.Color = XMFLOAT4(1.0f, 1.0f, 1.0f, 1);
+	light.SpotAngle = XMConvertToRadians(45.0f);
+	light.ConstantAttenuation = 1.0f;
+	light.LinearAttenuation = 1.0f;
+	light.QuadraticAttenuation = 1;
+	light.Position = { 0, 0,0,1 };
+	m_lights.push_back(light);
 }
 
 void Scene::Update(const float deltaTime)
 {
 	static bool moveLightRight = true;
 
-	if (m_lightProperties.Lights[4].Position.x >= 5.0f)
+	if (m_lights[4].Position.x >= 5.0f)
 	{
 		moveLightRight = false;
 	}
-	else if (m_lightProperties.Lights[4].Position.x <= -5.0f)
+	else if (m_lights[4].Position.x <= -5.0f)
 	{
 		moveLightRight = true;
 	}
 
 	if (moveLightRight)
 	{
-		m_lightProperties.Lights[4].Position.x += 2 * deltaTime;
+		m_lights[4].Position.x += 2 * deltaTime;
 	}
 	else
 	{
-		m_lightProperties.Lights[4].Position.x -= 2 * deltaTime;
+		m_lights[4].Position.x -= 2 * deltaTime;
 	}
 
 	UpdateLightBuffer();

@@ -70,8 +70,6 @@ enum LightType
 	SpotLight = 2
 };
 
-#define MAX_LIGHTS 5
-
 struct Light
 {
 	Light()
@@ -117,5 +115,6 @@ struct LightPropertiesConstantBuffer
 	//----------------------------------- (16 byte boundary)
 	DirectX::XMFLOAT4   GlobalAmbient;
 	//----------------------------------- (16 byte boundary)
-	Light               Lights[MAX_LIGHTS]; // 80 * 8 bytes
+	int LightCount;
+	DirectX::XMFLOAT3 Padding; // align to 16 bytes
 };  // Total:                                  672 bytes (42 * 16)

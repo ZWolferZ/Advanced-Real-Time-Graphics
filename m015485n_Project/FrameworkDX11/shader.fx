@@ -13,7 +13,6 @@ Texture2D txDiffuse : register(t0);
 Texture2D txNormalMap : register(t1);
 SamplerState samLinear : register(s0);
 
-#define MAX_LIGHTS 5
 // Light types.
 #define DIRECTIONAL_LIGHT 0
 #define POINT_LIGHT 1
@@ -66,8 +65,11 @@ cbuffer LightProperties : register(b2)
 //----------------------------------- (16 byte boundary)
     float4 GlobalAmbient; // 16 bytes
 //----------------------------------- (16 byte boundary)
-    Light Lights[MAX_LIGHTS]; // 80 * 8 = 640 bytes
+    uint LightCount;
+    float3 _Padding; // align to 16 bytes
 };
+
+StructuredBuffer<Light> Lights : register(t2); // Put the lights in a structured buffer so I can make them at runtime.
 
 //--------------------------------------------------------------------------------------
 struct VS_INPUT
@@ -230,8 +232,7 @@ LightingResult ComputeLightingNormalMap(float4 worldPos,float3 N,float3 pixelToE
     totalResult.Diffuse = float4(0, 0, 0, 0);
     totalResult.Specular = float4(0, 0, 0, 0);
 
-    [unroll]
-    for (int i = 0; i < MAX_LIGHTS; ++i)
+    for (uint i = 0; i < LightCount; ++i)
     {
         if (!Lights[i].Enabled)
             continue;
@@ -277,8 +278,7 @@ LightingResult ComputeLightingNoNormalMap(float4 worldPos, float3 N, float3 pixe
     totalResult.Diffuse = float4(0, 0, 0, 0);
     totalResult.Specular = float4(0, 0, 0, 0);
 
-    [unroll]
-    for (int i = 0; i < MAX_LIGHTS; ++i)
+    for (uint i = 0; i < LightCount; ++i)
     {
         if (!Lights[i].Enabled)
             continue;
@@ -337,9 +337,6 @@ PS_INPUT VS(VS_INPUT input)
     output.Norm = mul(float4(input.Norm, 0), World).xyz;
 
     float3 vertexToEye = EyePosition.xyz - output.worldPos.xyz;
-
-
-
 
 
     float3 T = normalize(mul(input.Tangent, (float3x3)World));

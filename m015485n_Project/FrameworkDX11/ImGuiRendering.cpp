@@ -77,13 +77,21 @@ void ImGuiRendering::DrawSelectLightWindow()
 	ImGui::SetNextWindowPos(ImVec2(250, 10), ImGuiCond_FirstUseEver);
 	ImGui::Begin("Light Selection", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 
-	ImGui::Text("Choose an light to select!");
+	ImGui::Text("Choose a light to select!");
+	if (ImGui::Button("Add Light"))
+	{
+		m_currentScene->AddLight();
+		m_selectedLight = nullptr;
+	}
+
 	ImGui::Separator();
 
-	for (unsigned int i = 0; i < MAX_LIGHTS; ++i)
+	auto& lights = m_currentScene->GetLights();
+
+	for (unsigned int i = 0; i < lights.size(); ++i)
 	{
-		Light& light = m_currentScene->getLightProperties().Lights[i];
-		bool isSelected = (m_selectedLight == &light);
+		Light* light = &lights[i];
+		bool isSelected = (m_selectedLight == light);
 
 		if (ImGui::Selectable(("Light " + std::to_string(i)).c_str(), isSelected))
 		{
@@ -93,7 +101,7 @@ void ImGuiRendering::DrawSelectLightWindow()
 			}
 			else
 			{
-				m_selectedLight = &light;
+				m_selectedLight = light;
 				m_selectedObject = nullptr;
 				lightIndex = i;
 			}
@@ -146,11 +154,11 @@ void ImGuiRendering::DrawLightUpdateWindow()
 		}
 		if (m_selectedLight->LightType == SpotLight)
 		{
-			float spotAngle = m_selectedLight->SpotAngle;
+			float spotAngleDeg = XMConvertToDegrees(m_selectedLight->SpotAngle);
 
-			if (ImGui::SliderFloat(("Light " + std::to_string(lightIndex) + " Spot Angle").c_str(), &spotAngle, 0.0f, 90.0f))
+			if (ImGui::SliderFloat(("Light " + std::to_string(lightIndex) + " Spot Angle").c_str(), &spotAngleDeg, 0.0f, 90.0f))
 			{
-				m_selectedLight->SpotAngle = XMConvertToRadians(spotAngle);
+				m_selectedLight->SpotAngle = XMConvertToRadians(spotAngleDeg);
 			}
 		}
 
@@ -186,7 +194,6 @@ void ImGuiRendering::DrawLightUpdateWindow()
 		}
 
 		ImGui::Separator();
-		m_currentScene->UpdateLightProperties(lightIndex, *m_selectedLight);
 		ImGui::End();
 	}
 }
@@ -377,7 +384,6 @@ void ImGuiRendering::DrawObjectGimzo()
 
 	if (m_selectedLight != nullptr)
 	{
-		ImGui::SetNextWindowPos(ImVec2(930, 10), ImGuiCond_FirstUseEver);
 		ImGuizmo::SetOrthographic(false);
 		// THE ANSWER!!!!
 		ImGuizmo::SetDrawlist(ImGui::GetBackgroundDrawList());
@@ -404,8 +410,6 @@ void ImGuiRendering::DrawObjectGimzo()
 			XMMatrixDecompose(&dummyVec, &dummyVec, &lightPosVector, newLightMatrix);
 
 			m_selectedLight->Position = XMFLOAT4(XMVectorGetX(lightPosVector), XMVectorGetY(lightPosVector), XMVectorGetZ(lightPosVector), 1.0f);
-
-			m_currentScene->UpdateLightProperties(lightIndex, *m_selectedLight);
 		}
 	}
 }

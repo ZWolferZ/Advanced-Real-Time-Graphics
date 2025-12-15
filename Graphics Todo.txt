@@ -1,21 +1,9 @@
-Camera Spline Window
-
-Texture Selection Window
-
-Normal Map Selection Window
-
 OBJ Loading + Obj Texture Loading
-
-Light Objects (hopefully a light Obj)
 
 Load OBJ Test Scene (Asteroids and Rocket Ship) 
 
 Fix Davids BiNormal and Tangent Calcuations;
 
-Skybox (Lock to camera, Stary Night Texture)
-
 Forum Post (ERA Template, from blackboard + Stage 4: Images/Video/Gif Output)
-
-Max Lights Buffer instead of constant
 
 Window Title Info (Copy Raytracing)
