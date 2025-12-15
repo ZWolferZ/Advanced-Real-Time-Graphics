@@ -6,8 +6,6 @@
 
 #include "globals.h"
 
-#pragma region Class lifetime
-
 HRESULT DX11Renderer::Init(HWND hwnd)
 {
 	InitDevice(hwnd);
