@@ -170,4 +170,9 @@
       <Filter>Resources</Filter>
     </FxCompile>
   </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Resource.rc">
+      <Filter>App</Filter>
+    </ResourceCompile>
+  </ItemGroup>
 </Project>

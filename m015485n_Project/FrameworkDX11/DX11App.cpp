@@ -42,12 +42,12 @@ HRESULT DX11App::initWindow(HINSTANCE hInstance, int nCmdShow)
 	wcex.cbClsExtra = 0;
 	wcex.cbWndExtra = 0;
 	wcex.hInstance = hInstance;
-	wcex.hIcon = LoadIcon(hInstance, (LPCTSTR)IDI_TUTORIAL1);
+	wcex.hIcon = LoadIcon(hInstance, (LPCTSTR)IDI_APP_ICON);
 	wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
 	wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
 	wcex.lpszMenuName = nullptr;
 	wcex.lpszClassName = L"lWindowClass";
-	wcex.hIconSm = LoadIcon(wcex.hInstance, (LPCTSTR)IDI_TUTORIAL1);
+	wcex.hIconSm = LoadIcon(wcex.hInstance, (LPCTSTR)IDI_APP_ICON);
 	if (!RegisterClassEx(&wcex))
 		return E_FAIL;
 
