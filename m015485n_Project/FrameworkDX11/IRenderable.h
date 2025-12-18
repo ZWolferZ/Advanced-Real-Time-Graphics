@@ -71,6 +71,8 @@ public:
 	bool m_autoRotateY = false;
 	bool m_autoRotateZ = false;
 
+	bool renderTexture = false;
+
 	float m_autoRotationSpeed = 50.0f;
 
 protected:

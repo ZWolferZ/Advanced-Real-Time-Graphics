@@ -40,6 +40,8 @@ public:
 	~DX11Renderer() = default;
 
 	HRESULT Init(HWND hwnd);
+	void CreateFullScreenQuad();
+	void DrawFullScreenQuad();
 	void	CleanUp();
 
 	void	Update(const float deltaTime);
@@ -85,5 +87,20 @@ private: // properties
 	Microsoft::WRL::ComPtr <ID3D11PixelShader>		m_pTextureUnLitPixelShader;
 	Microsoft::WRL::ComPtr <ID3D11InputLayout>		m_pVertexLayout;
 
+
+	Microsoft::WRL::ComPtr <ID3D11Texture2D> g_pRTTRenderTargetTexture;
+	D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
+	Microsoft::WRL::ComPtr <ID3D11RenderTargetView> g_RTTRenderTargetView;
+	D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
+	Microsoft::WRL::ComPtr <ID3D11ShaderResourceView> pRTTShaderResourceView;
+
 	Scene* m_pScene;
+
+	// Full Screen Quad Stuff
+	Microsoft::WRL::ComPtr <ID3D11Buffer> g_pScreenQuadVB = nullptr;
+	Microsoft::WRL::ComPtr <ID3D11InputLayout> g_pQuadLayout = nullptr;
+	Microsoft::WRL::ComPtr <ID3D11VertexShader> g_pQuadVS = nullptr;
+	Microsoft::WRL::ComPtr <ID3D11PixelShader> g_pQuadPS = nullptr;
+	Microsoft::WRL::ComPtr < ID3D11SamplerState> m_textureSampler = nullptr;
+
 };

@@ -14,6 +14,9 @@ HRESULT DX11Renderer::Init(HWND hwnd)
 
 	m_imguiRenderer = new ImGuiRendering(hwnd, m_pd3dDevice.Get(), m_pImmediateContext.Get());
 
+	m_pScene->m_textureMap.push_back({ "RenderTargetView",pRTTShaderResourceView });
+
+
 	// Compile the vertex shader
 	ID3DBlob* pVSBlob = nullptr;
 	HRESULT hr = DX11Renderer::CompileShaderFromFile(L"shader.fx", "VS", "vs_4_0", &pVSBlob);
@@ -96,9 +99,127 @@ HRESULT DX11Renderer::Init(HWND hwnd)
 	m_pScene->PushBackPixelShaders("Texture Pixel Shader", m_pPixelShader);
 	m_pScene->PushBackPixelShaders("Texture UnLit Pixel Shader", m_pTextureUnLitPixelShader);
 
+	CreateFullScreenQuad();
+
 	m_pScene->Init(hwnd, m_pd3dDevice, m_pImmediateContext);
 
 	return hr;
+}
+
+void DX11Renderer::CreateFullScreenQuad()
+{
+	SCREEN_VERTEX svQuad[4];
+
+	svQuad[0].pos = XMFLOAT4(-1.0f, 1.0f, 0.0f,1.0f);
+	svQuad[0].tex = XMFLOAT2(0.0f, 0.0f);
+
+	svQuad[1].pos = XMFLOAT4(1.0f, 1.0f, 0.0f,1.0f);
+	svQuad[1].tex = XMFLOAT2(1.0f, 0.0f);
+
+	svQuad[2].pos = XMFLOAT4(-1.0f, -1.0f, 0.0f, 1.0f);
+	svQuad[2].tex = XMFLOAT2(0.0f, 1.0f);
+
+	svQuad[3].pos = XMFLOAT4(1.0f, -1.0f, 0.0f, 1.0f);
+	svQuad[3].tex = XMFLOAT2(1.0f, 1.0f);
+
+	D3D11_BUFFER_DESC bd = {};
+	bd.Usage = D3D11_USAGE_DEFAULT;
+	bd.ByteWidth = sizeof(SCREEN_VERTEX) * 4;
+	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	bd.CPUAccessFlags = 0;
+
+	D3D11_SUBRESOURCE_DATA InitData = {};
+	InitData.pSysMem = svQuad;
+	HRESULT hr = m_pd3dDevice->CreateBuffer(&bd, &InitData, g_pScreenQuadVB.GetAddressOf());
+	if (FAILED(hr))
+	{
+		MessageBox(nullptr, L"Failed to init FullScreen Quad VBuffer", L"Error", MB_OK);
+	}
+
+	ID3DBlob* pVSBlob = nullptr;
+	 hr = DX11Renderer::CompileShaderFromFile(L"shader.fx", "QuadVS", "vs_4_0", &pVSBlob);
+	if (FAILED(hr))
+	{
+		MessageBox(nullptr,
+			L"The FX file cannot be compiled.  Please run this executable from the directory that contains the FX file.", L"Error", MB_OK);
+	}
+
+	// Create the vertex shader
+	hr = m_pd3dDevice->CreateVertexShader(pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize(), nullptr, &g_pQuadVS);
+	if (FAILED(hr))
+	{
+		pVSBlob->Release();
+	}
+
+
+	// Define the input layout
+	D3D11_INPUT_ELEMENT_DESC layout[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT , D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	
+	};
+	UINT numElements = ARRAYSIZE(layout);
+
+	// Create the input layout
+	hr = m_pd3dDevice->CreateInputLayout(layout, numElements, pVSBlob->GetBufferPointer(),
+			pVSBlob->GetBufferSize(), &g_pQuadLayout);
+	pVSBlob->Release();
+	if (FAILED(hr))	MessageBox(nullptr, L"Failed to create FullScreen Quad inputlayout", L"Error", MB_OK);
+
+	ID3DBlob* pPSBlob = nullptr;
+	hr = CompileShaderFromFile(L"shader.fx", "QuadPS", "ps_4_0", &pPSBlob);
+	if (FAILED(hr))
+	{
+		MessageBox(nullptr,
+			L"The FX file cannot be compiled.  Please run this executable from the directory that contains the FX file.", L"Error", MB_OK);
+	}
+
+	// Create the pixel shader
+	hr = m_pd3dDevice->CreatePixelShader(pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize(), nullptr, &g_pQuadPS);
+
+	pPSBlob->Release();
+
+
+	D3D11_SAMPLER_DESC sampDesc;
+	ZeroMemory(&sampDesc, sizeof(sampDesc));
+	sampDesc.Filter = D3D11_FILTER_MAXIMUM_MIN_MAG_MIP_POINT;
+	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+	sampDesc.MinLOD = 0;
+	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	 hr = m_pd3dDevice->CreateSamplerState(&sampDesc, &m_textureSampler);
+	if (FAILED(hr))
+	{
+		MessageBox(nullptr,
+			L"Failed to init sampler in Full Screen Quad.", L"Error", MB_OK);
+	}
+}
+
+void DX11Renderer::DrawFullScreenQuad()
+{
+
+	m_pImmediateContext->IASetInputLayout(g_pQuadLayout.Get());
+	m_pImmediateContext->VSSetShader(g_pQuadVS.Get(), nullptr, 0);
+	m_pImmediateContext->PSSetShader(g_pQuadPS.Get(), nullptr, 0);
+
+	ID3D11ShaderResourceView* srv = pRTTShaderResourceView.Get();
+	m_pImmediateContext->PSSetShaderResources(0, 1, &srv);
+	ID3D11SamplerState* ss = m_textureSampler.Get();
+	m_pImmediateContext->PSSetSamplers(0, 1, &ss);
+	UINT VBSTRIDE = sizeof(SCREEN_VERTEX);
+	UINT VBOffset = 0;
+	// Set vertex buffer
+	ID3D11Buffer* vbuf = g_pScreenQuadVB.Get();
+	m_pImmediateContext->IASetVertexBuffers(0, 1, &vbuf, &VBSTRIDE, &VBOffset);
+
+	m_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	m_pImmediateContext->DrawIndexed(4, 0, 0);
+
+
 }
 
 HRESULT DX11Renderer::InitDevice(HWND hwnd)
@@ -245,6 +366,10 @@ HRESULT DX11Renderer::InitDevice(HWND hwnd)
 		return hr;
 	}
 
+
+
+
+
 	hr = m_pd3dDevice->CreateRenderTargetView(pBackBuffer, nullptr, &m_pRenderTargetView);
 	pBackBuffer->Release();
 	if (FAILED(hr))
@@ -253,6 +378,54 @@ HRESULT DX11Renderer::InitDevice(HWND hwnd)
 			L"Failed to create a render target.", L"Error", MB_OK);
 		return hr;
 	}
+	D3D11_TEXTURE2D_DESC textureDesc;
+	ZeroMemory(&textureDesc, sizeof(textureDesc));
+
+	textureDesc.Width = width;
+	textureDesc.Height = height;
+	textureDesc.MipLevels = 1;
+	textureDesc.ArraySize = 1;
+	textureDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	textureDesc.SampleDesc.Count = 1;
+	textureDesc.SampleDesc.Quality = 0;
+	textureDesc.Usage = D3D11_USAGE_DEFAULT;
+	textureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	textureDesc.CPUAccessFlags = 0;
+	textureDesc.MiscFlags = 0;
+
+	hr = m_pd3dDevice->CreateTexture2D(&textureDesc, NULL, &g_pRTTRenderTargetTexture);
+	if (FAILED(hr))
+	{
+		MessageBox(nullptr,
+			L"Failed to create a render target Texture 2D.", L"Error", MB_OK);
+		return hr;
+	}
+
+	renderTargetViewDesc.Format = textureDesc.Format;
+	renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+	renderTargetViewDesc.Texture2D.MipSlice = 0;
+	hr = m_pd3dDevice->CreateRenderTargetView(g_pRTTRenderTargetTexture.Get(), &renderTargetViewDesc, g_RTTRenderTargetView.GetAddressOf());
+	if (FAILED(hr))
+	{
+		MessageBox(nullptr,
+			L"Failed to create a render target view", L"Error", MB_OK);
+		return hr;
+	}
+
+
+	shaderResourceViewDesc.Format = textureDesc.Format;
+	shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
+	shaderResourceViewDesc.Texture2D.MipLevels = 1;
+
+	hr = m_pd3dDevice->CreateShaderResourceView(g_pRTTRenderTargetTexture.Get(), &shaderResourceViewDesc, pRTTShaderResourceView.GetAddressOf());
+	if (FAILED(hr))
+	{
+		MessageBox(nullptr,
+			L"Failed to create a render target shader resource view", L"Error", MB_OK);
+		return hr;
+	}
+
 
 	// Create depth stencil texture
 	D3D11_TEXTURE2D_DESC descDepth = {};
@@ -510,10 +683,29 @@ void DX11Renderer::Update(const float deltaTime)
 	// Clear the back buffer
 	//float blueish[4] = { 0.2, 0.2, 1, 1 };
 	//m_pImmediateContext->ClearRenderTargetView(m_pRenderTargetView.Get(), blueish);
-
-	// Clear the depth buffer to 1.0 (max depth)
+		// Clear the depth buffer to 1.0 (max depth)
 	m_pImmediateContext->ClearDepthStencilView(m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 
+	m_pImmediateContext->VSSetShader(m_pVertexShader.Get(), nullptr, 0);
+	m_pImmediateContext->PSSetShader(m_pPixelShader.Get(), nullptr, 0);
+
+	ID3D11RenderTargetView* rtv1 = g_RTTRenderTargetView.Get();
+	m_pImmediateContext->OMSetRenderTargets(1, &rtv1, m_pDepthStencilView.Get());
+
+	// Do stuff
+	m_pImmediateContext->IASetInputLayout(m_pVertexLayout.Get());
+
+	m_pScene->Draw();
+
+	ID3D11RenderTargetView* rtv2 = m_pRenderTargetView.Get();
+	m_pImmediateContext->OMSetRenderTargets(1, &rtv2, m_pDepthStencilView.Get());
+	m_pImmediateContext->ClearDepthStencilView(m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+
+
+	DrawFullScreenQuad();
+
+
+	m_pImmediateContext->IASetInputLayout(m_pVertexLayout.Get());
 	m_pImmediateContext->VSSetShader(m_pVertexShader.Get(), nullptr, 0);
 	m_pImmediateContext->PSSetShader(m_pPixelShader.Get(), nullptr, 0);
 
@@ -522,6 +714,7 @@ void DX11Renderer::Update(const float deltaTime)
 	m_pScene->Draw();
 
 	m_imguiRenderer->ImGuiDrawAllWindows(FPS, m_totalTime, m_pScene, m_pImmediateContext.Get());
+
 
 	// Present our back buffer to our front buffer
 	m_pSwapChain->Present(m_imguiRenderer->VSyncEnabled, 0);

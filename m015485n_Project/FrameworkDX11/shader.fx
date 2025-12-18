@@ -423,3 +423,33 @@ float4 PSSolid(PS_INPUT input) : SV_Target
 
     return vOutputColor;
 }
+
+struct QuadVS_Input 
+{
+    float4 Pos : POSITION;
+    float2 Tex : TEXCOORD0;
+};
+
+struct QuadVS_Output 
+{
+    float4 Pos : POSITION;
+    float2 Tex : TEXCOORD0;
+};
+
+QuadVS_Output QuadVS(QuadVS_Input Input)
+{
+    // no mvp transform - model coordinates already in projection space (-1 to 1)
+    QuadVS_Output Output = (QuadVS_Output) 0;
+    Output.Pos = Input.Pos;
+    Output.Tex = Input.Tex;
+    return Output;
+}
+
+float4 QuadPS(QuadVS_Output Input) : SV_TARGET
+{
+    float4 vColor = txDiffuse.Sample(samLinear, Input.Tex);
+    
+// do something with the colour… post process?
+
+    return vColor;
+}

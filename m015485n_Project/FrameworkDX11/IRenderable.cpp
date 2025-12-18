@@ -84,11 +84,11 @@ void IRenderable::Draw(ID3D11DeviceContext* pContext, Camera* camera, ID3D11Buff
 	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	// Set the texture and sampler
-	//if (m_textureResourceView != nullptr)
+	if (m_textureResourceView != nullptr)
 	{
 		ID3D11ShaderResourceView* srv = m_textureResourceView.Get();
 		pContext->PSSetShaderResources(0, 1, &srv);
-		//if (m_normalMapResourceView != nullptr)
+		if (m_normalMapResourceView != nullptr)
 		{
 			ID3D11ShaderResourceView* nrv = m_normalMapResourceView.Get();
 			pContext->PSSetShaderResources(1, 1, &nrv);
