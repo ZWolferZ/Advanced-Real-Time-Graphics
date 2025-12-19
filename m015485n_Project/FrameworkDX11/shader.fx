@@ -424,15 +424,15 @@ float4 PSSolid(PS_INPUT input) : SV_Target
     return vOutputColor;
 }
 
-struct QuadVS_Input 
+struct QuadVS_Input
 {
     float4 Pos : POSITION;
     float2 Tex : TEXCOORD0;
 };
 
-struct QuadVS_Output 
+struct QuadVS_Output
 {
-    float4 Pos : POSITION;
+    float4 Pos : SV_POSITION;
     float2 Tex : TEXCOORD0;
 };
 
@@ -448,7 +448,7 @@ QuadVS_Output QuadVS(QuadVS_Input Input)
 float4 QuadPS(QuadVS_Output Input) : SV_TARGET
 {
     float4 vColor = txDiffuse.Sample(samLinear, Input.Tex);
-    
+
 // do something with the colour… post process?
 
     return vColor;

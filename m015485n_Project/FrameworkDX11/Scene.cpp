@@ -98,29 +98,35 @@ void Scene::LoadModels()
 void Scene::CreateGameObjects()
 {
 	// CREATE A SIMPLE game object
-	GameObject* go = new GameObject(XMFLOAT3(0, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), "Cube 1", GetModelData("Cube"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture(m_textureMap, "stone.dds"), GetTexture(m_normalMapTextureMap, "conenormal.dds"));
-	// CREATE A SIMPLE game object
-	GameObject* go2 = new GameObject(XMFLOAT3(7.6, -1.3, -7.1), XMFLOAT3(0, -31, 0), XMFLOAT3(2, 2, 2), "Asha", GetModelData("asha.obj"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture(m_textureMap, "AshaTex.dds"));
+	GameObject* go = new GameObject(XMFLOAT3(2.0f, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), "Cube 1", GetModelData("Cube"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture(m_textureMap, "stone.dds"), GetTexture(m_normalMapTextureMap, "conenormal.dds"));
 
-	GameObject* go3 = new GameObject(XMFLOAT3(-8, -1.4, -8.4), XMFLOAT3(0, -47, 0), XMFLOAT3(10, 10, 10), "Bunny", GetModelData("bunny.obj"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture(m_textureMap, "BunnyTex.dds"));
+	GameObject* go2 = new GameObject(XMFLOAT3(-2.0f, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), "Cube 2", GetModelData("Cube"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture UnLit Pixel Shader"), GetTexture(m_textureMap, "RenderTargetViewPass2"));
 
 	// CREATE A SIMPLE game object
-	GameObject* go4 = new GameObject(XMFLOAT3(0, -1.5, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(10, 0.1, 10), "Floor 1", GetModelData("Cube"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture(m_textureMap, "Pathway.dds"), GetTexture(m_normalMapTextureMap, "PathwayNormal.dds"));
+	GameObject* go3 = new GameObject(XMFLOAT3(7.6, -1.3, -7.1), XMFLOAT3(0, -31, 0), XMFLOAT3(2, 2, 2), "Asha", GetModelData("asha.obj"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture(m_textureMap, "AshaTex.dds"));
 
-	GameObject* go5 = new GameObject(XMFLOAT3(0, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(-50, -50, -50), "Skybox", GetModelData("Cube"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture UnLit Pixel Shader"), GetTexture(m_textureMap, "Stars.dds"));
+	GameObject* go4 = new GameObject(XMFLOAT3(-8, -1.4, -8.4), XMFLOAT3(0, -47, 0), XMFLOAT3(10, 10, 10), "Bunny", GetModelData("bunny.obj"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture(m_textureMap, "BunnyTex.dds"));
+
+	// CREATE A SIMPLE game object
+	GameObject* go5 = new GameObject(XMFLOAT3(0, -1.5, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(10, 0.1, 10), "Floor 1", GetModelData("Cube"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture(m_textureMap, "Pathway.dds"), GetTexture(m_normalMapTextureMap, "PathwayNormal.dds"));
+
+	GameObject* go6 = new GameObject(XMFLOAT3(0, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(-50, -50, -50), "Skybox", GetModelData("Cube"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture UnLit Pixel Shader"), GetTexture(m_textureMap, "Stars.dds"));
 
 	go->m_autoRotateX = true;
 	go->m_autoRotateY = true;
+	go2->m_autoRotateX = true;
+	go2->m_autoRotateY = true;
 
-	go5->m_autoRotateX = true;
-	go5->m_autoRotateY = true;
-	go5->m_autoRotationSpeed = 1.5f;
+	go6->m_autoRotateX = true;
+	go6->m_autoRotateY = true;
+	go6->m_autoRotationSpeed = 1.5f;
 
 	m_vecDrawables.push_back(go);
 	m_vecDrawables.push_back(go2);
 	m_vecDrawables.push_back(go3);
 	m_vecDrawables.push_back(go4);
 	m_vecDrawables.push_back(go5);
+	m_vecDrawables.push_back(go6);
 }
 
 void Scene::CleanUp()
@@ -548,25 +554,25 @@ void Scene::AddLight()
 
 void Scene::Update(const float deltaTime)
 {
-	//static bool moveLightRight = true;
+	static bool moveLightRight = true;
 
-	//if (m_lights[4].Position.x >= 5.0f)
-	//{
-	//	moveLightRight = false;
-	//}
-	//else if (m_lights[4].Position.x <= -5.0f)
-	//{
-	//	moveLightRight = true;
-	//}
+	if (m_lights[4].Position.x >= 5.0f)
+	{
+		moveLightRight = false;
+	}
+	else if (m_lights[4].Position.x <= -5.0f)
+	{
+		moveLightRight = true;
+	}
 
-	//if (moveLightRight)
-	//{
-	//	m_lights[4].Position.x += 2 * deltaTime;
-	//}
-	//else
-	//{
-	//	m_lights[4].Position.x -= 2 * deltaTime;
-	//}
+	if (moveLightRight)
+	{
+		m_lights[4].Position.x += 2 * deltaTime;
+	}
+	else
+	{
+		m_lights[4].Position.x -= 2 * deltaTime;
+	}
 
 	UpdateLightBuffer();
 
@@ -585,10 +591,18 @@ void Scene::Update(const float deltaTime)
 	}
 }
 
-void Scene::Draw()
+void Scene::Draw(int renderPass)
 {
 	for (unsigned int i = 0; i < m_vecDrawables.size(); i++)
 	{
+		if (renderPass == 0 && m_vecDrawables[i]->GetTextureResourceView() == GetTexture(m_textureMap, "RenderTargetViewPass0").Get() || m_vecDrawables[i]->GetTextureResourceView() == GetTexture(m_textureMap, "RenderTargetViewPass1").Get())
+		{
+			continue;
+		}
+		if (renderPass == 1 && m_vecDrawables[i]->GetTextureResourceView() != GetTexture(m_textureMap, "RenderTargetViewPass2").Get())
+		{
+			continue;
+		}
 		m_vecDrawables[i]->Draw(m_pImmediateContext.Get(), GetCamera(), m_pConstantBuffer.Get());
 	}
 }

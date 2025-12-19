@@ -74,14 +74,13 @@ public:
 	bool renderTexture = false;
 
 	float m_autoRotationSpeed = 50.0f;
-
+	MeshData m_meshData;
 protected:
 
 	XMFLOAT4X4													m_world;
 	MaterialPropertiesConstantBuffer							m_material;
 	MaterialPropertiesConstantBuffer							m_originalMaterial;
 
-	MeshData m_meshData;
 	Microsoft::WRL::ComPtr < ID3D11ShaderResourceView>			m_textureResourceView = nullptr;
 	Microsoft::WRL::ComPtr < ID3D11ShaderResourceView>			m_normalMapResourceView = nullptr;
 

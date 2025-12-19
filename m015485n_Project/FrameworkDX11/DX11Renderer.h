@@ -42,6 +42,11 @@ public:
 	HRESULT Init(HWND hwnd);
 	void CreateFullScreenQuad();
 	void DrawFullScreenQuad();
+
+	void SetRenderTargetAndClear(ID3D11RenderTargetView* rtv, bool clearDepth = true);;
+
+	void DrawFullscreenQuadWithSRVs(std::vector<ID3D11ShaderResourceView*> srvs);;
+
 	void	CleanUp();
 
 	void	Update(const float deltaTime);
@@ -87,12 +92,21 @@ private: // properties
 	Microsoft::WRL::ComPtr <ID3D11PixelShader>		m_pTextureUnLitPixelShader;
 	Microsoft::WRL::ComPtr <ID3D11InputLayout>		m_pVertexLayout;
 
-
 	Microsoft::WRL::ComPtr <ID3D11Texture2D> g_pRTTRenderTargetTexture;
+	Microsoft::WRL::ComPtr <ID3D11Texture2D> g_pRTTRenderTargetTexture2;
+	Microsoft::WRL::ComPtr <ID3D11Texture2D> g_pRTTRenderTargetTexture3;
+
 	D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
 	Microsoft::WRL::ComPtr <ID3D11RenderTargetView> g_RTTRenderTargetView;
+	Microsoft::WRL::ComPtr <ID3D11RenderTargetView> g_RTTRenderTargetView2;
+	Microsoft::WRL::ComPtr <ID3D11RenderTargetView> g_RTTRenderTargetView3;
+
 	D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
-	Microsoft::WRL::ComPtr <ID3D11ShaderResourceView> pRTTShaderResourceView;
+	Microsoft::WRL::ComPtr <ID3D11ShaderResourceView> g_pRTTShaderResourceView;
+	Microsoft::WRL::ComPtr <ID3D11ShaderResourceView> g_pRTTShaderResourceView2;
+	Microsoft::WRL::ComPtr <ID3D11ShaderResourceView> g_pRTTShaderResourceView3;
+
+	Microsoft::WRL::ComPtr <ID3D11Texture2D> resolvedTexture;
 
 	Scene* m_pScene;
 
@@ -102,5 +116,4 @@ private: // properties
 	Microsoft::WRL::ComPtr <ID3D11VertexShader> g_pQuadVS = nullptr;
 	Microsoft::WRL::ComPtr <ID3D11PixelShader> g_pQuadPS = nullptr;
 	Microsoft::WRL::ComPtr < ID3D11SamplerState> m_textureSampler = nullptr;
-
 };

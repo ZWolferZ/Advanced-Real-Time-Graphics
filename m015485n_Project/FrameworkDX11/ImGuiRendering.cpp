@@ -44,7 +44,7 @@ void ImGuiRendering::ImGuiDrawAllWindows(const unsigned int FPS, float totalAppT
 		DrawTextureSelectionWindow(pContext);
 		DrawNormalMapSelectionWindow(pContext);
 		DrawCameraStatsWindow();
-
+		DrawMeshSelectionWindow();
 		if (showCameraSplineWindow)DrawCameraSplineWindow();
 
 		DrawObjectGimzo();
@@ -115,7 +115,7 @@ void ImGuiRendering::DrawLightUpdateWindow()
 {
 	if (m_selectedLight != nullptr)
 	{
-		ImGui::SetNextWindowPos(ImVec2(10, 150), ImGuiCond_FirstUseEver);
+		ImGui::SetNextWindowPos(ImVec2(10, 200), ImGuiCond_FirstUseEver);
 		ImGui::Begin("Light Movement Update Window", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 		ImGui::Separator();
 
@@ -500,6 +500,11 @@ void ImGuiRendering::DrawTextureSelectionWindow(ID3D11DeviceContext* pContext)
 		{
 			const auto& shaderPair = textures[i];
 
+			if (shaderPair.first == "RenderTargetViewPass0" || shaderPair.first == "RenderTargetViewPass1")
+			{
+				continue;
+			}
+
 			bool isSelected = (m_selectedObject->GetTextureResourceView() == shaderPair.second.Get());
 
 			if (ImGui::Selectable(shaderPair.first.c_str(), isSelected))
@@ -515,11 +520,40 @@ void ImGuiRendering::DrawTextureSelectionWindow(ID3D11DeviceContext* pContext)
 	}
 }
 
+void ImGuiRendering::DrawMeshSelectionWindow()
+{
+	if (m_selectedObject != nullptr)
+	{
+		ImGui::SetNextWindowPos(ImVec2(270, 295), ImGuiCond_FirstUseEver);
+		ImGui::Begin("Mesh/Model Selection", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+		ImGui::Text("Select a Mesh for Each Object!");
+		ImGui::Separator();
+		ImGui::Text("Selected Object: %s", m_selectedObject->GetObjectName().c_str());
+		ImGui::Separator();
+
+		auto& models = m_currentScene->m_models;
+
+		for (size_t i = 0; i < models.size(); ++i)
+		{
+			const auto& modelPair = models[i];
+
+			bool isSelected = (m_selectedObject->m_meshData.VertexBuffer == modelPair.second.VertexBuffer && m_selectedObject->m_meshData.IndexBuffer == modelPair.second.IndexBuffer);
+
+			if (ImGui::Selectable(modelPair.first.c_str(), isSelected))
+			{
+				m_selectedObject->m_meshData = modelPair.second;
+			}
+		}
+
+		ImGui::End();
+	}
+}
+
 void ImGuiRendering::DrawNormalMapSelectionWindow(ID3D11DeviceContext* pContext)
 {
 	if (m_selectedObject != nullptr)
 	{
-		ImGui::SetNextWindowPos(ImVec2(10, 445), ImGuiCond_FirstUseEver);
+		ImGui::SetNextWindowPos(ImVec2(10, 550), ImGuiCond_FirstUseEver);
 		ImGui::Begin("Normal Map Selection", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 		ImGui::Text("Select a Normal Map for Each Object!");
 		ImGui::Separator();

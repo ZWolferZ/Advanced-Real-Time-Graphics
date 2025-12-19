@@ -31,6 +31,7 @@ private:
 	void	DrawObjectSelectionWindow();
 	void	DrawPixelShaderSelectionWindow();
 	void	DrawTextureSelectionWindow(ID3D11DeviceContext* pContext);
+	void DrawMeshSelectionWindow();
 	void	DrawNormalMapSelectionWindow(ID3D11DeviceContext* pContext);
 	void	DrawCameraStatsWindow();
 	void    DrawCameraSplineWindow();

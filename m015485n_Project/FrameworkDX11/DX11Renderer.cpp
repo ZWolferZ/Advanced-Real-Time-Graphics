@@ -14,8 +14,9 @@ HRESULT DX11Renderer::Init(HWND hwnd)
 
 	m_imguiRenderer = new ImGuiRendering(hwnd, m_pd3dDevice.Get(), m_pImmediateContext.Get());
 
-	m_pScene->m_textureMap.push_back({ "RenderTargetView",pRTTShaderResourceView });
-
+	m_pScene->m_textureMap.push_back({ "RenderTargetViewPass0",g_pRTTShaderResourceView });
+	m_pScene->m_textureMap.push_back({ "RenderTargetViewPass1",g_pRTTShaderResourceView2 });
+	m_pScene->m_textureMap.push_back({ "RenderTargetViewPass2",g_pRTTShaderResourceView3 });
 
 	// Compile the vertex shader
 	ID3DBlob* pVSBlob = nullptr;
@@ -110,10 +111,10 @@ void DX11Renderer::CreateFullScreenQuad()
 {
 	SCREEN_VERTEX svQuad[4];
 
-	svQuad[0].pos = XMFLOAT4(-1.0f, 1.0f, 0.0f,1.0f);
+	svQuad[0].pos = XMFLOAT4(-1.0f, 1.0f, 0.0f, 1.0f);
 	svQuad[0].tex = XMFLOAT2(0.0f, 0.0f);
 
-	svQuad[1].pos = XMFLOAT4(1.0f, 1.0f, 0.0f,1.0f);
+	svQuad[1].pos = XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f);
 	svQuad[1].tex = XMFLOAT2(1.0f, 0.0f);
 
 	svQuad[2].pos = XMFLOAT4(-1.0f, -1.0f, 0.0f, 1.0f);
@@ -137,7 +138,7 @@ void DX11Renderer::CreateFullScreenQuad()
 	}
 
 	ID3DBlob* pVSBlob = nullptr;
-	 hr = DX11Renderer::CompileShaderFromFile(L"shader.fx", "QuadVS", "vs_4_0", &pVSBlob);
+	hr = DX11Renderer::CompileShaderFromFile(L"shader.fx", "QuadVS", "vs_4_0", &pVSBlob);
 	if (FAILED(hr))
 	{
 		MessageBox(nullptr,
@@ -151,19 +152,17 @@ void DX11Renderer::CreateFullScreenQuad()
 		pVSBlob->Release();
 	}
 
-
 	// Define the input layout
 	D3D11_INPUT_ELEMENT_DESC layout[] =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT , D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-	
 	};
 	UINT numElements = ARRAYSIZE(layout);
 
 	// Create the input layout
 	hr = m_pd3dDevice->CreateInputLayout(layout, numElements, pVSBlob->GetBufferPointer(),
-			pVSBlob->GetBufferSize(), &g_pQuadLayout);
+		pVSBlob->GetBufferSize(), &g_pQuadLayout);
 	pVSBlob->Release();
 	if (FAILED(hr))	MessageBox(nullptr, L"Failed to create FullScreen Quad inputlayout", L"Error", MB_OK);
 
@@ -180,17 +179,16 @@ void DX11Renderer::CreateFullScreenQuad()
 
 	pPSBlob->Release();
 
-
 	D3D11_SAMPLER_DESC sampDesc;
 	ZeroMemory(&sampDesc, sizeof(sampDesc));
-	sampDesc.Filter = D3D11_FILTER_MAXIMUM_MIN_MAG_MIP_POINT;
+	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
 	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
 	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
 	sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
 	sampDesc.MinLOD = 0;
 	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
-	 hr = m_pd3dDevice->CreateSamplerState(&sampDesc, &m_textureSampler);
+	hr = m_pd3dDevice->CreateSamplerState(&sampDesc, &m_textureSampler);
 	if (FAILED(hr))
 	{
 		MessageBox(nullptr,
@@ -200,26 +198,44 @@ void DX11Renderer::CreateFullScreenQuad()
 
 void DX11Renderer::DrawFullScreenQuad()
 {
-
 	m_pImmediateContext->IASetInputLayout(g_pQuadLayout.Get());
+	m_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+
+	UINT stride = sizeof(SCREEN_VERTEX);
+	UINT offset = 0;
+	ID3D11Buffer* vb = g_pScreenQuadVB.Get();
+	m_pImmediateContext->IASetVertexBuffers(0, 1, &vb, &stride, &offset);
+
 	m_pImmediateContext->VSSetShader(g_pQuadVS.Get(), nullptr, 0);
 	m_pImmediateContext->PSSetShader(g_pQuadPS.Get(), nullptr, 0);
 
-	ID3D11ShaderResourceView* srv = pRTTShaderResourceView.Get();
+	ID3D11ShaderResourceView* srv = g_pRTTShaderResourceView.Get();
 	m_pImmediateContext->PSSetShaderResources(0, 1, &srv);
+
 	ID3D11SamplerState* ss = m_textureSampler.Get();
 	m_pImmediateContext->PSSetSamplers(0, 1, &ss);
-	UINT VBSTRIDE = sizeof(SCREEN_VERTEX);
-	UINT VBOffset = 0;
-	// Set vertex buffer
-	ID3D11Buffer* vbuf = g_pScreenQuadVB.Get();
-	m_pImmediateContext->IASetVertexBuffers(0, 1, &vbuf, &VBSTRIDE, &VBOffset);
 
-	m_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	m_pImmediateContext->Draw(4, 0);
+}
 
-	m_pImmediateContext->DrawIndexed(4, 0, 0);
+void DX11Renderer::SetRenderTargetAndClear(ID3D11RenderTargetView* rtv, bool clearDepth)
+{
+	float clearColor[4] = { 0.f, 0.f, 0.f, 1.f };
 
+	m_pImmediateContext->OMSetRenderTargets(1, &rtv, clearDepth ? m_pDepthStencilView.Get() : nullptr);
+	m_pImmediateContext->ClearRenderTargetView(rtv, clearColor);
+	if (clearDepth)
+		m_pImmediateContext->ClearDepthStencilView(m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+}
 
+void DX11Renderer::DrawFullscreenQuadWithSRVs(std::vector<ID3D11ShaderResourceView*> srvs)
+{
+	m_pImmediateContext->PSSetShaderResources(0, srvs.size(), srvs.data());
+	DrawFullScreenQuad();
+
+	// unbind
+	std::vector<ID3D11ShaderResourceView*> nullSRVs(srvs.size(), nullptr);
+	m_pImmediateContext->PSSetShaderResources(0, nullSRVs.size(), nullSRVs.data());
 }
 
 HRESULT DX11Renderer::InitDevice(HWND hwnd)
@@ -366,10 +382,6 @@ HRESULT DX11Renderer::InitDevice(HWND hwnd)
 		return hr;
 	}
 
-
-
-
-
 	hr = m_pd3dDevice->CreateRenderTargetView(pBackBuffer, nullptr, &m_pRenderTargetView);
 	pBackBuffer->Release();
 	if (FAILED(hr))
@@ -412,13 +424,12 @@ HRESULT DX11Renderer::InitDevice(HWND hwnd)
 		return hr;
 	}
 
-
 	shaderResourceViewDesc.Format = textureDesc.Format;
 	shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 	shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
 	shaderResourceViewDesc.Texture2D.MipLevels = 1;
 
-	hr = m_pd3dDevice->CreateShaderResourceView(g_pRTTRenderTargetTexture.Get(), &shaderResourceViewDesc, pRTTShaderResourceView.GetAddressOf());
+	hr = m_pd3dDevice->CreateShaderResourceView(g_pRTTRenderTargetTexture.Get(), &shaderResourceViewDesc, g_pRTTShaderResourceView.GetAddressOf());
 	if (FAILED(hr))
 	{
 		MessageBox(nullptr,
@@ -426,6 +437,69 @@ HRESULT DX11Renderer::InitDevice(HWND hwnd)
 		return hr;
 	}
 
+	hr = m_pd3dDevice->CreateTexture2D(&textureDesc, NULL, &g_pRTTRenderTargetTexture2);
+	if (FAILED(hr))
+	{
+		MessageBox(nullptr,
+			L"Failed to create a render target Texture 2D.", L"Error", MB_OK);
+		return hr;
+	}
+
+	renderTargetViewDesc.Format = textureDesc.Format;
+	renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+	renderTargetViewDesc.Texture2D.MipSlice = 0;
+	hr = m_pd3dDevice->CreateRenderTargetView(g_pRTTRenderTargetTexture2.Get(), &renderTargetViewDesc, g_RTTRenderTargetView2.GetAddressOf());
+	if (FAILED(hr))
+	{
+		MessageBox(nullptr,
+			L"Failed to create a render target view", L"Error", MB_OK);
+		return hr;
+	}
+
+	shaderResourceViewDesc.Format = textureDesc.Format;
+	shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
+	shaderResourceViewDesc.Texture2D.MipLevels = 1;
+
+	hr = m_pd3dDevice->CreateShaderResourceView(g_pRTTRenderTargetTexture2.Get(), &shaderResourceViewDesc, g_pRTTShaderResourceView2.GetAddressOf());
+	if (FAILED(hr))
+	{
+		MessageBox(nullptr,
+			L"Failed to create a render target shader resource view", L"Error", MB_OK);
+		return hr;
+	}
+
+	hr = m_pd3dDevice->CreateTexture2D(&textureDesc, NULL, &g_pRTTRenderTargetTexture3);
+	if (FAILED(hr))
+	{
+		MessageBox(nullptr,
+			L"Failed to create a render target Texture 2D.", L"Error", MB_OK);
+		return hr;
+	}
+
+	renderTargetViewDesc.Format = textureDesc.Format;
+	renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+	renderTargetViewDesc.Texture2D.MipSlice = 0;
+	hr = m_pd3dDevice->CreateRenderTargetView(g_pRTTRenderTargetTexture3.Get(), &renderTargetViewDesc, g_RTTRenderTargetView3.GetAddressOf());
+	if (FAILED(hr))
+	{
+		MessageBox(nullptr,
+			L"Failed to create a render target view", L"Error", MB_OK);
+		return hr;
+	}
+
+	shaderResourceViewDesc.Format = textureDesc.Format;
+	shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
+	shaderResourceViewDesc.Texture2D.MipLevels = 1;
+
+	hr = m_pd3dDevice->CreateShaderResourceView(g_pRTTRenderTargetTexture3.Get(), &shaderResourceViewDesc, g_pRTTShaderResourceView3.GetAddressOf());
+	if (FAILED(hr))
+	{
+		MessageBox(nullptr,
+			L"Failed to create a render target shader resource view", L"Error", MB_OK);
+		return hr;
+	}
 
 	// Create depth stencil texture
 	D3D11_TEXTURE2D_DESC descDepth = {};
@@ -668,54 +742,41 @@ void DX11Renderer::Update(const float deltaTime)
 {
 	UpdateKeyInputs();
 
+	// ----- FPS calculation -----
 	static float timer = 0;
 	timer += deltaTime;
 	static unsigned int frameCounter = 0;
 	frameCounter++;
 	static unsigned int FPS = 0;
-	if (timer > 1)
+	if (timer > 1.0f)
 	{
 		timer -= 1.0f;
 		FPS = frameCounter;
 		frameCounter = 0;
 	}
 
-	// Clear the back buffer
-	//float blueish[4] = { 0.2, 0.2, 1, 1 };
-	//m_pImmediateContext->ClearRenderTargetView(m_pRenderTargetView.Get(), blueish);
-		// Clear the depth buffer to 1.0 (max depth)
-	m_pImmediateContext->ClearDepthStencilView(m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
-
+	// PASS 1
+	SetRenderTargetAndClear(g_RTTRenderTargetView.Get());
 	m_pImmediateContext->VSSetShader(m_pVertexShader.Get(), nullptr, 0);
 	m_pImmediateContext->PSSetShader(m_pPixelShader.Get(), nullptr, 0);
-
-	ID3D11RenderTargetView* rtv1 = g_RTTRenderTargetView.Get();
-	m_pImmediateContext->OMSetRenderTargets(1, &rtv1, m_pDepthStencilView.Get());
-
-	// Do stuff
 	m_pImmediateContext->IASetInputLayout(m_pVertexLayout.Get());
-
-	m_pScene->Draw();
-
-	ID3D11RenderTargetView* rtv2 = m_pRenderTargetView.Get();
-	m_pImmediateContext->OMSetRenderTargets(1, &rtv2, m_pDepthStencilView.Get());
-	m_pImmediateContext->ClearDepthStencilView(m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
-
-
-	DrawFullScreenQuad();
-
-
-	m_pImmediateContext->IASetInputLayout(m_pVertexLayout.Get());
-	m_pImmediateContext->VSSetShader(m_pVertexShader.Get(), nullptr, 0);
-	m_pImmediateContext->PSSetShader(m_pPixelShader.Get(), nullptr, 0);
 
 	m_pScene->Update(deltaTime);
+	m_pScene->Draw(0);
 
-	m_pScene->Draw();
+	// PASS 2
+	SetRenderTargetAndClear(g_RTTRenderTargetView2.Get());
+	m_pScene->Draw(1);
+
+	// PASS 3
+	SetRenderTargetAndClear(g_RTTRenderTargetView3.Get(), false);
+	DrawFullscreenQuadWithSRVs({ g_pRTTShaderResourceView.Get() });
+
+	// PASS 4
+	SetRenderTargetAndClear(m_pRenderTargetView.Get(), false);
+	DrawFullscreenQuadWithSRVs({ g_pRTTShaderResourceView2.Get(), g_pRTTShaderResourceView3.Get() });
 
 	m_imguiRenderer->ImGuiDrawAllWindows(FPS, m_totalTime, m_pScene, m_pImmediateContext.Get());
 
-
-	// Present our back buffer to our front buffer
 	m_pSwapChain->Present(m_imguiRenderer->VSyncEnabled, 0);
 }
