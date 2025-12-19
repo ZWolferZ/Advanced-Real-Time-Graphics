@@ -1,5 +1,10 @@
-Forum Post (ERA Template, from blackboard + Stage 4: Images/Video/Gif Output)
+Forum Post Week 1 (ERA Template, from blackboard + Stage 4: Images/Video/Gif Output)
+
+Forum Post Week 2 (ERA Template, from blackboard + Stage 4: Images/Video/Gif Output)
+
+Light and Camera Objects (To see where they are)
+
+Multiple Scene Cameras
 
 Window Title Info (Copy Raytracing)
 
-Mesh / Object Switching , Imgui Window
