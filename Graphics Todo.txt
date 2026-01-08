@@ -6,5 +6,37 @@ Light and Camera Objects (To see where they are)
 
 Multiple Scene Cameras
 
+Holy Shit Fix the Render Passes its so cooked
+
+Add Specular Mapping
+
+------------------------------------------------
+GBuffer (All of these, one per render pass, Look on Lecture slide for Render Target Layouts):
+
+Depth Buffer View
+
+Position Buffer View 
+
+Texture Buffer View
+
+Colour Buffer View (unlit)
+
+Normal Buffer View (World Space Normal)
+
+Specular Buffer View
+---------------------------------------
+
+Optimisation of GBuffer 
+
+Deferred Lighting Rendering (add to GBuffer)
+
+Recompile Shaders at Runtime (Imgui Text Editor in runtime)
+
+Post Processing Window + Options
+
 Window Title Info (Copy Raytracing)
+
+Fix Compiler Warnings
+
+
 

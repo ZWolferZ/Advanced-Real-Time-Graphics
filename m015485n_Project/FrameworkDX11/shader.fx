@@ -250,7 +250,7 @@ LightingResult ComputeLightingNormalMap(float4 worldPos,float3 N,float3 pixelToE
             float3 pixelToLight = Lights[i].Position.xyz - worldPos.xyz;
             float distanceToLight = length(pixelToLight);
 
-            float3 pixelToLightTS =VectorToTangentSpace(pixelToLight, TBN_Inv);
+            float3 pixelToLightTS = VectorToTangentSpace(pixelToLight, TBN_Inv);
 
             if (Lights[i].LightType == POINT_LIGHT)
             {
@@ -364,6 +364,7 @@ PS_INPUT VS(VS_INPUT input)
 float4 PS(PS_INPUT IN) : SV_TARGET
 {
     LightingResult lit;
+    
     if (Material.UseNormalMap)
     {
         float4 bumpMap = txNormalMap.Sample(samLinear, IN.Tex);
@@ -383,7 +384,7 @@ float4 PS(PS_INPUT IN) : SV_TARGET
     float4 ambient = Material.Ambient * GlobalAmbient;
     float4 diffuse = Material.Diffuse * lit.Diffuse;
     float4 specular = Material.Specular * lit.Specular;
-
+    
     float4 finalColor = emissive + ambient + diffuse + specular;
     if (Material.UseTexture)
     {
