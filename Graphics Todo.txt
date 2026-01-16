@@ -36,9 +36,14 @@ Recompile Shaders at Runtime (Imgui Text Editor in runtime)
 
 Post Processing Window + Options
 
+Blur Effect
+
+Wireframe Mode
+
+Render Cube on a screen or something
+
 Window Title Info (Copy Raytracing)
 
 Fix Compiler Warnings
 
-
-
+Add Audio
