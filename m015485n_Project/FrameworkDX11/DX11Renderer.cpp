@@ -6,17 +6,67 @@
 
 #include "globals.h"
 
+void DX11Renderer::ToggleFullScreen()
+{
+	m_isBorderlessFullscreen = !m_isBorderlessFullscreen;
+
+	if (m_isBorderlessFullscreen)
+	{
+		// Save windowed rect
+		GetWindowRect(m_handle, &m_windowedRect);
+
+		// Get monitor info
+		HMONITOR hMon = MonitorFromWindow(m_handle, MONITOR_DEFAULTTONEAREST);
+		MONITORINFO mi = { sizeof(mi) };
+		GetMonitorInfo(hMon, &mi);
+
+		// Remove borders
+		SetWindowLong(
+			m_handle,
+			GWL_STYLE,
+			WS_POPUP | WS_VISIBLE
+		);
+
+		// Resize to monitor
+		SetWindowPos(
+			m_handle,
+			HWND_TOP,
+			mi.rcMonitor.left,
+			mi.rcMonitor.top,
+			mi.rcMonitor.right - mi.rcMonitor.left,
+			mi.rcMonitor.bottom - mi.rcMonitor.top,
+			SWP_FRAMECHANGED | SWP_NOOWNERZORDER
+		);
+	}
+	else
+	{
+		// Restore windowed mode
+		SetWindowLong(
+			m_handle,
+			GWL_STYLE,
+			WS_OVERLAPPEDWINDOW | WS_VISIBLE
+		);
+
+		SetWindowPos(
+			m_handle,
+			HWND_TOP,
+			m_windowedRect.left,
+			m_windowedRect.top,
+			m_windowedRect.right - m_windowedRect.left,
+			m_windowedRect.bottom - m_windowedRect.top,
+			SWP_FRAMECHANGED | SWP_NOOWNERZORDER
+		);
+	}
+}
+
 HRESULT DX11Renderer::Init(HWND hwnd)
 {
+	m_handle = hwnd;
 	InitDevice(hwnd);
 
 	m_pScene = new Scene;
 
 	m_imguiRenderer = new ImGuiRendering(hwnd, m_pd3dDevice.Get(), m_pImmediateContext.Get());
-
-	m_pScene->m_textureMap.push_back({ "RenderTargetViewPass0",g_pRTTShaderResourceView });
-	m_pScene->m_textureMap.push_back({ "RenderTargetViewPass1",g_pRTTShaderResourceView2 });
-	m_pScene->m_textureMap.push_back({ "RenderTargetViewPass2",g_pRTTShaderResourceView3 });
 
 	// Compile the vertex shader
 	ID3DBlob* pVSBlob = nullptr;
@@ -198,6 +248,7 @@ void DX11Renderer::CreateFullScreenQuad()
 
 void DX11Renderer::DrawFullScreenQuad()
 {
+	m_pImmediateContext->PSSetShaderResources(0, 1, g_ShaderResourceView.GetAddressOf());
 	m_pImmediateContext->IASetInputLayout(g_pQuadLayout.Get());
 	m_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
@@ -209,33 +260,24 @@ void DX11Renderer::DrawFullScreenQuad()
 	m_pImmediateContext->VSSetShader(g_pQuadVS.Get(), nullptr, 0);
 	m_pImmediateContext->PSSetShader(g_pQuadPS.Get(), nullptr, 0);
 
-	ID3D11ShaderResourceView* srv = g_pRTTShaderResourceView.Get();
+	ID3D11ShaderResourceView* srv = g_ShaderResourceView.Get();
 	m_pImmediateContext->PSSetShaderResources(0, 1, &srv);
 
 	ID3D11SamplerState* ss = m_textureSampler.Get();
 	m_pImmediateContext->PSSetSamplers(0, 1, &ss);
 
 	m_pImmediateContext->Draw(4, 0);
-}
-
-void DX11Renderer::SetRenderTargetAndClear(ID3D11RenderTargetView* rtv, bool clearDepth)
-{
-	float clearColor[4] = { 0.f, 0.f, 0.f, 1.f };
-
-	m_pImmediateContext->OMSetRenderTargets(1, &rtv, clearDepth ? m_pDepthStencilView.Get() : nullptr);
-	m_pImmediateContext->ClearRenderTargetView(rtv, clearColor);
-	if (clearDepth)
-		m_pImmediateContext->ClearDepthStencilView(m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
-}
-
-void DX11Renderer::DrawFullscreenQuadWithSRVs(std::vector<ID3D11ShaderResourceView*> srvs)
-{
-	m_pImmediateContext->PSSetShaderResources(0, srvs.size(), srvs.data());
-	DrawFullScreenQuad();
 
 	// unbind
-	std::vector<ID3D11ShaderResourceView*> nullSRVs(srvs.size(), nullptr);
-	m_pImmediateContext->PSSetShaderResources(0, nullSRVs.size(), nullSRVs.data());
+	ID3D11ShaderResourceView* nullSRV = nullptr;
+	m_pImmediateContext->PSSetShaderResources(0, 1, &nullSRV);
+}
+
+void DX11Renderer::SetSceneDrawData()
+{
+	m_pImmediateContext->VSSetShader(m_pVertexShader.Get(), nullptr, 0);
+	m_pImmediateContext->PSSetShader(m_pPixelShader.Get(), nullptr, 0);
+	m_pImmediateContext->IASetInputLayout(m_pVertexLayout.Get());
 }
 
 HRESULT DX11Renderer::InitDevice(HWND hwnd)
@@ -329,11 +371,22 @@ HRESULT DX11Renderer::InitDevice(HWND hwnd)
 		sd.Height = height;
 		sd.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
 		sd.SampleDesc.Count = 1;
-		sd.SampleDesc.Quality = 0;
 		sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-		sd.BufferCount = 1;
+		sd.BufferCount = 2;
+		sd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+		sd.Scaling = DXGI_SCALING_STRETCH;
+		sd.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
+		sd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
 
-		hr = dxgiFactory2->CreateSwapChainForHwnd(m_pd3dDevice.Get(), hwnd, &sd, nullptr, nullptr, &m_pSwapChain1);
+		hr = dxgiFactory2->CreateSwapChainForHwnd(
+			m_pd3dDevice.Get(),
+			hwnd,
+			&sd,
+			nullptr,
+			nullptr,
+			&m_pSwapChain1
+		);
+
 		if (SUCCEEDED(hr))
 		{
 			hr = m_pSwapChain1->QueryInterface(__uuidof(IDXGISwapChain), &m_pSwapChain);
@@ -361,7 +414,7 @@ HRESULT DX11Renderer::InitDevice(HWND hwnd)
 	}
 
 	// Note this tutorial doesn't handle full-screen swapchains so we block the ALT+ENTER shortcut
-	dxgiFactory->MakeWindowAssociation(hwnd, DXGI_MWA_NO_ALT_ENTER);
+	dxgiFactory->MakeWindowAssociation(hwnd, 0);
 
 	dxgiFactory->Release();
 
@@ -382,7 +435,7 @@ HRESULT DX11Renderer::InitDevice(HWND hwnd)
 		return hr;
 	}
 
-	hr = m_pd3dDevice->CreateRenderTargetView(pBackBuffer, nullptr, &m_pRenderTargetView);
+	hr = m_pd3dDevice->CreateRenderTargetView(pBackBuffer, nullptr, &m_PresentedRenderTargetView);
 	pBackBuffer->Release();
 	if (FAILED(hr))
 	{
@@ -405,7 +458,7 @@ HRESULT DX11Renderer::InitDevice(HWND hwnd)
 	textureDesc.CPUAccessFlags = 0;
 	textureDesc.MiscFlags = 0;
 
-	hr = m_pd3dDevice->CreateTexture2D(&textureDesc, NULL, &g_pRTTRenderTargetTexture);
+	hr = m_pd3dDevice->CreateTexture2D(&textureDesc, NULL, &g_RenderTargetTexture);
 	if (FAILED(hr))
 	{
 		MessageBox(nullptr,
@@ -416,7 +469,7 @@ HRESULT DX11Renderer::InitDevice(HWND hwnd)
 	renderTargetViewDesc.Format = textureDesc.Format;
 	renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
 	renderTargetViewDesc.Texture2D.MipSlice = 0;
-	hr = m_pd3dDevice->CreateRenderTargetView(g_pRTTRenderTargetTexture.Get(), &renderTargetViewDesc, g_RTTRenderTargetView.GetAddressOf());
+	hr = m_pd3dDevice->CreateRenderTargetView(g_RenderTargetTexture.Get(), &renderTargetViewDesc, g_RenderTargetView.GetAddressOf());
 	if (FAILED(hr))
 	{
 		MessageBox(nullptr,
@@ -429,71 +482,7 @@ HRESULT DX11Renderer::InitDevice(HWND hwnd)
 	shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
 	shaderResourceViewDesc.Texture2D.MipLevels = 1;
 
-	hr = m_pd3dDevice->CreateShaderResourceView(g_pRTTRenderTargetTexture.Get(), &shaderResourceViewDesc, g_pRTTShaderResourceView.GetAddressOf());
-	if (FAILED(hr))
-	{
-		MessageBox(nullptr,
-			L"Failed to create a render target shader resource view", L"Error", MB_OK);
-		return hr;
-	}
-
-	hr = m_pd3dDevice->CreateTexture2D(&textureDesc, NULL, &g_pRTTRenderTargetTexture2);
-	if (FAILED(hr))
-	{
-		MessageBox(nullptr,
-			L"Failed to create a render target Texture 2D.", L"Error", MB_OK);
-		return hr;
-	}
-
-	renderTargetViewDesc.Format = textureDesc.Format;
-	renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
-	renderTargetViewDesc.Texture2D.MipSlice = 0;
-	hr = m_pd3dDevice->CreateRenderTargetView(g_pRTTRenderTargetTexture2.Get(), &renderTargetViewDesc, g_RTTRenderTargetView2.GetAddressOf());
-	if (FAILED(hr))
-	{
-		MessageBox(nullptr,
-			L"Failed to create a render target view", L"Error", MB_OK);
-		return hr;
-	}
-
-	shaderResourceViewDesc.Format = textureDesc.Format;
-	shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-	shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
-	shaderResourceViewDesc.Texture2D.MipLevels = 1;
-
-	hr = m_pd3dDevice->CreateShaderResourceView(g_pRTTRenderTargetTexture2.Get(), &shaderResourceViewDesc, g_pRTTShaderResourceView2.GetAddressOf());
-	if (FAILED(hr))
-	{
-		MessageBox(nullptr,
-			L"Failed to create a render target shader resource view", L"Error", MB_OK);
-		return hr;
-	}
-
-	hr = m_pd3dDevice->CreateTexture2D(&textureDesc, NULL, &g_pRTTRenderTargetTexture3);
-	if (FAILED(hr))
-	{
-		MessageBox(nullptr,
-			L"Failed to create a render target Texture 2D.", L"Error", MB_OK);
-		return hr;
-	}
-
-	renderTargetViewDesc.Format = textureDesc.Format;
-	renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
-	renderTargetViewDesc.Texture2D.MipSlice = 0;
-	hr = m_pd3dDevice->CreateRenderTargetView(g_pRTTRenderTargetTexture3.Get(), &renderTargetViewDesc, g_RTTRenderTargetView3.GetAddressOf());
-	if (FAILED(hr))
-	{
-		MessageBox(nullptr,
-			L"Failed to create a render target view", L"Error", MB_OK);
-		return hr;
-	}
-
-	shaderResourceViewDesc.Format = textureDesc.Format;
-	shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-	shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
-	shaderResourceViewDesc.Texture2D.MipLevels = 1;
-
-	hr = m_pd3dDevice->CreateShaderResourceView(g_pRTTRenderTargetTexture3.Get(), &shaderResourceViewDesc, g_pRTTShaderResourceView3.GetAddressOf());
+	hr = m_pd3dDevice->CreateShaderResourceView(g_RenderTargetTexture.Get(), &shaderResourceViewDesc, g_ShaderResourceView.GetAddressOf());
 	if (FAILED(hr))
 	{
 		MessageBox(nullptr,
@@ -536,7 +525,7 @@ HRESULT DX11Renderer::InitDevice(HWND hwnd)
 	}
 
 	// Get the raw pointer.
-	ID3D11RenderTargetView* rtv = m_pRenderTargetView.Get();
+	ID3D11RenderTargetView* rtv = m_PresentedRenderTargetView.Get();
 	m_pImmediateContext->OMSetRenderTargets(1, &rtv, m_pDepthStencilView.Get());
 
 	// Setup the viewport
@@ -701,22 +690,124 @@ void DX11Renderer::Input(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 void DX11Renderer::UpdateKeyInputs()
 {
-	if (inputs['W'] == true) m_pScene->GetCamera()->MoveForward(m_pScene->GetCamera()->m_cameraMoveSpeed * m_currentDeltaTime);
-	if (inputs['A'] == true) m_pScene->GetCamera()->StrafeLeft(m_pScene->GetCamera()->m_cameraMoveSpeed * m_currentDeltaTime);
-	if (inputs['S'] == true) m_pScene->GetCamera()->MoveBackward(m_pScene->GetCamera()->m_cameraMoveSpeed * m_currentDeltaTime);
-	if (inputs['D'] == true) m_pScene->GetCamera()->StrafeRight(m_pScene->GetCamera()->m_cameraMoveSpeed * m_currentDeltaTime);
-	if (inputs['E'] == true) m_pScene->GetCamera()->MoveUp(m_pScene->GetCamera()->m_cameraMoveSpeed * m_currentDeltaTime);
-	if (inputs[VK_SPACE] == true) m_pScene->GetCamera()->MoveUp(m_pScene->GetCamera()->m_cameraMoveSpeed * m_currentDeltaTime);
-	if (inputs['Q'] == true) m_pScene->GetCamera()->MoveDown(m_pScene->GetCamera()->m_cameraMoveSpeed * m_currentDeltaTime);
-	if (inputs[VK_SHIFT] == true) m_pScene->GetCamera()->MoveDown(m_pScene->GetCamera()->m_cameraMoveSpeed * m_currentDeltaTime);
-	if (inputs[VK_NUMPAD8] == true) m_pScene->GetCamera()->RotatePitch(-m_pScene->GetCamera()->m_cameraRotateSpeed * m_currentDeltaTime);
-	if (inputs[VK_NUMPAD5] == true) m_pScene->GetCamera()->RotatePitch(m_pScene->GetCamera()->m_cameraRotateSpeed * m_currentDeltaTime);
-	if (inputs[VK_NUMPAD4] == true) m_pScene->GetCamera()->RotateYaw(-m_pScene->GetCamera()->m_cameraRotateSpeed * m_currentDeltaTime);
-	if (inputs[VK_NUMPAD6] == true) m_pScene->GetCamera()->RotateYaw(m_pScene->GetCamera()->m_cameraRotateSpeed * m_currentDeltaTime);
-	if (inputs[VK_NUMPAD9] == true) m_pScene->GetCamera()->RotateRoll(-m_pScene->GetCamera()->m_cameraRotateSpeed * m_currentDeltaTime);
-	if (inputs[VK_NUMPAD7] == true) m_pScene->GetCamera()->RotateRoll(m_pScene->GetCamera()->m_cameraRotateSpeed * m_currentDeltaTime);
-	if (inputs['R'] == true)  m_pScene->GetCamera()->Reset();
-	if (inputs[27] == true)  PostQuitMessage(0);
+	if (KeyHeld('W')) m_pScene->GetCamera()->MoveForward(m_pScene->GetCamera()->m_cameraMoveSpeed * m_currentDeltaTime);
+	if (KeyHeld('A')) m_pScene->GetCamera()->StrafeLeft(m_pScene->GetCamera()->m_cameraMoveSpeed * m_currentDeltaTime);
+	if (KeyHeld('S')) m_pScene->GetCamera()->MoveBackward(m_pScene->GetCamera()->m_cameraMoveSpeed * m_currentDeltaTime);
+	if (KeyHeld('D')) m_pScene->GetCamera()->StrafeRight(m_pScene->GetCamera()->m_cameraMoveSpeed * m_currentDeltaTime);
+
+	if (KeyHeld('E') || KeyHeld(VK_SPACE))
+		m_pScene->GetCamera()->MoveUp(m_pScene->GetCamera()->m_cameraMoveSpeed * m_currentDeltaTime);
+
+	if (KeyHeld('Q') || KeyHeld(VK_SHIFT))
+		m_pScene->GetCamera()->MoveDown(m_pScene->GetCamera()->m_cameraMoveSpeed * m_currentDeltaTime);
+
+	if (KeyPressed('R'))
+		m_pScene->GetCamera()->Reset();
+
+	if (KeyPressed(VK_ESCAPE))
+		PostQuitMessage(0);
+
+	if (KeyPressed(VK_F1))
+		m_imguiRenderer->VSyncEnabled = !m_imguiRenderer->VSyncEnabled;
+
+	if (KeyPressed(VK_F11) || KeyPressed('F')) ToggleFullScreen();
+
+	previnputs = inputs;
+}
+
+bool DX11Renderer::KeyHeld(int key)
+{
+	return inputs[key];
+}
+
+bool DX11Renderer::KeyPressed(int key)
+{
+	return inputs[key] && !previnputs[key];
+}
+
+bool DX11Renderer::KeyReleased(int key)
+{
+	return !inputs[key] && previnputs[key];
+}
+
+void DX11Renderer::OnResize(UINT width, UINT height)
+{
+	if (!m_pSwapChain)
+		return;
+
+	// Unbind render targets
+	ID3D11RenderTargetView* nullRTV[] = { nullptr };
+	m_pImmediateContext->OMSetRenderTargets(1, nullRTV, nullptr);
+
+	// Release size-dependent resources
+	m_PresentedRenderTargetView.Reset();
+	m_pDepthStencilView.Reset();
+	m_pDepthStencil.Reset();
+
+	g_RenderTargetView.Reset();
+	g_RenderTargetTexture.Reset();
+	g_ShaderResourceView.Reset();
+
+	// Resize swap chain buffers
+	HRESULT hr = m_pSwapChain->ResizeBuffers(
+		0,              // keep buffer count
+		width,
+		height,
+		DXGI_FORMAT_UNKNOWN, // keep format
+		DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING
+	);
+	if (FAILED(hr))
+		return;
+
+	// Recreate back buffer RTV
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> backBuffer;
+	m_pSwapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer));
+	m_pd3dDevice->CreateRenderTargetView(
+		backBuffer.Get(),
+		nullptr,
+		&m_PresentedRenderTargetView
+	);
+
+	// Recreate depth buffer
+	D3D11_TEXTURE2D_DESC depthDesc = {};
+	depthDesc.Width = width;
+	depthDesc.Height = height;
+	depthDesc.MipLevels = 1;
+	depthDesc.ArraySize = 1;
+	depthDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	depthDesc.SampleDesc.Count = 1;
+	depthDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+
+	m_pd3dDevice->CreateTexture2D(&depthDesc, nullptr, &m_pDepthStencil);
+	m_pd3dDevice->CreateDepthStencilView(
+		m_pDepthStencil.Get(),
+		nullptr,
+		&m_pDepthStencilView
+	);
+
+	D3D11_TEXTURE2D_DESC rtDesc = {};
+	rtDesc.Width = width;
+	rtDesc.Height = height;
+	rtDesc.MipLevels = 1;
+	rtDesc.ArraySize = 1;
+	rtDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	rtDesc.SampleDesc.Count = 1;
+	rtDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+
+	m_pd3dDevice->CreateTexture2D(&rtDesc, nullptr, &g_RenderTargetTexture);
+	m_pd3dDevice->CreateRenderTargetView(g_RenderTargetTexture.Get(), nullptr, &g_RenderTargetView);
+	m_pd3dDevice->CreateShaderResourceView(g_RenderTargetTexture.Get(), nullptr, &g_ShaderResourceView);
+
+	// Set viewport
+	D3D11_VIEWPORT vp{};
+	vp.Width = (float)width;
+	vp.Height = (float)height;
+	vp.MinDepth = 0.0f;
+	vp.MaxDepth = 1.0f;
+	m_pImmediateContext->RSSetViewports(1, &vp);
+
+	// Update camera projection
+	m_pScene->GetCamera()->SetProjectionMatrix(width, height);
 }
 
 // Function to center the mouse in the window
@@ -755,28 +846,28 @@ void DX11Renderer::Update(const float deltaTime)
 		frameCounter = 0;
 	}
 
-	// PASS 1
-	SetRenderTargetAndClear(g_RTTRenderTargetView.Get());
-	m_pImmediateContext->VSSetShader(m_pVertexShader.Get(), nullptr, 0);
-	m_pImmediateContext->PSSetShader(m_pPixelShader.Get(), nullptr, 0);
-	m_pImmediateContext->IASetInputLayout(m_pVertexLayout.Get());
+	float clearColor[4] = { 0.f, 0.f, 0.f, 1.f };
+
+	m_pImmediateContext->OMSetRenderTargets(1, g_RenderTargetView.GetAddressOf(), m_pDepthStencilView.Get());
+	m_pImmediateContext->ClearRenderTargetView(g_RenderTargetView.Get(), clearColor);
+	m_pImmediateContext->ClearDepthStencilView(m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 
 	m_pScene->Update(deltaTime);
+	SetSceneDrawData();
 	m_pScene->Draw(0);
 
-	// PASS 2
-	SetRenderTargetAndClear(g_RTTRenderTargetView2.Get());
-	m_pScene->Draw(1);
+	m_pImmediateContext->OMSetRenderTargets(1, m_PresentedRenderTargetView.GetAddressOf(), nullptr);
 
-	// PASS 3
-	SetRenderTargetAndClear(g_RTTRenderTargetView3.Get(), false);
-	DrawFullscreenQuadWithSRVs({ g_pRTTShaderResourceView.Get() });
-
-	// PASS 4
-	SetRenderTargetAndClear(m_pRenderTargetView.Get(), false);
-	DrawFullscreenQuadWithSRVs({ g_pRTTShaderResourceView2.Get(), g_pRTTShaderResourceView3.Get() });
+	DrawFullScreenQuad();
 
 	m_imguiRenderer->ImGuiDrawAllWindows(FPS, m_totalTime, m_pScene, m_pImmediateContext.Get());
 
-	m_pSwapChain->Present(m_imguiRenderer->VSyncEnabled, 0);
+	if (m_imguiRenderer->VSyncEnabled)
+	{
+		m_pSwapChain->Present(1, 0);
+	}
+	else
+	{
+		m_pSwapChain->Present(0, DXGI_PRESENT_ALLOW_TEARING);
+	}
 }

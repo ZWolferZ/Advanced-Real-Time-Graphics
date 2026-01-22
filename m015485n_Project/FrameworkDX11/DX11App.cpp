@@ -1,5 +1,4 @@
 #include "DX11app.h"
-
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_win32.h"
 #include "imgui/imgui_impl_dx11.h"
@@ -60,7 +59,7 @@ HRESULT DX11App::initWindow(HINSTANCE hInstance, int nCmdShow)
 
 	AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
 	m_hWnd = CreateWindow(L"lWindowClass", L"LucyLabs Proprietary Advanced Realtime Graphics Framework",
-		WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
+		WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT, CW_USEDEFAULT, rc.right - rc.left, rc.bottom - rc.top, nullptr, nullptr, hInstance,
 		nullptr);
 	if (!m_hWnd)
@@ -131,8 +130,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		PostQuitMessage(0);
 		break;
 
-		// Note that this tutorial does not handle resizing (WM_SIZE) requests,
-		// so we created the window without the resize border.
+	case WM_SIZE:
+	{
+		if (wParam != SIZE_MINIMIZED)
+		{
+			UINT width = LOWORD(lParam);
+			UINT height = HIWORD(lParam);
+
+			if (gThisApp->getRenderer())  gThisApp->getRenderer()->OnResize(width, height);
+		}
+	}
+	break;
 
 	default:
 		return DefWindowProc(hWnd, message, wParam, lParam);

@@ -100,7 +100,7 @@ void Scene::CreateGameObjects()
 	// CREATE A SIMPLE game object
 	GameObject* go = new GameObject(XMFLOAT3(2.0f, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), "Cube 1", GetModelData("Cube"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture(m_textureMap, "stone.dds"), GetTexture(m_normalMapTextureMap, "conenormal.dds"));
 
-	GameObject* go2 = new GameObject(XMFLOAT3(-2.0f, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), "Cube 2", GetModelData("Cube"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture UnLit Pixel Shader"), GetTexture(m_textureMap, "RenderTargetViewPass2"));
+	GameObject* go2 = new GameObject(XMFLOAT3(-2.0f, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), "Cube 2", GetModelData("Cube"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture(m_textureMap, "Crate_COLOR.dds"), GetTexture(m_normalMapTextureMap, "Crate_NRM.dds"));
 
 	// CREATE A SIMPLE game object
 	GameObject* go3 = new GameObject(XMFLOAT3(7.6, -1.3, -7.1), XMFLOAT3(0, -31, 0), XMFLOAT3(2, 2, 2), "Asha", GetModelData("asha.obj"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture(m_textureMap, "AshaTex.dds"));
@@ -595,14 +595,6 @@ void Scene::Draw(int renderPass)
 {
 	for (unsigned int i = 0; i < m_vecDrawables.size(); i++)
 	{
-		if (renderPass == 0 && m_vecDrawables[i]->GetTextureResourceView() == GetTexture(m_textureMap, "RenderTargetViewPass0").Get() || m_vecDrawables[i]->GetTextureResourceView() == GetTexture(m_textureMap, "RenderTargetViewPass1").Get())
-		{
-			continue;
-		}
-		if (renderPass == 1 && m_vecDrawables[i]->GetTextureResourceView() != GetTexture(m_textureMap, "RenderTargetViewPass2").Get())
-		{
-			continue;
-		}
 		m_vecDrawables[i]->Draw(m_pImmediateContext.Get(), GetCamera(), m_pConstantBuffer.Get());
 	}
 }

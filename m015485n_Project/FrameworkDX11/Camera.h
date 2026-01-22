@@ -78,6 +78,12 @@ public:
 	{
 		return m_projectionMatrix;
 	}
+
+	void SetProjectionMatrix(UINT width, UINT height)
+	{
+		constexpr float fovAngleY = XMConvertToRadians(90.0f);
+		XMStoreFloat4x4(&m_projectionMatrix, XMMatrixPerspectiveFovLH(fovAngleY, width / (FLOAT)height, 0.01f, 100.0f));
+	}
 #pragma endregion
 
 #pragma region Camera Movement

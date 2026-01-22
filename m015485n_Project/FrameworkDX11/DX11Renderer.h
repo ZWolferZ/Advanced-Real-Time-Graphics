@@ -39,13 +39,13 @@ public:
 	DX11Renderer() = default;
 	~DX11Renderer() = default;
 
+	void ToggleFullScreen();
+
 	HRESULT Init(HWND hwnd);
 	void CreateFullScreenQuad();
 	void DrawFullScreenQuad();
 
-	void SetRenderTargetAndClear(ID3D11RenderTargetView* rtv, bool clearDepth = true);;
-
-	void DrawFullscreenQuadWithSRVs(std::vector<ID3D11ShaderResourceView*> srvs);;
+	void SetSceneDrawData();
 
 	void	CleanUp();
 
@@ -56,6 +56,12 @@ public:
 
 	void Input(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 	void UpdateKeyInputs();
+
+	bool KeyHeld(int key);
+	bool KeyPressed(int key);
+	bool KeyReleased(int key);
+
+	void OnResize(UINT width, UINT height);
 
 	float m_currentDeltaTime = 0.0f;
 	float m_totalTime = 0.0f;
@@ -70,9 +76,12 @@ private: // methods
 	void	CentreMouseInWindow(HWND hWnd);
 
 private: // properties
-
+	HWND m_handle = nullptr;
 	ImGuiRendering* m_imguiRenderer = nullptr;
 	std::unordered_map<UINT8, bool > inputs;
+	std::unordered_map<UINT8, bool > previnputs;
+	bool m_isBorderlessFullscreen = false;
+	RECT m_windowedRect = {};
 
 	D3D_DRIVER_TYPE									m_driverType = D3D_DRIVER_TYPE_NULL;
 	D3D_FEATURE_LEVEL								m_featureLevel = D3D_FEATURE_LEVEL_11_0;
@@ -82,7 +91,7 @@ private: // properties
 	Microsoft::WRL::ComPtr <ID3D11DeviceContext1>	m_pImmediateContext1;
 	Microsoft::WRL::ComPtr <IDXGISwapChain>			m_pSwapChain;
 	Microsoft::WRL::ComPtr <IDXGISwapChain1>		m_pSwapChain1;
-	Microsoft::WRL::ComPtr <ID3D11RenderTargetView> m_pRenderTargetView;
+
 	Microsoft::WRL::ComPtr <ID3D11Texture2D>		m_pDepthStencil;
 	Microsoft::WRL::ComPtr <ID3D11DepthStencilView> m_pDepthStencilView;
 
@@ -92,21 +101,15 @@ private: // properties
 	Microsoft::WRL::ComPtr <ID3D11PixelShader>		m_pTextureUnLitPixelShader;
 	Microsoft::WRL::ComPtr <ID3D11InputLayout>		m_pVertexLayout;
 
-	Microsoft::WRL::ComPtr <ID3D11Texture2D> g_pRTTRenderTargetTexture;
-	Microsoft::WRL::ComPtr <ID3D11Texture2D> g_pRTTRenderTargetTexture2;
-	Microsoft::WRL::ComPtr <ID3D11Texture2D> g_pRTTRenderTargetTexture3;
+	Microsoft::WRL::ComPtr <ID3D11RenderTargetView> m_PresentedRenderTargetView;
+
+	Microsoft::WRL::ComPtr <ID3D11Texture2D> g_RenderTargetTexture;
 
 	D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
-	Microsoft::WRL::ComPtr <ID3D11RenderTargetView> g_RTTRenderTargetView;
-	Microsoft::WRL::ComPtr <ID3D11RenderTargetView> g_RTTRenderTargetView2;
-	Microsoft::WRL::ComPtr <ID3D11RenderTargetView> g_RTTRenderTargetView3;
+	Microsoft::WRL::ComPtr <ID3D11RenderTargetView> g_RenderTargetView;
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
-	Microsoft::WRL::ComPtr <ID3D11ShaderResourceView> g_pRTTShaderResourceView;
-	Microsoft::WRL::ComPtr <ID3D11ShaderResourceView> g_pRTTShaderResourceView2;
-	Microsoft::WRL::ComPtr <ID3D11ShaderResourceView> g_pRTTShaderResourceView3;
-
-	Microsoft::WRL::ComPtr <ID3D11Texture2D> resolvedTexture;
+	Microsoft::WRL::ComPtr <ID3D11ShaderResourceView> g_ShaderResourceView;
 
 	Scene* m_pScene;
 
