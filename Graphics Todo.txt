@@ -12,6 +12,8 @@ Holy Shit Fix the Render Passes its so cooked
 
 Add Specular Mapping
 
+Add Parallax Occlusion Mapping
+
 ------------------------------------------------
 GBuffer (All of these, one per render pass, Look on Lecture slide for Render Target Layouts):
 

@@ -43,4 +43,6 @@ private:
 	GameObject* m_selectedObject = nullptr;
 	Light* m_selectedLight = nullptr;
 	int lightIndex = 0;
+
+
 };

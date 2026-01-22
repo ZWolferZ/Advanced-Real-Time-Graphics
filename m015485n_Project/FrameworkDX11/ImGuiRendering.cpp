@@ -5,15 +5,21 @@ ImGuiRendering::ImGuiRendering(HWND hwnd, ID3D11Device* m_pd3dDevice, ID3D11Devi
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO();
-	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
 	// Setup Platform/Renderer backends
 	ImGui_ImplWin32_Init(hwnd);
 	ImGui_ImplDX11_Init(m_pd3dDevice, m_pImmediateContext);
 
+	ImGuiIO& io = ImGui::GetIO();
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+	io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+
+	//io.ConfigViewportsNoAutoMerge = true;
+
+
 	io.IniFilename = nullptr;
+
 }
 
 void ImGuiRendering::ShutDownImGui()
@@ -30,7 +36,7 @@ void ImGuiRendering::ImGuiDrawAllWindows(const unsigned int FPS, float totalAppT
 	StartIMGUIDraw();
 
 	DrawHideAllWindows();
-
+	
 	if (showWindows)
 	{
 		DrawVersionWindow(FPS, totalAppTime);
@@ -49,7 +55,10 @@ void ImGuiRendering::ImGuiDrawAllWindows(const unsigned int FPS, float totalAppT
 		DrawObjectGimzo();
 	}
 
+
+
 	CompleteIMGUIDraw();
+
 }
 
 void ImGuiRendering::DrawVersionWindow(const unsigned int FPS, float totalAppTime)
@@ -65,7 +74,7 @@ void ImGuiRendering::DrawVersionWindow(const unsigned int FPS, float totalAppTim
 
 void ImGuiRendering::DrawHideAllWindows()
 {
-	ImGui::SetNextWindowPos(ImVec2(1100, 650), ImGuiCond_FirstUseEver);
+	//ImGui::SetNextWindowPos(ImVec2(1100, 650), ImGuiCond_FirstUseEver);
 	ImGui::Begin("Show/Hide UI", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 	ImGui::Checkbox("Show All Windows", &showWindows);
 	ImGui::End();
@@ -665,13 +674,18 @@ void ImGuiRendering::StartIMGUIDraw()
 	ImGui_ImplDX11_NewFrame();
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
-
 	ImGuizmo::BeginFrame();
 }
 
 void ImGuiRendering::CompleteIMGUIDraw()
 {
 	ImGui::Render();
-
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+	ImGuiIO& io = ImGui::GetIO();
+	io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+	if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+	{
+		ImGui::UpdatePlatformWindows();
+		ImGui::RenderPlatformWindowsDefault();
+	}
 }

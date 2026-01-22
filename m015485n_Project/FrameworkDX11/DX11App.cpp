@@ -48,18 +48,32 @@ HRESULT DX11App::initWindow(HINSTANCE hInstance, int nCmdShow)
 
 	// Create window
 	m_hInst = hInstance;
-	RECT rc = { 0, 0, 1280, 720 };
+	RECT rc = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
 
 	m_viewWidth = SCREEN_WIDTH;
 	m_viewHeight = SCREEN_HEIGHT;
 
+
+	int screenWidth = GetSystemMetrics(SM_CXSCREEN);
+	int screenHeight = GetSystemMetrics(SM_CYSCREEN);
+
+
+	int xPos = (screenWidth - m_viewWidth) / 2;
+	int yPos = (screenHeight - m_viewHeight) / 2;
+
 	AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
 	m_hWnd = CreateWindow(L"lWindowClass", L"LucyLabs Proprietary Advanced Realtime Graphics Framework",
 		WS_OVERLAPPEDWINDOW,
-		CW_USEDEFAULT, CW_USEDEFAULT, rc.right - rc.left, rc.bottom - rc.top, nullptr, nullptr, hInstance,
+		xPos, yPos, rc.right - rc.left, rc.bottom - rc.top, nullptr, nullptr, hInstance,
 		nullptr);
 	if (!m_hWnd)
 		return E_FAIL;
+
+	LONG style = GetWindowLong(m_hWnd, GWL_STYLE);
+	style &= ~WS_MAXIMIZEBOX; // Remove maximize box
+	SetWindowLong(m_hWnd, GWL_STYLE, style);
+	SetWindowPos(m_hWnd, NULL, 0, 0, 0, 0,
+		SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
 
 	ShowWindow(m_hWnd, nCmdShow);
 
