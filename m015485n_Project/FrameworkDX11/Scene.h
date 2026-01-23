@@ -52,6 +52,7 @@ public:
 	void UpdateLightBuffer();
 	std::vector<Light>& GetLights() { return m_lights; }
 	void AddLight();
+
 	vector<GameObject*>		m_vecDrawables;
 	vector<std::pair<string, MeshData>> m_models;
 

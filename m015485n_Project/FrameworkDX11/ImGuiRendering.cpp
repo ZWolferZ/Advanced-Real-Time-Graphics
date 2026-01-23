@@ -1,5 +1,7 @@
 ﻿#include "ImGuiRendering.h"
 
+#include "imgui/imgui_internal.h"
+
 ImGuiRendering::ImGuiRendering(HWND hwnd, ID3D11Device* m_pd3dDevice, ID3D11DeviceContext* m_pImmediateContext)
 {
 	// Setup Dear ImGui context
@@ -15,11 +17,7 @@ ImGuiRendering::ImGuiRendering(HWND hwnd, ID3D11Device* m_pd3dDevice, ID3D11Devi
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 	io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
-	//io.ConfigViewportsNoAutoMerge = true;
-
-
 	io.IniFilename = nullptr;
-
 }
 
 void ImGuiRendering::ShutDownImGui()
@@ -36,7 +34,7 @@ void ImGuiRendering::ImGuiDrawAllWindows(const unsigned int FPS, float totalAppT
 	StartIMGUIDraw();
 
 	DrawHideAllWindows();
-	
+
 	if (showWindows)
 	{
 		DrawVersionWindow(FPS, totalAppTime);
@@ -55,16 +53,26 @@ void ImGuiRendering::ImGuiDrawAllWindows(const unsigned int FPS, float totalAppT
 		DrawObjectGimzo();
 	}
 
-
-
 	CompleteIMGUIDraw();
+}
 
+void ImGuiRendering::ResetAllWindowsPositions()
+{
+	for (auto& pair : m_originalWindowPositions)
+	{
+		ImGui::SetWindowPos(pair.first.c_str(), pair.second);
+	}
 }
 
 void ImGuiRendering::DrawVersionWindow(const unsigned int FPS, float totalAppTime)
 {
-	ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
-	ImGui::Begin("LucyLabs DX11 Renderer", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+	static ImVec2 windowPos = ImVec2(10, 10);
+	static string windowName = "LucyLabs DX11 Renderer";
+
+	m_originalWindowPositions.try_emplace(windowName, windowPos);
+
+	ImGui::SetNextWindowPos(windowPos, ImGuiCond_FirstUseEver);
+	ImGui::Begin(windowName.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove);
 	ImGui::Text("ImGUI version: (%s)", IMGUI_VERSION);
 	ImGui::Text("Application Runtime (%f)", totalAppTime);
 	ImGui::Text("FPS %d", FPS);
@@ -74,16 +82,26 @@ void ImGuiRendering::DrawVersionWindow(const unsigned int FPS, float totalAppTim
 
 void ImGuiRendering::DrawHideAllWindows()
 {
-	//ImGui::SetNextWindowPos(ImVec2(1100, 650), ImGuiCond_FirstUseEver);
-	ImGui::Begin("Show/Hide UI", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+	static ImVec2 windowPos = ImVec2(1425, 853);
+	static string windowName = "Show/Hide UI";
+
+	m_originalWindowPositions.try_emplace(windowName, windowPos);
+
+	ImGui::SetNextWindowPos(windowPos, ImGuiCond_FirstUseEver);
+	ImGui::Begin(windowName.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove);
 	ImGui::Checkbox("Show All Windows", &showWindows);
 	ImGui::End();
 }
 
 void ImGuiRendering::DrawSelectLightWindow()
 {
-	ImGui::SetNextWindowPos(ImVec2(250, 10), ImGuiCond_FirstUseEver);
-	ImGui::Begin("Light Selection", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+	static ImVec2 windowPos = ImVec2(719, 3);
+	static string windowName = "Light Selection";
+
+	m_originalWindowPositions.try_emplace(windowName, windowPos);
+
+	ImGui::SetNextWindowPos(windowPos, ImGuiCond_FirstUseEver);
+	ImGui::Begin(windowName.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove);
 
 	ImGui::Text("Choose a light to select!");
 	if (ImGui::Button("Add Light"))
@@ -123,8 +141,14 @@ void ImGuiRendering::DrawLightUpdateWindow()
 {
 	if (m_selectedLight != nullptr)
 	{
-		ImGui::SetNextWindowPos(ImVec2(10, 200), ImGuiCond_FirstUseEver);
-		ImGui::Begin("Light Movement Update Window", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+		static ImVec2 windowPos = ImVec2(276, 2);
+		static string windowName = "Light Movement Update Window";
+
+		m_originalWindowPositions.try_emplace(windowName, windowPos);
+
+		ImGui::SetNextWindowPos(windowPos, ImGuiCond_FirstUseEver);
+		ImGui::Begin(windowName.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove);
+
 		ImGui::Separator();
 
 		bool lightEnabled = m_selectedLight->Enabled;
@@ -210,8 +234,13 @@ void ImGuiRendering::DrawObjectMovementWindow()
 {
 	if (m_selectedObject != nullptr)
 	{
-		ImGui::SetNextWindowPos(ImVec2(930, 10), ImGuiCond_FirstUseEver);
-		ImGui::Begin("Object Movement Window", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+		static ImVec2 windowPos = ImVec2(1582, 12);
+		static string windowName = "Object Movement Window";
+
+		m_originalWindowPositions.try_emplace(windowName, windowPos);
+
+		ImGui::SetNextWindowPos(windowPos, ImGuiCond_FirstUseEver);
+		ImGui::Begin(windowName.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove);
 
 		ImGui::Text("Manipulate object:");
 		ImGui::Text("Selected Object: %s", m_selectedObject->GetObjectName().c_str());
@@ -265,8 +294,13 @@ void ImGuiRendering::DrawUpdateObjectMaterialBufferWindow(ID3D11DeviceContext* p
 	{
 		if (m_selectedObject->GetPixelShader() == m_currentScene->GetPixelShader("Solid Pixel Shader") || m_selectedObject->GetPixelShader() == m_currentScene->GetPixelShader("Texture UnLit Pixel Shader")) return;
 
-		ImGui::SetNextWindowPos(ImVec2(930, 400), ImGuiCond_FirstUseEver);
-		ImGui::Begin("Object Material Buffer Window", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+		static ImVec2 windowPos = ImVec2(1582, 341);
+		static string windowName = "Object Material Buffer Window";
+
+		m_originalWindowPositions.try_emplace(windowName, windowPos);
+
+		ImGui::SetNextWindowPos(windowPos, ImGuiCond_FirstUseEver);
+		ImGui::Begin(windowName.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove);
 
 		MaterialPropertiesConstantBuffer currentMaterialBuffer = m_selectedObject->GetMaterialConstantBufferData();
 
@@ -350,15 +384,26 @@ void ImGuiRendering::DrawObjectGimzo()
 
 	if (m_selectedObject != nullptr)
 	{
-		ImGui::SetNextWindowPos(ImVec2(680, 10), ImGuiCond_FirstUseEver);
-		ImGui::Begin("Object Gizmo Type Window", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+		static ImVec2 windowPos = ImVec2(1336, 13);
+		static string windowName = "Object Gizmo Type Window";
+
+		m_originalWindowPositions.try_emplace(windowName, windowPos);
+
+		ImGui::SetNextWindowPos(windowPos, ImGuiCond_FirstUseEver);
+		ImGui::Begin(windowName.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove);
 
 		ImGuizmo::SetOrthographic(false);
 
 		// THE ANSWER!!!!
-		ImGuizmo::SetDrawlist(ImGui::GetBackgroundDrawList());
+		ImGuiViewport* viewport = ImGui::GetMainViewport();
 
-		ImGuizmo::SetRect(0, 0, ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y);
+		ImGuizmo::SetDrawlist(ImGui::GetBackgroundDrawList(viewport));
+		ImGuizmo::SetRect(
+			viewport->Pos.x,
+			viewport->Pos.y,
+			viewport->Size.x,
+			viewport->Size.y
+		);
 
 		XMFLOAT4X4 object4x4 = *m_selectedObject->GetTransform();
 		XMMATRIX objectMatrix = XMLoadFloat4x4(&object4x4);
@@ -386,7 +431,6 @@ void ImGuiRendering::DrawObjectGimzo()
 			XMMATRIX newObjectMatrix = XMLoadFloat4x4(reinterpret_cast<XMFLOAT4X4*>(objMat));
 			m_selectedObject->SetTransform(newObjectMatrix);
 		}
-
 		ImGui::End();
 	}
 
@@ -394,8 +438,18 @@ void ImGuiRendering::DrawObjectGimzo()
 	{
 		ImGuizmo::SetOrthographic(false);
 		// THE ANSWER!!!!
-		ImGuizmo::SetDrawlist(ImGui::GetBackgroundDrawList());
-		ImGuizmo::SetRect(0, 0, ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y);
+		//ImGui::SetNextWindowViewport(ImGui::GetMainViewport()->ID);
+
+		ImGuiViewport* viewport = ImGui::GetMainViewport();
+
+		ImGuizmo::SetDrawlist(ImGui::GetBackgroundDrawList(viewport));
+		ImGuizmo::SetRect(
+			viewport->Pos.x,
+			viewport->Pos.y,
+			viewport->Size.x,
+			viewport->Size.y
+		);
+
 		XMFLOAT4X4 light4x4;
 		XMStoreFloat4x4(&light4x4, XMMatrixTranslation(m_selectedLight->Position.x, m_selectedLight->Position.y, m_selectedLight->Position.z));
 		XMMATRIX lightMatrix = XMLoadFloat4x4(&light4x4);
@@ -424,9 +478,13 @@ void ImGuiRendering::DrawObjectGimzo()
 
 void ImGuiRendering::DrawObjectSelectionWindow()
 {
-	ImGui::SetNextWindowPos(ImVec2(465, 10), ImGuiCond_FirstUseEver);
+	static ImVec2 windowPos = ImVec2(948, 3);
+	static string windowName = "Object Selection";
 
-	ImGui::Begin("Object Selection", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+	m_originalWindowPositions.try_emplace(windowName, windowPos);
+
+	ImGui::SetNextWindowPos(windowPos, ImGuiCond_FirstUseEver);
+	ImGui::Begin(windowName.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove);
 
 	ImGui::Text("Choose an object to select!");
 	ImGui::Separator();
@@ -448,7 +506,6 @@ void ImGuiRendering::DrawObjectSelectionWindow()
 			}
 		}
 	}
-
 	ImGui::End();
 }
 
@@ -456,8 +513,14 @@ void ImGuiRendering::DrawPixelShaderSelectionWindow()
 {
 	if (m_selectedObject != nullptr)
 	{
-		ImGui::SetNextWindowPos(ImVec2(10, 150), ImGuiCond_FirstUseEver);
-		ImGui::Begin("Pixel Shader Selection", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+		static ImVec2 windowPos = ImVec2(13, 230);
+		static string windowName = "Pixel Shader Selection";
+
+		m_originalWindowPositions.try_emplace(windowName, windowPos);
+
+		ImGui::SetNextWindowPos(windowPos, ImGuiCond_FirstUseEver);
+		ImGui::Begin(windowName.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove);
+
 		ImGui::Text("Select Pixel Shader for Each Object!");
 		ImGui::Separator();
 		ImGui::Text("Selected Object: %s", m_selectedObject->GetObjectName().c_str());
@@ -485,8 +548,14 @@ void ImGuiRendering::DrawTextureSelectionWindow(ID3D11DeviceContext* pContext)
 {
 	if (m_selectedObject != nullptr)
 	{
-		ImGui::SetNextWindowPos(ImVec2(10, 295), ImGuiCond_FirstUseEver);
-		ImGui::Begin("Texture Selection", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+		static ImVec2 windowPos = ImVec2(14, 381);
+		static string windowName = "Texture Selection";
+
+		m_originalWindowPositions.try_emplace(windowName, windowPos);
+
+		ImGui::SetNextWindowPos(windowPos, ImGuiCond_FirstUseEver);
+		ImGui::Begin(windowName.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove);
+
 		ImGui::Text("Select a Texture for Each Object!");
 		ImGui::Separator();
 		ImGui::Text("Selected Object: %s", m_selectedObject->GetObjectName().c_str());
@@ -523,7 +592,6 @@ void ImGuiRendering::DrawTextureSelectionWindow(ID3D11DeviceContext* pContext)
 				m_selectedObject->SetTextureResourceView(shaderPair.second);
 			}
 		}
-
 		ImGui::End();
 	}
 }
@@ -532,8 +600,14 @@ void ImGuiRendering::DrawMeshSelectionWindow()
 {
 	if (m_selectedObject != nullptr)
 	{
-		ImGui::SetNextWindowPos(ImVec2(270, 295), ImGuiCond_FirstUseEver);
-		ImGui::Begin("Mesh/Model Selection", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+		static ImVec2 windowPos = ImVec2(1666, 593);
+		static string windowName = "Mesh/Model Selection";
+
+		m_originalWindowPositions.try_emplace(windowName, windowPos);
+
+		ImGui::SetNextWindowPos(windowPos, ImGuiCond_FirstUseEver);
+		ImGui::Begin(windowName.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove);
+
 		ImGui::Text("Select a Mesh for Each Object!");
 		ImGui::Separator();
 		ImGui::Text("Selected Object: %s", m_selectedObject->GetObjectName().c_str());
@@ -561,8 +635,14 @@ void ImGuiRendering::DrawNormalMapSelectionWindow(ID3D11DeviceContext* pContext)
 {
 	if (m_selectedObject != nullptr)
 	{
-		ImGui::SetNextWindowPos(ImVec2(10, 550), ImGuiCond_FirstUseEver);
-		ImGui::Begin("Normal Map Selection", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+		static ImVec2 windowPos = ImVec2(14, 631);
+		static string windowName = "Normal Map Selection";
+
+		m_originalWindowPositions.try_emplace(windowName, windowPos);
+
+		ImGui::SetNextWindowPos(windowPos, ImGuiCond_FirstUseEver);
+		ImGui::Begin(windowName.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove);
+
 		ImGui::Text("Select a Normal Map for Each Object!");
 		ImGui::Separator();
 		ImGui::Text("Selected Object: %s", m_selectedObject->GetObjectName().c_str());
@@ -602,8 +682,14 @@ void ImGuiRendering::DrawNormalMapSelectionWindow(ID3D11DeviceContext* pContext)
 void ImGuiRendering::DrawCameraStatsWindow()
 {
 	XMFLOAT3 cameraPosition = m_currentScene->GetCamera()->GetPosition();
-	ImGui::SetNextWindowPos(ImVec2(300, 505), ImGuiCond_FirstUseEver);
-	ImGui::Begin("Camera Statistics", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+	static ImVec2 windowPos = ImVec2(342, 687);
+	static string windowName = "Camera Statistics";
+
+	m_originalWindowPositions.try_emplace(windowName, windowPos);
+
+	ImGui::SetNextWindowPos(windowPos, ImGuiCond_FirstUseEver);
+	ImGui::Begin(windowName.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove);
+
 	ImGui::Separator();
 	ImGui::Text("Camera Position: X - %.3f", cameraPosition.x);
 	ImGui::Text("Camera Position: Y - %.3f", cameraPosition.y);
@@ -629,8 +715,13 @@ void ImGuiRendering::DrawCameraStatsWindow()
 
 void ImGuiRendering::DrawCameraSplineWindow()
 {
-	ImGui::SetNextWindowPos(ImVec2(800, 300), ImGuiCond_FirstUseEver);
-	ImGui::Begin("Camera Spline Animation", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+	static ImVec2 windowPos = ImVec2(705, 628);
+	static std::string windowName = "Camera Spline Animation";
+
+	m_originalWindowPositions.try_emplace(windowName, windowPos);
+
+	ImGui::SetNextWindowPos(windowPos, ImGuiCond_FirstUseEver);
+	ImGui::Begin(windowName.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove);
 
 	ImGui::Checkbox("Start / Stop Camera Animation", &m_currentScene->m_playCameraSplineAnimation);
 	ImGui::Separator();
@@ -681,8 +772,7 @@ void ImGuiRendering::CompleteIMGUIDraw()
 {
 	ImGui::Render();
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-	ImGuiIO& io = ImGui::GetIO();
-	io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+
 	if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
 	{
 		ImGui::UpdatePlatformWindows();

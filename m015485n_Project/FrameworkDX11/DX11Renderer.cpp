@@ -832,6 +832,7 @@ void DX11Renderer::CentreMouseInWindow(HWND hWnd)
 void DX11Renderer::Update(const float deltaTime)
 {
 	UpdateKeyInputs();
+	m_imguiRenderer->ResetAllWindowsPositions();
 
 	// ----- FPS calculation -----
 	static float timer = 0;

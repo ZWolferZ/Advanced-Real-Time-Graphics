@@ -6,6 +6,8 @@
 #include "structures.h"
 #include <string>
 #include <d3d11_1.h>
+#include <unordered_map>
+
 #include "Scene.h"
 
 class ImGuiRendering
@@ -16,6 +18,8 @@ public:
 	void ShutDownImGui();
 
 	void ImGuiDrawAllWindows(const unsigned int FPS, float totalAppTime, Scene* currentScene, ID3D11DeviceContext* pContext);
+
+	void	ResetAllWindowsPositions();
 
 	bool VSyncEnabled = true;
 
@@ -30,19 +34,17 @@ private:
 	void	DrawObjectSelectionWindow();
 	void	DrawPixelShaderSelectionWindow();
 	void	DrawTextureSelectionWindow(ID3D11DeviceContext* pContext);
-	void DrawMeshSelectionWindow();
+	void	DrawMeshSelectionWindow();
 	void	DrawNormalMapSelectionWindow(ID3D11DeviceContext* pContext);
 	void	DrawCameraStatsWindow();
 	void    DrawCameraSplineWindow();
 	void	StartIMGUIDraw();
 	void	CompleteIMGUIDraw();
-
+	unordered_map<std::string, ImVec2> m_originalWindowPositions;
 	bool showWindows = false;
 	bool showCameraSplineWindow = false;
 	Scene* m_currentScene = nullptr;
 	GameObject* m_selectedObject = nullptr;
 	Light* m_selectedLight = nullptr;
 	int lightIndex = 0;
-
-
 };
