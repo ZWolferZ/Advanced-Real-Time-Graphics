@@ -35,7 +35,6 @@ struct SCREEN_VERTEX
 	XMFLOAT2 tex;
 };
 
-
 inline void CalculateTangentBinormal(SimpleVertex v0, SimpleVertex v1, SimpleVertex v2, XMFLOAT3& normal, XMFLOAT3& tangent, XMFLOAT3& binormal)
 {
 	XMVECTOR vv0 = XMLoadFloat3(&v0.Pos);

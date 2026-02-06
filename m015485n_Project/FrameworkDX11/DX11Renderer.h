@@ -33,6 +33,49 @@ struct ImGuiParameterState
 	int selected_radio;
 };
 
+struct GbufferComponent
+{
+	Microsoft::WRL::ComPtr <ID3D11Texture2D> texture;
+	Microsoft::WRL::ComPtr <ID3D11RenderTargetView> rtv;
+	Microsoft::WRL::ComPtr <ID3D11ShaderResourceView> srv;
+
+	void Reset()
+	{
+		texture.Reset();
+		rtv.Reset();
+		srv.Reset();
+	}
+};
+
+struct GBufferDepthComponent
+{
+	Microsoft::WRL::ComPtr <ID3D11Texture2D>		m_pDepthStencil;
+	Microsoft::WRL::ComPtr <ID3D11DepthStencilView> m_pDepthStencilView;
+	Microsoft::WRL::ComPtr <ID3D11ShaderResourceView> srv;
+
+	void Reset()
+	{
+		m_pDepthStencilView.Reset();
+		m_pDepthStencil.Reset();
+		srv.Reset();
+	}
+};
+
+struct GBuffer
+{
+	GbufferComponent albedo;
+	GbufferComponent normals;
+	GbufferComponent worldPos;
+	GBufferDepthComponent depth;
+
+	void Reset()
+	{
+		albedo.Reset();
+		normals.Reset();
+		depth.Reset();
+	}
+};
+
 class DX11Renderer
 {
 public:
@@ -92,13 +135,14 @@ private: // properties
 	Microsoft::WRL::ComPtr <IDXGISwapChain>			m_pSwapChain;
 	Microsoft::WRL::ComPtr <IDXGISwapChain1>		m_pSwapChain1;
 
-	Microsoft::WRL::ComPtr <ID3D11Texture2D>		m_pDepthStencil;
-	Microsoft::WRL::ComPtr <ID3D11DepthStencilView> m_pDepthStencilView;
+	GBuffer m_gBuffer;
 
 	Microsoft::WRL::ComPtr <ID3D11VertexShader>		m_pVertexShader;
 	Microsoft::WRL::ComPtr <ID3D11PixelShader>		m_pPixelShader;
 	Microsoft::WRL::ComPtr <ID3D11PixelShader>		m_pSolidPixelShader;
 	Microsoft::WRL::ComPtr <ID3D11PixelShader>		m_pTextureUnLitPixelShader;
+	Microsoft::WRL::ComPtr <ID3D11PixelShader>	m_WriteGBuffer;
+
 	Microsoft::WRL::ComPtr <ID3D11InputLayout>		m_pVertexLayout;
 
 	Microsoft::WRL::ComPtr <ID3D11RenderTargetView> m_PresentedRenderTargetView;

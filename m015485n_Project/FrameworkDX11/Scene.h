@@ -37,7 +37,7 @@ public:
 	Camera* GetCamera() { return m_pCamera; }
 
 	void		Update(const float deltaTime);
-	void		Draw(int renderPass);
+	void		Draw();
 
 	void PushBackPixelShaders(string name, Microsoft::WRL::ComPtr <ID3D11PixelShader>& pixelShader) { m_pixelShadersMap.push_back({ name, pixelShader }); }
 	MeshData GetModelData(const string& modelToFind);
@@ -67,15 +67,17 @@ XMVectorSet(0.0f,  0.0f, 5.0f, 0.0f),
 XMVectorSet(5.0f,  0.0f, 5.0f, 0.0f),
 XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f)   // Final velocity
 	};
+	Microsoft::WRL::ComPtr <ID3D11Buffer>			m_pConstantBuffer;
+
 private:
 	Camera* m_pCamera;
 
 	Microsoft::WRL::ComPtr <ID3D11Device>			m_pd3dDevice;
 	Microsoft::WRL::ComPtr <ID3D11DeviceContext>	m_pImmediateContext;
-	Microsoft::WRL::ComPtr <ID3D11Buffer>			m_pConstantBuffer;
 	Microsoft::WRL::ComPtr <ID3D11Buffer>			m_pLightConstantBuffer;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> m_lightStructuredBuffer;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_lightSRV;
+
 	std::vector<Light> m_lights;
 	LightPropertiesConstantBuffer m_lightProperties;
 };

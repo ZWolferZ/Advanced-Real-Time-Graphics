@@ -9,8 +9,12 @@ cbuffer ConstantBuffer : register(b0)
     float4 vOutputColor;
 };
 
+
 Texture2D txDiffuse : register(t0);
 Texture2D txNormalMap : register(t1);
+Texture2D NormalBuffer : register(t2);
+Texture2D DepthBuffer : register(t3);
+Texture2D WorldPosBuffer : register(t4);
 SamplerState samLinear : register(s0);
 
 // Light types.
@@ -91,6 +95,12 @@ struct PS_INPUT
     float3 EyeWorldSpaceVector : EyeWorldSpaceVector;
     float3 EyeTangentVector : EyeTangentVector;
     float3x3 TBN_Inv : MATRIX;
+};
+
+struct PS_OUTPUT
+{
+    float4 Normal : SV_Target0;
+    float4 WorldPos : SV_Target1;
 };
 
 float3 VectorToTangentSpace(float3 vectorV, float3x3 TBN_Inv)
@@ -351,6 +361,7 @@ PS_INPUT VS(VS_INPUT input)
 
     output.EyeTangentVector = VectorToTangentSpace(vertexToEye, TBN_Inv);
 
+    output.EyeWorldSpaceVector = vertexToEye;
 
     return output;
 
@@ -404,6 +415,35 @@ float4 PS(PS_INPUT IN) : SV_TARGET
 
 
 }
+
+PS_OUTPUT PSWriteGBuffer(PS_INPUT IN) // Depth Buffer is made auto ants
+{
+    PS_OUTPUT output;
+
+    // World-space normal
+    float3 N;
+    if (Material.UseNormalMap)
+    {
+        float3 bump = txNormalMap.Sample(samLinear, IN.Tex).xyz;
+        bump = bump * 2.0f - 1.0f;
+        N = normalize(bump);
+    }
+    else
+    {
+        N = normalize(IN.Norm);
+    }
+
+    output.Normal = float4(N * 0.5f + 0.5f, 1.0f); // pack into 0..1 for storage
+
+    // World position
+    output.WorldPos = IN.worldPos; // full float4(x,y,z,1)
+
+    return output;
+}
+
+
+
+
 float4 PSTextureUnLit(PS_INPUT IN) : SV_TARGET
 {
     float4 finalColor;
@@ -454,11 +494,27 @@ QuadVS_Output QuadVS(QuadVS_Input Input)
     return Output;
 }
 
-float4 QuadPS(QuadVS_Output Input) : SV_TARGET
+float LinearizeDepth(float depth, float nearZ, float farZ)
 {
-    float4 vColor = txDiffuse.Sample(samLinear, Input.Tex);
+    return (nearZ * farZ) / (farZ - depth * (farZ - nearZ));
+}
 
-// do something with the colour… post process?
 
-    return vColor;
+float4 QuadPS(QuadVS_Output IN) : SV_TARGET
+{
+    float2 uv = IN.Tex;
+    float4 worldPos = WorldPosBuffer.Sample(samLinear, uv);
+    return worldPos;
+
+    //float3 normal = NormalBuffer.Sample(samLinear, IN.Tex).xyz;
+    //return float4(normal, 1);
+
+  
+
+    float depth = DepthBuffer.Sample(samLinear, uv).r;
+
+    depth = LinearizeDepth(depth, 0.1f, 100.0f) / 100.0f; // normalize to [0,1] for visualization
+
+    // visualize depth
+    return float4(depth, depth, depth, 1);
 }

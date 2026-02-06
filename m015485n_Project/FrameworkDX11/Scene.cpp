@@ -591,7 +591,7 @@ void Scene::Update(const float deltaTime)
 	}
 }
 
-void Scene::Draw(int renderPass)
+void Scene::Draw()
 {
 	for (unsigned int i = 0; i < m_vecDrawables.size(); i++)
 	{
