@@ -27,7 +27,7 @@ void ImGuiRendering::ShutDownImGui()
 	ImGui::DestroyContext();
 }
 
-void ImGuiRendering::ImGuiDrawAllWindows(const unsigned int FPS, float totalAppTime, Scene* currentScene, ID3D11DeviceContext* pContext)
+void ImGuiRendering::ImGuiDrawAllWindows(const unsigned int FPS, float totalAppTime, Scene* currentScene, ID3D11DeviceContext* pContext, ID3D11ShaderResourceView* depthTexture, ID3D11ShaderResourceView* albedoTexture)
 {
 	m_currentScene = currentScene;
 
@@ -51,6 +51,18 @@ void ImGuiRendering::ImGuiDrawAllWindows(const unsigned int FPS, float totalAppT
 		if (showCameraSplineWindow)DrawCameraSplineWindow();
 
 		DrawObjectGimzo();
+
+		ImGui::Begin("Depth Texture");
+		ImGui::Text("pointer = %p", depthTexture);
+		ImGui::Text("size = %d x %d", 200, 400);
+		ImGui::Image((ImTextureID)(intptr_t)depthTexture, ImVec2(200, 400));
+		ImGui::End();
+
+		ImGui::Begin("Albedo Texture");
+		ImGui::Text("pointer = %p", albedoTexture);
+		ImGui::Text("size = %d x %d", 200, 400);
+		ImGui::Image((ImTextureID)(intptr_t)albedoTexture, ImVec2(200, 400));
+		ImGui::End();
 	}
 
 	CompleteIMGUIDraw();

@@ -1,4 +1,4 @@
-#pragma once
+#pragma onces
 #include <windows.h>
 #include "imgui/imgui_impl_win32.h"
 #include "imgui/imgui_impl_dx11.h"
@@ -17,7 +17,7 @@ public:
 
 	void ShutDownImGui();
 
-	void ImGuiDrawAllWindows(const unsigned int FPS, float totalAppTime, Scene* currentScene, ID3D11DeviceContext* pContext);
+	void ImGuiDrawAllWindows(const unsigned int FPS, float totalAppTime, Scene* currentScene, ID3D11DeviceContext* pContext, ID3D11ShaderResourceView* depthTexture, ID3D11ShaderResourceView* albedoTexture);
 
 	void	ResetAllWindowsPositions();
 

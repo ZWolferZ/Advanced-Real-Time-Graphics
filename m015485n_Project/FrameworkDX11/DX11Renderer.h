@@ -33,6 +33,32 @@ struct ImGuiParameterState
 	int selected_radio;
 };
 
+struct GBufferComponent
+{
+	Microsoft::WRL::ComPtr <ID3D11Texture2D> texture;
+	Microsoft::WRL::ComPtr <ID3D11RenderTargetView> rtv;
+	Microsoft::WRL::ComPtr <ID3D11ShaderResourceView> srv;
+};
+
+struct GBufferDepthComponent
+{
+	Microsoft::WRL::ComPtr <ID3D11Texture2D> texture;
+	Microsoft::WRL::ComPtr <ID3D11DepthStencilView> dsv;
+	Microsoft::WRL::ComPtr <ID3D11ShaderResourceView> srv;
+
+	Microsoft::WRL::ComPtr <ID3D11RenderTargetView> rtv;
+	Microsoft::WRL::ComPtr <ID3D11Texture2D> renderTexture;
+	Microsoft::WRL::ComPtr <ID3D11ShaderResourceView> rendersrv;
+};
+
+struct GBuffer
+{
+	GBufferComponent albedo;
+	GBufferComponent normal;
+	GBufferComponent position;
+	GBufferDepthComponent depth;
+};
+
 class DX11Renderer
 {
 public:
@@ -68,11 +94,10 @@ public:
 
 private: // methods
 	HRESULT InitDevice(HWND hwnd);
+	GBufferComponent CreateGBufferComponent(UINT width, UINT height);
+	GBufferDepthComponent CreateGBufferDepthComponent(UINT width, UINT height);
 	void    CleanupDevice();
-	//void	initIMGUI(HWND hwnd);
-	//void	IMGUIDraw(const unsigned int FPS);
-	//void	startIMGUIDraw();
-	//void	completeIMGUIDraw();
+
 	void	CentreMouseInWindow(HWND hWnd);
 
 private: // properties
@@ -92,9 +117,6 @@ private: // properties
 	Microsoft::WRL::ComPtr <IDXGISwapChain>			m_pSwapChain;
 	Microsoft::WRL::ComPtr <IDXGISwapChain1>		m_pSwapChain1;
 
-	Microsoft::WRL::ComPtr <ID3D11Texture2D>		m_pDepthStencil;
-	Microsoft::WRL::ComPtr <ID3D11DepthStencilView> m_pDepthStencilView;
-
 	Microsoft::WRL::ComPtr <ID3D11VertexShader>		m_pVertexShader;
 	Microsoft::WRL::ComPtr <ID3D11PixelShader>		m_pPixelShader;
 	Microsoft::WRL::ComPtr <ID3D11PixelShader>		m_pSolidPixelShader;
@@ -111,6 +133,8 @@ private: // properties
 	D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
 	Microsoft::WRL::ComPtr <ID3D11ShaderResourceView> g_ShaderResourceView;
 
+	GBuffer m_gBuffer;
+
 	Scene* m_pScene;
 
 	// Full Screen Quad Stuff
@@ -118,5 +142,8 @@ private: // properties
 	Microsoft::WRL::ComPtr <ID3D11InputLayout> g_pQuadLayout = nullptr;
 	Microsoft::WRL::ComPtr <ID3D11VertexShader> g_pQuadVS = nullptr;
 	Microsoft::WRL::ComPtr <ID3D11PixelShader> g_pQuadPS = nullptr;
+	Microsoft::WRL::ComPtr <ID3D11PixelShader> g_pQuadDepthPS = nullptr;
+	Microsoft::WRL::ComPtr <ID3D11PixelShader> g_pQuadAlbedoPS = nullptr;
+
 	Microsoft::WRL::ComPtr < ID3D11SamplerState> m_textureSampler = nullptr;
 };
