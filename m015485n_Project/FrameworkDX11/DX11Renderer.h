@@ -103,13 +103,13 @@ private: // properties
 
 	Microsoft::WRL::ComPtr <ID3D11RenderTargetView> m_PresentedRenderTargetView;
 
-	Microsoft::WRL::ComPtr <ID3D11Texture2D> g_RenderTargetTexture;
+	Microsoft::WRL::ComPtr <ID3D11Texture2D> g_SceneRenderTargetTexture;
 
 	D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
-	Microsoft::WRL::ComPtr <ID3D11RenderTargetView> g_RenderTargetView;
+	Microsoft::WRL::ComPtr <ID3D11RenderTargetView> g_SceneRenderTargetView;
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
-	Microsoft::WRL::ComPtr <ID3D11ShaderResourceView> g_ShaderResourceView;
+	Microsoft::WRL::ComPtr <ID3D11ShaderResourceView> g_SceneShaderResourceView;
 
 	Scene* m_pScene;
 

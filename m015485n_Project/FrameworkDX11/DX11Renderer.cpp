@@ -248,7 +248,7 @@ void DX11Renderer::CreateFullScreenQuad()
 
 void DX11Renderer::DrawFullScreenQuad()
 {
-	m_pImmediateContext->PSSetShaderResources(0, 1, g_ShaderResourceView.GetAddressOf());
+	m_pImmediateContext->PSSetShaderResources(0, 1, g_SceneShaderResourceView.GetAddressOf());
 	m_pImmediateContext->IASetInputLayout(g_pQuadLayout.Get());
 	m_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
@@ -260,7 +260,7 @@ void DX11Renderer::DrawFullScreenQuad()
 	m_pImmediateContext->VSSetShader(g_pQuadVS.Get(), nullptr, 0);
 	m_pImmediateContext->PSSetShader(g_pQuadPS.Get(), nullptr, 0);
 
-	ID3D11ShaderResourceView* srv = g_ShaderResourceView.Get();
+	ID3D11ShaderResourceView* srv = g_SceneShaderResourceView.Get();
 	m_pImmediateContext->PSSetShaderResources(0, 1, &srv);
 
 	ID3D11SamplerState* ss = m_textureSampler.Get();
@@ -458,7 +458,7 @@ HRESULT DX11Renderer::InitDevice(HWND hwnd)
 	textureDesc.CPUAccessFlags = 0;
 	textureDesc.MiscFlags = 0;
 
-	hr = m_pd3dDevice->CreateTexture2D(&textureDesc, NULL, &g_RenderTargetTexture);
+	hr = m_pd3dDevice->CreateTexture2D(&textureDesc, NULL, &g_SceneRenderTargetTexture);
 	if (FAILED(hr))
 	{
 		MessageBox(nullptr,
@@ -469,7 +469,7 @@ HRESULT DX11Renderer::InitDevice(HWND hwnd)
 	renderTargetViewDesc.Format = textureDesc.Format;
 	renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
 	renderTargetViewDesc.Texture2D.MipSlice = 0;
-	hr = m_pd3dDevice->CreateRenderTargetView(g_RenderTargetTexture.Get(), &renderTargetViewDesc, g_RenderTargetView.GetAddressOf());
+	hr = m_pd3dDevice->CreateRenderTargetView(g_SceneRenderTargetTexture.Get(), &renderTargetViewDesc, g_SceneRenderTargetView.GetAddressOf());
 	if (FAILED(hr))
 	{
 		MessageBox(nullptr,
@@ -482,7 +482,7 @@ HRESULT DX11Renderer::InitDevice(HWND hwnd)
 	shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
 	shaderResourceViewDesc.Texture2D.MipLevels = 1;
 
-	hr = m_pd3dDevice->CreateShaderResourceView(g_RenderTargetTexture.Get(), &shaderResourceViewDesc, g_ShaderResourceView.GetAddressOf());
+	hr = m_pd3dDevice->CreateShaderResourceView(g_SceneRenderTargetTexture.Get(), &shaderResourceViewDesc, g_SceneShaderResourceView.GetAddressOf());
 	if (FAILED(hr))
 	{
 		MessageBox(nullptr,
@@ -744,9 +744,9 @@ void DX11Renderer::OnResize(UINT width, UINT height)
 	m_pDepthStencilView.Reset();
 	m_pDepthStencil.Reset();
 
-	g_RenderTargetView.Reset();
-	g_RenderTargetTexture.Reset();
-	g_ShaderResourceView.Reset();
+	g_SceneRenderTargetView.Reset();
+	g_SceneRenderTargetTexture.Reset();
+	g_SceneShaderResourceView.Reset();
 
 	// Resize swap chain buffers
 	HRESULT hr = m_pSwapChain->ResizeBuffers(
@@ -794,9 +794,9 @@ void DX11Renderer::OnResize(UINT width, UINT height)
 	rtDesc.SampleDesc.Count = 1;
 	rtDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 
-	m_pd3dDevice->CreateTexture2D(&rtDesc, nullptr, &g_RenderTargetTexture);
-	m_pd3dDevice->CreateRenderTargetView(g_RenderTargetTexture.Get(), nullptr, &g_RenderTargetView);
-	m_pd3dDevice->CreateShaderResourceView(g_RenderTargetTexture.Get(), nullptr, &g_ShaderResourceView);
+	m_pd3dDevice->CreateTexture2D(&rtDesc, nullptr, &g_SceneRenderTargetTexture);
+	m_pd3dDevice->CreateRenderTargetView(g_SceneRenderTargetTexture.Get(), nullptr, &g_SceneRenderTargetView);
+	m_pd3dDevice->CreateShaderResourceView(g_SceneRenderTargetTexture.Get(), nullptr, &g_SceneShaderResourceView);
 
 	// Set viewport
 	D3D11_VIEWPORT vp{};
@@ -849,8 +849,8 @@ void DX11Renderer::Update(const float deltaTime)
 
 	float clearColor[4] = { 0.f, 0.f, 0.f, 1.f };
 
-	m_pImmediateContext->OMSetRenderTargets(1, g_RenderTargetView.GetAddressOf(), m_pDepthStencilView.Get());
-	m_pImmediateContext->ClearRenderTargetView(g_RenderTargetView.Get(), clearColor);
+	m_pImmediateContext->OMSetRenderTargets(1, g_SceneRenderTargetView.GetAddressOf(), m_pDepthStencilView.Get());
+	m_pImmediateContext->ClearRenderTargetView(g_SceneRenderTargetView.Get(), clearColor);
 	m_pImmediateContext->ClearDepthStencilView(m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 
 	m_pScene->Update(deltaTime);

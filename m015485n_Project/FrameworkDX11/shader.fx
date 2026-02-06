@@ -363,34 +363,41 @@ PS_INPUT VS(VS_INPUT input)
 
 float4 PS(PS_INPUT IN) : SV_TARGET
 {
+    float4 texColor = float4(1, 1, 1, 1);
+
+
+    if (Material.UseTexture)
+    {
+        texColor = txDiffuse.Sample(samLinear, IN.Tex);
+        if (texColor.a < 0.1f)
+        {
+            discard;
+        }
+    }
+
+
     LightingResult lit;
-    
+
     if (Material.UseNormalMap)
     {
         float4 bumpMap = txNormalMap.Sample(samLinear, IN.Tex);
         bumpMap = (bumpMap * 2.0f) - 1.0f;
         bumpMap = float4(normalize(bumpMap.xyz), 1);
-        lit = ComputeLightingNormalMap(IN.worldPos, bumpMap.xyz,  normalize(IN.EyeTangentVector),IN.TBN_Inv);
+        lit = ComputeLightingNormalMap(IN.worldPos, bumpMap.xyz, normalize(IN.EyeTangentVector), IN.TBN_Inv);
     }
     else
     {
-        lit = ComputeLightingNoNormalMap(IN.worldPos, normalize(IN.Norm),  normalize(IN.EyeWorldSpaceVector));
+        lit = ComputeLightingNoNormalMap(IN.worldPos, normalize(IN.Norm), normalize(IN.EyeWorldSpaceVector));
     }
 
 
-    float4 texColor = float4(1, 1, 1, 1);
 
     float4 emissive = Material.Emissive;
     float4 ambient = Material.Ambient * GlobalAmbient;
     float4 diffuse = Material.Diffuse * lit.Diffuse;
     float4 specular = Material.Specular * lit.Specular;
-    
-    float4 finalColor = emissive + ambient + diffuse + specular;
-    if (Material.UseTexture)
-    {
-    	texColor = txDiffuse.Sample(samLinear, IN.Tex);
-        finalColor *= texColor;
-    }
+    float4 finalColor = (emissive + ambient + diffuse + specular) * texColor;
+
 
 
     return finalColor;
@@ -414,6 +421,7 @@ float4 PSTextureUnLit(PS_INPUT IN) : SV_TARGET
 
 
 }
+
 
 //--------------------------------------------------------------------------------------
 // PSSolid - render a solid color
