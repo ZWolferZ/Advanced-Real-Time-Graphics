@@ -31,7 +31,7 @@ public:
 	virtual ~IRenderable();
 
 	virtual void	Update(const float deltaTime, ID3D11DeviceContext* pContext);
-	virtual void	Draw(ID3D11DeviceContext* pContext, Camera* camera, ID3D11Buffer* m_pConstantBuffer);
+	virtual void	Draw(ID3D11DeviceContext* pContext, Camera* camera, ID3D11Buffer* m_pConstantBuffer, bool skybox);
 	virtual void	Cleanup();
 
 	const ID3D11Buffer* GetVertexBuffer() const { return m_meshData.VertexBuffer.Get(); }

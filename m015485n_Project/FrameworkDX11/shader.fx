@@ -15,6 +15,9 @@ Texture2D txNormalMap : register(t1);
 Texture2D NormalBuffer : register(t2);
 Texture2D DepthBuffer : register(t3);
 Texture2D WorldPosBuffer : register(t4);
+Texture2D AlbedoBuffer : register(t5);
+Texture2D LightAccBuffer : register(t6);
+Texture2D DepthTex : register(t7);
 SamplerState samLinear : register(s0);
 
 // Light types.
@@ -63,7 +66,7 @@ struct Light
 //----------------------------------- (16 byte boundary)
 }; // Total: // 80 bytes (5 * 16)
 
-cbuffer LightProperties : register(b2)
+cbuffer LightProperties : register(b9)
 {
     float4 EyePosition; // 16 bytes
 //----------------------------------- (16 byte boundary)
@@ -73,7 +76,7 @@ cbuffer LightProperties : register(b2)
     float3 _Padding; // align to 16 bytes
 };
 
-StructuredBuffer<Light> Lights : register(t2); // Put the lights in a structured buffer so I can make them at runtime.
+StructuredBuffer<Light> Lights : register(t9); // Put the lights in a structured buffer so I can make them at runtime.
 
 //--------------------------------------------------------------------------------------
 struct VS_INPUT
@@ -102,6 +105,8 @@ struct PS_OUTPUT
     float4 Normal : SV_Target0;
     float4 WorldPos : SV_Target1;
 };
+
+
 
 float3 VectorToTangentSpace(float3 vectorV, float3x3 TBN_Inv)
 {
@@ -416,27 +421,58 @@ float4 PS(PS_INPUT IN) : SV_TARGET
 
 }
 
-PS_OUTPUT PSWriteGBuffer(PS_INPUT IN) // Depth Buffer is made auto ants
-{
-    PS_OUTPUT output;
 
-    // World-space normal
-    float3 N;
-    if (Material.UseNormalMap)
+
+
+float4 PSWriteAlbedoBuffer(PS_INPUT IN) : SV_TARGET
+{
+
+    float4 texColor;
+    if (Material.UseTexture)
     {
-        float3 bump = txNormalMap.Sample(samLinear, IN.Tex).xyz;
-        bump = bump * 2.0f - 1.0f;
-        N = normalize(bump);
+        texColor = txDiffuse.Sample(samLinear, IN.Tex);
+        if (texColor.a < 0.1f)
+        {
+            discard;
+        }
     }
     else
     {
-        N = normalize(IN.Norm);
+        texColor = Material.Diffuse;
     }
 
-    output.Normal = float4(N * 0.5f + 0.5f, 1.0f); // pack into 0..1 for storage
 
-    // World position
-    output.WorldPos = IN.worldPos; // full float4(x,y,z,1)
+    return texColor;
+}
+
+
+float LinearizeDepth(float depth, float nearZ, float farZ)
+{
+    return (nearZ * farZ) / (farZ - depth * (farZ - nearZ));
+}
+
+PS_OUTPUT PSWriteGBuffer(PS_INPUT IN)
+{
+    PS_OUTPUT output;
+
+    float3 N_ws;
+
+    if (Material.UseNormalMap)
+    {
+        float3 bumpTS = txNormalMap.Sample(samLinear, IN.Tex).xyz * 2.0f - 1.0f;
+
+        N_ws = normalize(mul(bumpTS, transpose(IN.TBN_Inv)));
+    }
+    else
+    {
+        N_ws = normalize(IN.Norm);
+    }
+
+
+
+    output.Normal = float4(N_ws * 0.5f + 0.5f, 1.0f);
+    output.WorldPos = IN.worldPos;
+
 
     return output;
 }
@@ -485,6 +521,8 @@ struct QuadVS_Output
     float2 Tex : TEXCOORD0;
 };
 
+
+
 QuadVS_Output QuadVS(QuadVS_Input Input)
 {
     // no mvp transform - model coordinates already in projection space (-1 to 1)
@@ -494,27 +532,89 @@ QuadVS_Output QuadVS(QuadVS_Input Input)
     return Output;
 }
 
-float LinearizeDepth(float depth, float nearZ, float farZ)
-{
-    return (nearZ * farZ) / (farZ - depth * (farZ - nearZ));
-}
+
+
 
 
 float4 QuadPS(QuadVS_Output IN) : SV_TARGET
 {
     float2 uv = IN.Tex;
+
+
+
+
+    float4 light = LightAccBuffer.Sample(samLinear, uv);
+
+
+
+
+    float4 albedo = AlbedoBuffer.Sample(samLinear, uv);
+    return  albedo * light;
+
     float4 worldPos = WorldPosBuffer.Sample(samLinear, uv);
     return worldPos;
 
     //float3 normal = NormalBuffer.Sample(samLinear, IN.Tex).xyz;
     //return float4(normal, 1);
 
-  
 
-    float depth = DepthBuffer.Sample(samLinear, uv).r;
 
-    depth = LinearizeDepth(depth, 0.1f, 100.0f) / 100.0f; // normalize to [0,1] for visualization
 
-    // visualize depth
+}
+
+float4 PS_VisualiseDepth(QuadVS_Output IN) : SV_Target
+{
+    float depth = DepthBuffer.Sample(samLinear, IN.Tex).r;
+    depth = LinearizeDepth(depth, 0.1f, 100.0f) / 100.0f;
     return float4(depth, depth, depth, 1);
 }
+
+
+float4 PS_DeferredLighting(QuadVS_Output IN) : SV_TARGET
+{
+    float3 N = NormalBuffer.Sample(samLinear, IN.Tex).xyz * 2.0f - 1.0f;
+    float3 worldPos = WorldPosBuffer.Sample(samLinear, IN.Tex).xyz;
+
+
+    float3 diffuseLighting = float3(0.03f, 0.03f, 0.03f);
+
+    for (uint i = 0; i < LightCount; ++i)
+    {
+        if (!Lights[i].Enabled)
+            continue;
+
+        float3 lightDir;
+        float attenuation = 1.0f;
+
+        if (Lights[i].LightType == DIRECTIONAL_LIGHT)
+        {
+            lightDir = normalize(-Lights[i].Direction.xyz);
+        }
+        else
+        {
+            float3 toLight = Lights[i].Position.xyz - worldPos;
+            float distance = length(toLight);
+            lightDir = normalize(toLight);
+
+            attenuation = 1.0f / (Lights[i].ConstantAttenuation + Lights[i].LinearAttenuation * distance + Lights[i].QuadraticAttenuation * distance * distance);
+
+            if (Lights[i].LightType == SPOT_LIGHT)
+            {
+                float3 spotDir = normalize(-Lights[i].Direction.xyz);
+                float spotFactor = dot(lightDir, spotDir);
+                if (spotFactor < Lights[i].SpotAngle)
+                    continue;
+                attenuation *= saturate((spotFactor - Lights[i].SpotAngle) / (1.0f - Lights[i].SpotAngle));
+            }
+        }
+
+        float diff = max(dot(N, lightDir), 0.0f);
+
+        diffuseLighting += Lights[i].Color.rgb * diff * attenuation;
+    }
+
+
+
+    return float4(diffuseLighting, 1.0f);
+}
+

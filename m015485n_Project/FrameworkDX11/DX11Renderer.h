@@ -53,11 +53,18 @@ struct GBufferDepthComponent
 	Microsoft::WRL::ComPtr <ID3D11DepthStencilView> m_pDepthStencilView;
 	Microsoft::WRL::ComPtr <ID3D11ShaderResourceView> srv;
 
+	Microsoft::WRL::ComPtr <ID3D11Texture2D> renderTexture;
+	Microsoft::WRL::ComPtr <ID3D11RenderTargetView> rtv;
+	Microsoft::WRL::ComPtr <ID3D11ShaderResourceView> rendersrv;
+
 	void Reset()
 	{
 		m_pDepthStencilView.Reset();
 		m_pDepthStencil.Reset();
 		srv.Reset();
+		rtv.Reset();
+		rendersrv.Reset();
+		renderTexture.Reset();
 	}
 };
 
@@ -66,6 +73,7 @@ struct GBuffer
 	GbufferComponent albedo;
 	GbufferComponent normals;
 	GbufferComponent worldPos;
+	GbufferComponent lightAccumulation;
 	GBufferDepthComponent depth;
 
 	void Reset()
@@ -73,6 +81,8 @@ struct GBuffer
 		albedo.Reset();
 		normals.Reset();
 		depth.Reset();
+		worldPos.Reset();
+		lightAccumulation.Reset();
 	}
 };
 
@@ -86,7 +96,8 @@ public:
 
 	HRESULT Init(HWND hwnd);
 	void CreateFullScreenQuad();
-	void DrawFullScreenQuad();
+	void DrawFullScreenQuad(bool lightingQuad);
+	void DrawDepthScreenQuad();
 
 	void SetSceneDrawData();
 
@@ -142,6 +153,9 @@ private: // properties
 	Microsoft::WRL::ComPtr <ID3D11PixelShader>		m_pSolidPixelShader;
 	Microsoft::WRL::ComPtr <ID3D11PixelShader>		m_pTextureUnLitPixelShader;
 	Microsoft::WRL::ComPtr <ID3D11PixelShader>	m_WriteGBuffer;
+	Microsoft::WRL::ComPtr <ID3D11PixelShader>	m_WriteAlbedo;
+	Microsoft::WRL::ComPtr <ID3D11PixelShader>	m_LightAccumulationWrite;
+	Microsoft::WRL::ComPtr <ID3D11PixelShader> m_visualiseDepth;
 
 	Microsoft::WRL::ComPtr <ID3D11InputLayout>		m_pVertexLayout;
 

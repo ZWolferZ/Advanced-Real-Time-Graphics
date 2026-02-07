@@ -54,9 +54,9 @@ void IRenderable::Update(const float deltaTime, ID3D11DeviceContext* pContext)
 	XMStoreFloat4x4(&m_world, world);
 }
 
-void IRenderable::Draw(ID3D11DeviceContext* pContext, Camera* camera, ID3D11Buffer* m_pConstantBuffer)
+void IRenderable::Draw(ID3D11DeviceContext* pContext, Camera* camera, ID3D11Buffer* m_pConstantBuffer, bool skybox)
 {
-	//pContext->PSSetShader(m_pixelShader.Get(), nullptr, 0);
+	if (skybox) pContext->PSSetShader(m_pixelShader.Get(), nullptr, 0);
 
 	ConstantBuffer cb;
 	cb.mView = XMMatrixTranspose(camera->GetViewMatrix());

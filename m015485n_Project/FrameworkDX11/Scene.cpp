@@ -532,10 +532,10 @@ void Scene::UpdateLightBuffer()
 
 	// Bind to PS
 	ID3D11Buffer* cb = m_pLightConstantBuffer.Get();
-	m_pImmediateContext->PSSetConstantBuffers(2, 1, &cb);
+	m_pImmediateContext->PSSetConstantBuffers(9, 1, &cb);
 
 	ID3D11ShaderResourceView* srv = m_lightSRV.Get();
-	m_pImmediateContext->PSSetShaderResources(2, 1, &srv);
+	m_pImmediateContext->PSSetShaderResources(9, 1, &srv);
 }
 
 void Scene::AddLight()
@@ -595,6 +595,13 @@ void Scene::Draw()
 {
 	for (unsigned int i = 0; i < m_vecDrawables.size(); i++)
 	{
-		m_vecDrawables[i]->Draw(m_pImmediateContext.Get(), GetCamera(), m_pConstantBuffer.Get());
+		if (m_vecDrawables[i]->GetObjectName() == "Skybox")
+		{
+			m_vecDrawables[i]->Draw(m_pImmediateContext.Get(), GetCamera(), m_pConstantBuffer.Get(), true);
+		}
+		else
+		{
+			m_vecDrawables[i]->Draw(m_pImmediateContext.Get(), GetCamera(), m_pConstantBuffer.Get(), false);
+		}
 	}
 }

@@ -154,6 +154,39 @@ HRESULT DX11Renderer::Init(HWND hwnd)
 	// Create the pixel shader
 	hr = m_pd3dDevice->CreatePixelShader(pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize(), nullptr, &m_WriteGBuffer);
 
+	hr = CompileShaderFromFile(L"shader.fx", "PSWriteAlbedoBuffer", "ps_4_0", &pPSBlob);
+	if (FAILED(hr))
+	{
+		MessageBox(nullptr,
+			L"The FX file cannot be compiled.  Please run this executable from the directory that contains the FX file.", L"Error", MB_OK);
+		return hr;
+	}
+
+	// Create the pixel shader
+	hr = m_pd3dDevice->CreatePixelShader(pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize(), nullptr, &m_WriteAlbedo);
+
+	hr = CompileShaderFromFile(L"shader.fx", "PS_DeferredLighting", "ps_4_0", &pPSBlob);
+	if (FAILED(hr))
+	{
+		MessageBox(nullptr,
+			L"The FX file cannot be compiled.  Please run this executable from the directory that contains the FX file.", L"Error", MB_OK);
+		return hr;
+	}
+
+	// Create the pixel shader
+	hr = m_pd3dDevice->CreatePixelShader(pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize(), nullptr, &m_LightAccumulationWrite);
+
+	hr = CompileShaderFromFile(L"shader.fx", "PS_VisualiseDepth", "ps_4_0", &pPSBlob);
+	if (FAILED(hr))
+	{
+		MessageBox(nullptr,
+			L"The FX file cannot be compiled.  Please run this executable from the directory that contains the FX file.", L"Error", MB_OK);
+		return hr;
+	}
+
+	// Create the pixel shader
+	hr = m_pd3dDevice->CreatePixelShader(pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize(), nullptr, &m_visualiseDepth);
+
 	pPSBlob->Release();
 	if (FAILED(hr))
 		return hr;
@@ -529,6 +562,10 @@ HRESULT DX11Renderer::InitDevice(HWND hwnd)
 
 	hr = m_pd3dDevice->CreateShaderResourceView(m_gBuffer.normals.texture.Get(), nullptr, m_gBuffer.normals.srv.GetAddressOf());
 
+	hr = m_pd3dDevice->CreateTexture2D(&normalDesc, nullptr, m_gBuffer.depth.renderTexture.GetAddressOf());
+	hr = m_pd3dDevice->CreateRenderTargetView(m_gBuffer.depth.renderTexture.Get(), nullptr, m_gBuffer.depth.rtv.GetAddressOf());
+	hr = m_pd3dDevice->CreateShaderResourceView(m_gBuffer.depth.renderTexture.Get(), nullptr, m_gBuffer.depth.rendersrv.GetAddressOf());
+
 	D3D11_TEXTURE2D_DESC descPosition = {};
 	descPosition.Width = width;
 	descPosition.Height = height;
@@ -544,6 +581,37 @@ HRESULT DX11Renderer::InitDevice(HWND hwnd)
 	hr = m_pd3dDevice->CreateRenderTargetView(m_gBuffer.worldPos.texture.Get(), nullptr, m_gBuffer.worldPos.rtv.GetAddressOf());
 
 	hr = m_pd3dDevice->CreateShaderResourceView(m_gBuffer.worldPos.texture.Get(), nullptr, m_gBuffer.worldPos.srv.GetAddressOf());
+
+	D3D11_TEXTURE2D_DESC descAlbedo = {};
+	descAlbedo.Width = width;
+	descAlbedo.Height = height;
+	descAlbedo.MipLevels = 1;
+	descAlbedo.ArraySize = 1;
+	descAlbedo.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	descAlbedo.SampleDesc.Count = 1;
+	descAlbedo.Usage = D3D11_USAGE_DEFAULT;
+	descAlbedo.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	descAlbedo.CPUAccessFlags = 0;
+
+	hr = m_pd3dDevice->CreateTexture2D(&descAlbedo, nullptr, m_gBuffer.albedo.texture.GetAddressOf());
+	hr = m_pd3dDevice->CreateRenderTargetView(m_gBuffer.albedo.texture.Get(), nullptr, m_gBuffer.albedo.rtv.GetAddressOf());
+	hr = m_pd3dDevice->CreateShaderResourceView(m_gBuffer.albedo.texture.Get(), nullptr, m_gBuffer.albedo.srv.GetAddressOf());
+
+	// Light accumulation texture
+	D3D11_TEXTURE2D_DESC desc = {};
+	desc.Width = width;
+	desc.Height = height;
+	desc.MipLevels = 1;
+	desc.ArraySize = 1;
+	desc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	desc.SampleDesc.Count = 1;
+	desc.Usage = D3D11_USAGE_DEFAULT;
+	desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	desc.CPUAccessFlags = 0;
+
+	hr = m_pd3dDevice->CreateTexture2D(&desc, nullptr, m_gBuffer.lightAccumulation.texture.GetAddressOf());
+	hr = m_pd3dDevice->CreateRenderTargetView(m_gBuffer.lightAccumulation.texture.Get(), nullptr, m_gBuffer.lightAccumulation.rtv.GetAddressOf());
+	hr = m_pd3dDevice->CreateShaderResourceView(m_gBuffer.lightAccumulation.texture.Get(), nullptr, m_gBuffer.lightAccumulation.srv.GetAddressOf());
 
 	// Get the raw pointer.
 	ID3D11RenderTargetView* rtv = m_PresentedRenderTargetView.Get();
@@ -789,38 +857,173 @@ void DX11Renderer::OnResize(UINT width, UINT height)
 		&m_PresentedRenderTargetView
 	);
 
-	// Recreate depth buffer
-	D3D11_TEXTURE2D_DESC depthDesc = {};
-	depthDesc.Width = width;
-	depthDesc.Height = height;
-	depthDesc.MipLevels = 1;
-	depthDesc.ArraySize = 1;
-	depthDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	depthDesc.SampleDesc.Count = 1;
-	depthDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+	D3D11_TEXTURE2D_DESC textureDesc;
+	ZeroMemory(&textureDesc, sizeof(textureDesc));
 
-	m_pd3dDevice->CreateTexture2D(&depthDesc, nullptr, m_gBuffer.depth.m_pDepthStencil.GetAddressOf());
-	hr = m_pd3dDevice->CreateDepthStencilView(m_gBuffer.depth.m_pDepthStencil.Get(), nullptr, m_gBuffer.depth.m_pDepthStencilView.GetAddressOf());
+	textureDesc.Width = width;
+	textureDesc.Height = height;
+	textureDesc.MipLevels = 1;
+	textureDesc.ArraySize = 1;
+	textureDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	textureDesc.SampleDesc.Count = 1;
+	textureDesc.SampleDesc.Quality = 0;
+	textureDesc.Usage = D3D11_USAGE_DEFAULT;
+	textureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	textureDesc.CPUAccessFlags = 0;
+	textureDesc.MiscFlags = 0;
 
-	D3D11_TEXTURE2D_DESC rtDesc = {};
-	rtDesc.Width = width;
-	rtDesc.Height = height;
-	rtDesc.MipLevels = 1;
-	rtDesc.ArraySize = 1;
-	rtDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	rtDesc.SampleDesc.Count = 1;
-	rtDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	hr = m_pd3dDevice->CreateTexture2D(&textureDesc, NULL, &g_SceneRenderTargetTexture);
+	if (FAILED(hr))
+	{
+		MessageBox(nullptr,
+			L"Failed to create a render target Texture 2D.", L"Error", MB_OK);
+	}
 
-	m_pd3dDevice->CreateTexture2D(&rtDesc, nullptr, &g_SceneRenderTargetTexture);
-	m_pd3dDevice->CreateRenderTargetView(g_SceneRenderTargetTexture.Get(), nullptr, &g_SceneRenderTargetView);
-	m_pd3dDevice->CreateShaderResourceView(g_SceneRenderTargetTexture.Get(), nullptr, &g_SceneShaderResourceView);
+	renderTargetViewDesc.Format = textureDesc.Format;
+	renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+	renderTargetViewDesc.Texture2D.MipSlice = 0;
+	hr = m_pd3dDevice->CreateRenderTargetView(g_SceneRenderTargetTexture.Get(), &renderTargetViewDesc, g_SceneRenderTargetView.GetAddressOf());
+	if (FAILED(hr))
+	{
+		MessageBox(nullptr,
+			L"Failed to create a render target view", L"Error", MB_OK);
+	}
 
-	// Set viewport
-	D3D11_VIEWPORT vp{};
-	vp.Width = (float)width;
-	vp.Height = (float)height;
+	shaderResourceViewDesc.Format = textureDesc.Format;
+	shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
+	shaderResourceViewDesc.Texture2D.MipLevels = 1;
+
+	hr = m_pd3dDevice->CreateShaderResourceView(g_SceneRenderTargetTexture.Get(), &shaderResourceViewDesc, g_SceneShaderResourceView.GetAddressOf());
+	if (FAILED(hr))
+	{
+		MessageBox(nullptr,
+			L"Failed to create a render target shader resource view", L"Error", MB_OK);
+	}
+
+	// Create depth stencil texture
+	D3D11_TEXTURE2D_DESC descDepth = {};
+	descDepth.Width = width;
+	descDepth.Height = height;
+	descDepth.MipLevels = 1;
+	descDepth.ArraySize = 1;
+	descDepth.Format = DXGI_FORMAT_R24G8_TYPELESS;
+	descDepth.SampleDesc.Count = 1;
+	descDepth.SampleDesc.Quality = 0;
+	descDepth.Usage = D3D11_USAGE_DEFAULT;
+	descDepth.BindFlags = D3D11_BIND_DEPTH_STENCIL |
+		D3D11_BIND_SHADER_RESOURCE;;
+	descDepth.CPUAccessFlags = 0;
+	descDepth.MiscFlags = 0;
+	hr = m_pd3dDevice->CreateTexture2D(&descDepth, nullptr, m_gBuffer.depth.m_pDepthStencil.GetAddressOf());
+	if (FAILED(hr))
+	{
+		MessageBox(nullptr,
+			L"Failed to create a depth / stencil texture.", L"Error", MB_OK);
+	}
+
+	// Create the depth stencil view
+	D3D11_DEPTH_STENCIL_VIEW_DESC descDSV = {};
+	descDSV.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	descDSV.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+	descDSV.Texture2D.MipSlice = 0;
+	hr = m_pd3dDevice->CreateDepthStencilView(m_gBuffer.depth.m_pDepthStencil.Get(), &descDSV, m_gBuffer.depth.m_pDepthStencilView.GetAddressOf());
+	if (FAILED(hr))
+	{
+		MessageBox(nullptr,
+			L"Failed to create a depth / stencil view.", L"Error", MB_OK);
+	}
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC descSRV = {};
+	descSRV.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+	descSRV.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	descSRV.Texture2D.MipLevels = 1;
+	descSRV.Texture2D.MostDetailedMip = 0;
+
+	hr = m_pd3dDevice->CreateShaderResourceView(
+		m_gBuffer.depth.m_pDepthStencil.Get(),
+		&descSRV,
+		m_gBuffer.depth.srv.GetAddressOf()
+	);
+
+	D3D11_TEXTURE2D_DESC normalDesc = {};
+	normalDesc.Width = width;
+	normalDesc.Height = height;
+	normalDesc.MipLevels = 1;
+	normalDesc.ArraySize = 1;
+	normalDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT; // normals
+	normalDesc.SampleDesc.Count = 1;
+	normalDesc.Usage = D3D11_USAGE_DEFAULT;
+	normalDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	hr = m_pd3dDevice->CreateTexture2D(&normalDesc, nullptr, m_gBuffer.normals.texture.GetAddressOf());
+
+	hr = m_pd3dDevice->CreateRenderTargetView(m_gBuffer.normals.texture.Get(), nullptr, m_gBuffer.normals.rtv.GetAddressOf());
+
+	hr = m_pd3dDevice->CreateShaderResourceView(m_gBuffer.normals.texture.Get(), nullptr, m_gBuffer.normals.srv.GetAddressOf());
+
+	hr = m_pd3dDevice->CreateTexture2D(&normalDesc, nullptr, m_gBuffer.depth.renderTexture.GetAddressOf());
+	hr = m_pd3dDevice->CreateRenderTargetView(m_gBuffer.depth.renderTexture.Get(), nullptr, m_gBuffer.depth.rtv.GetAddressOf());
+	hr = m_pd3dDevice->CreateShaderResourceView(m_gBuffer.depth.renderTexture.Get(), nullptr, m_gBuffer.depth.rendersrv.GetAddressOf());
+
+	D3D11_TEXTURE2D_DESC descPosition = {};
+	descPosition.Width = width;
+	descPosition.Height = height;
+	descPosition.MipLevels = 1;
+	descPosition.ArraySize = 1;
+	descPosition.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	descPosition.SampleDesc.Count = 1;
+	descPosition.Usage = D3D11_USAGE_DEFAULT;
+	descPosition.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+
+	hr = m_pd3dDevice->CreateTexture2D(&descPosition, nullptr, m_gBuffer.worldPos.texture.GetAddressOf());
+
+	hr = m_pd3dDevice->CreateRenderTargetView(m_gBuffer.worldPos.texture.Get(), nullptr, m_gBuffer.worldPos.rtv.GetAddressOf());
+
+	hr = m_pd3dDevice->CreateShaderResourceView(m_gBuffer.worldPos.texture.Get(), nullptr, m_gBuffer.worldPos.srv.GetAddressOf());
+
+	D3D11_TEXTURE2D_DESC descAlbedo = {};
+	descAlbedo.Width = width;
+	descAlbedo.Height = height;
+	descAlbedo.MipLevels = 1;
+	descAlbedo.ArraySize = 1;
+	descAlbedo.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	descAlbedo.SampleDesc.Count = 1;
+	descAlbedo.Usage = D3D11_USAGE_DEFAULT;
+	descAlbedo.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	descAlbedo.CPUAccessFlags = 0;
+
+	hr = m_pd3dDevice->CreateTexture2D(&descAlbedo, nullptr, m_gBuffer.albedo.texture.GetAddressOf());
+	hr = m_pd3dDevice->CreateRenderTargetView(m_gBuffer.albedo.texture.Get(), nullptr, m_gBuffer.albedo.rtv.GetAddressOf());
+	hr = m_pd3dDevice->CreateShaderResourceView(m_gBuffer.albedo.texture.Get(), nullptr, m_gBuffer.albedo.srv.GetAddressOf());
+
+	// Light accumulation texture
+	D3D11_TEXTURE2D_DESC desc = {};
+	desc.Width = width;
+	desc.Height = height;
+	desc.MipLevels = 1;
+	desc.ArraySize = 1;
+	desc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	desc.SampleDesc.Count = 1;
+	desc.Usage = D3D11_USAGE_DEFAULT;
+	desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	desc.CPUAccessFlags = 0;
+
+	hr = m_pd3dDevice->CreateTexture2D(&desc, nullptr, m_gBuffer.lightAccumulation.texture.GetAddressOf());
+	hr = m_pd3dDevice->CreateRenderTargetView(m_gBuffer.lightAccumulation.texture.Get(), nullptr, m_gBuffer.lightAccumulation.rtv.GetAddressOf());
+	hr = m_pd3dDevice->CreateShaderResourceView(m_gBuffer.lightAccumulation.texture.Get(), nullptr, m_gBuffer.lightAccumulation.srv.GetAddressOf());
+
+	// Get the raw pointer.
+	ID3D11RenderTargetView* rtv = m_PresentedRenderTargetView.Get();
+	m_pImmediateContext->OMSetRenderTargets(1, &rtv, m_gBuffer.depth.m_pDepthStencilView.Get());
+
+	// Setup the viewport
+	D3D11_VIEWPORT vp;
+	vp.Width = (FLOAT)width;
+	vp.Height = (FLOAT)height;
 	vp.MinDepth = 0.0f;
 	vp.MaxDepth = 1.0f;
+	vp.TopLeftX = 0;
+	vp.TopLeftY = 0;
 	m_pImmediateContext->RSSetViewports(1, &vp);
 
 	// Update camera projection
@@ -846,7 +1049,7 @@ void DX11Renderer::CentreMouseInWindow(HWND hWnd)
 	SetCursorPos(center.x, center.y);
 }
 
-void DX11Renderer::DrawFullScreenQuad()
+void DX11Renderer::DrawFullScreenQuad(bool lightingQuad)
 {
 	m_pImmediateContext->PSSetShaderResources(0, 1, g_SceneShaderResourceView.GetAddressOf());
 	m_pImmediateContext->IASetInputLayout(g_pQuadLayout.Get());
@@ -858,21 +1061,72 @@ void DX11Renderer::DrawFullScreenQuad()
 	m_pImmediateContext->IASetVertexBuffers(0, 1, &vb, &stride, &offset);
 
 	m_pImmediateContext->VSSetShader(g_pQuadVS.Get(), nullptr, 0);
-	m_pImmediateContext->PSSetShader(g_pQuadPS.Get(), nullptr, 0);
-	m_pImmediateContext->PSSetShaderResources(2, 1, m_gBuffer.normals.srv.GetAddressOf());
-	m_pImmediateContext->PSSetShaderResources(3, 1, m_gBuffer.depth.srv.GetAddressOf());
-	m_pImmediateContext->PSSetShaderResources(4, 1, m_gBuffer.worldPos.srv.GetAddressOf());
+	ID3D11SamplerState* ss = m_textureSampler.Get();
+	m_pImmediateContext->PSSetSamplers(0, 1, &ss);
 
+	if (lightingQuad)
+	{
+		m_pImmediateContext->PSSetShader(m_LightAccumulationWrite.Get(), nullptr, 0);
+		m_pImmediateContext->PSSetShaderResources(2, 1, m_gBuffer.normals.srv.GetAddressOf());
+
+		m_pImmediateContext->PSSetShaderResources(4, 1, m_gBuffer.worldPos.srv.GetAddressOf());
+
+		m_pImmediateContext->Draw(4, 0);
+
+		// unbind
+		ID3D11ShaderResourceView* nullSRV = nullptr;
+		m_pImmediateContext->PSSetShaderResources(2, 1, &nullSRV);
+		m_pImmediateContext->PSSetShaderResources(4, 1, &nullSRV);
+	}
+	else
+	{
+		m_pImmediateContext->PSSetShader(g_pQuadPS.Get(), nullptr, 0);
+		m_pImmediateContext->PSSetShaderResources(2, 1, m_gBuffer.normals.srv.GetAddressOf());
+		m_pImmediateContext->PSSetShaderResources(3, 1, m_gBuffer.depth.srv.GetAddressOf());
+		m_pImmediateContext->PSSetShaderResources(4, 1, m_gBuffer.worldPos.srv.GetAddressOf());
+		m_pImmediateContext->PSSetShaderResources(5, 1, m_gBuffer.albedo.srv.GetAddressOf());
+		m_pImmediateContext->PSSetShaderResources(6, 1, m_gBuffer.lightAccumulation.srv.GetAddressOf());
+		m_pImmediateContext->PSSetShaderResources(7, 1, m_gBuffer.depth.rendersrv.GetAddressOf());
+
+		m_pImmediateContext->Draw(4, 0);
+
+		// unbind
+		ID3D11ShaderResourceView* nullSRV = nullptr;
+		m_pImmediateContext->PSSetShaderResources(2, 1, &nullSRV);
+		m_pImmediateContext->PSSetShaderResources(3, 1, &nullSRV);
+		m_pImmediateContext->PSSetShaderResources(4, 1, &nullSRV);
+		m_pImmediateContext->PSSetShaderResources(5, 1, &nullSRV);
+		m_pImmediateContext->PSSetShaderResources(6, 1, &nullSRV);
+		m_pImmediateContext->PSSetShaderResources(7, 1, &nullSRV);
+	}
+}
+
+void DX11Renderer::DrawDepthScreenQuad()
+{
+	m_pImmediateContext->VSSetShader(m_pVertexShader.Get(), nullptr, 0);
+	m_pImmediateContext->PSSetShader(m_visualiseDepth.Get(), nullptr, 0);
+
+	m_pImmediateContext->PSSetShaderResources(3, 1, m_gBuffer.depth.srv.GetAddressOf());
+
+	m_pImmediateContext->OMSetRenderTargets(1, m_gBuffer.depth.rtv.GetAddressOf(), nullptr);
+
+	m_pImmediateContext->PSSetShaderResources(0, 1, g_SceneShaderResourceView.GetAddressOf());
+	m_pImmediateContext->IASetInputLayout(g_pQuadLayout.Get());
+	m_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+
+	UINT stride = sizeof(SCREEN_VERTEX);
+	UINT offset = 0;
+	ID3D11Buffer* vb = g_pScreenQuadVB.Get();
+	m_pImmediateContext->IASetVertexBuffers(0, 1, &vb, &stride, &offset);
+
+	m_pImmediateContext->VSSetShader(g_pQuadVS.Get(), nullptr, 0);
 	ID3D11SamplerState* ss = m_textureSampler.Get();
 	m_pImmediateContext->PSSetSamplers(0, 1, &ss);
 
 	m_pImmediateContext->Draw(4, 0);
 
-	// unbind
-	ID3D11ShaderResourceView* nullSRV = nullptr;
-	m_pImmediateContext->PSSetShaderResources(2, 1, &nullSRV);
-	m_pImmediateContext->PSSetShaderResources(3, 1, &nullSRV);
-	m_pImmediateContext->PSSetShaderResources(4, 1, &nullSRV);
+	ID3D11ShaderResourceView* nullSRV[] = { nullptr };
+	m_pImmediateContext->PSSetShaderResources(3, 1, nullSRV);
 }
 
 void DX11Renderer::SetSceneDrawData()
@@ -907,13 +1161,14 @@ void DX11Renderer::Update(const float deltaTime)
 	ID3D11RenderTargetView* rtvs[] =
 	{
 		m_gBuffer.normals.rtv.Get(),
-		 m_gBuffer.worldPos.rtv.Get()
+		 m_gBuffer.worldPos.rtv.Get(),
+		m_gBuffer.depth.rtv.Get()
 	};
 
-	m_pImmediateContext->OMSetRenderTargets(_countof(rtvs), rtvs, m_gBuffer.depth.m_pDepthStencilView.Get()  // depth
-	);
+	m_pImmediateContext->OMSetRenderTargets(3, rtvs, m_gBuffer.depth.m_pDepthStencilView.Get());
 	m_pImmediateContext->ClearRenderTargetView(m_gBuffer.normals.rtv.Get(), clearColor);
 	m_pImmediateContext->ClearRenderTargetView(m_gBuffer.worldPos.rtv.Get(), clearColor);
+	m_pImmediateContext->ClearRenderTargetView(m_gBuffer.depth.rtv.Get(), clearColor);
 	m_pImmediateContext->ClearDepthStencilView(m_gBuffer.depth.m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 
 	m_pScene->Update(deltaTime);
@@ -923,19 +1178,40 @@ void DX11Renderer::Update(const float deltaTime)
 	m_pScene->Draw();
 
 	m_pImmediateContext->OMSetRenderTargets(0, nullptr, nullptr);
+	//////
+
+	DrawDepthScreenQuad();
+
 	//////////////
 
 	//SECOND PASS TO FILL FULL SCREEN RENDER TARGET WITH LIGHTING
+	m_pImmediateContext->OMSetRenderTargets(1, m_gBuffer.lightAccumulation.rtv.GetAddressOf(), nullptr);
+	m_pImmediateContext->ClearRenderTargetView(m_gBuffer.lightAccumulation.rtv.Get(), clearColor);
 
+	DrawFullScreenQuad(true);
 	//////////////
+	m_pImmediateContext->OMSetRenderTargets(0, nullptr, nullptr);
 
 	// THIRD PASS TO DRAW FULL SCREEN QUAD AND SAMPLE FROM G-BUFFER TO APPLY LIGHTING
 	// Full Screen Quad / Post Processing Pass / Sampling Pass
+
+	m_pImmediateContext->OMSetRenderTargets(1, m_gBuffer.albedo.rtv.GetAddressOf(), m_gBuffer.depth.m_pDepthStencilView.Get());
+	m_pImmediateContext->ClearRenderTargetView(m_gBuffer.albedo.rtv.Get(), clearColor);
+	m_pImmediateContext->ClearDepthStencilView(m_gBuffer.depth.m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+
+	m_pImmediateContext->IASetInputLayout(m_pVertexLayout.Get());;
+	m_pImmediateContext->VSSetShader(m_pVertexShader.Get(), nullptr, 0);
+
+	m_pImmediateContext->PSSetShader(m_WriteAlbedo.Get(), nullptr, 0);
+
+	m_pScene->Draw();
+	m_pImmediateContext->OMSetRenderTargets(0, nullptr, nullptr);
+
 	m_pImmediateContext->OMSetRenderTargets(1, m_PresentedRenderTargetView.GetAddressOf(), nullptr);
-	DrawFullScreenQuad();
+	DrawFullScreenQuad(false);
 
 	// ImGui Pass
-	m_imguiRenderer->ImGuiDrawAllWindows(FPS, m_totalTime, m_pScene, m_pImmediateContext.Get());
+	m_imguiRenderer->ImGuiDrawAllWindows(FPS, m_totalTime, m_pScene, m_pImmediateContext.Get(), m_gBuffer.depth.rendersrv.Get(), m_gBuffer.normals.srv.Get(), m_gBuffer.worldPos.srv.Get(), m_gBuffer.albedo.srv.Get(), m_gBuffer.lightAccumulation.srv.Get());
 
 	if (m_imguiRenderer->VSyncEnabled)
 	{
