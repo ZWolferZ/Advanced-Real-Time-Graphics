@@ -33,30 +33,57 @@ struct ImGuiParameterState
 	int selected_radio;
 };
 
-struct GBufferComponent
+struct GbufferComponent
 {
 	Microsoft::WRL::ComPtr <ID3D11Texture2D> texture;
 	Microsoft::WRL::ComPtr <ID3D11RenderTargetView> rtv;
 	Microsoft::WRL::ComPtr <ID3D11ShaderResourceView> srv;
+
+	void Reset()
+	{
+		texture.Reset();
+		rtv.Reset();
+		srv.Reset();
+	}
 };
 
 struct GBufferDepthComponent
 {
-	Microsoft::WRL::ComPtr <ID3D11Texture2D> texture;
-	Microsoft::WRL::ComPtr <ID3D11DepthStencilView> dsv;
+	Microsoft::WRL::ComPtr <ID3D11Texture2D>		m_pDepthStencil;
+	Microsoft::WRL::ComPtr <ID3D11DepthStencilView> m_pDepthStencilView;
 	Microsoft::WRL::ComPtr <ID3D11ShaderResourceView> srv;
 
-	Microsoft::WRL::ComPtr <ID3D11RenderTargetView> rtv;
 	Microsoft::WRL::ComPtr <ID3D11Texture2D> renderTexture;
+	Microsoft::WRL::ComPtr <ID3D11RenderTargetView> rtv;
 	Microsoft::WRL::ComPtr <ID3D11ShaderResourceView> rendersrv;
+
+	void Reset()
+	{
+		m_pDepthStencilView.Reset();
+		m_pDepthStencil.Reset();
+		srv.Reset();
+		rtv.Reset();
+		rendersrv.Reset();
+		renderTexture.Reset();
+	}
 };
 
 struct GBuffer
 {
-	GBufferComponent albedo;
-	GBufferComponent normal;
-	GBufferComponent position;
+	GbufferComponent albedo;
+	GbufferComponent normals;
+	GbufferComponent worldPos;
+	GbufferComponent lightAccumulation;
 	GBufferDepthComponent depth;
+
+	void Reset()
+	{
+		albedo.Reset();
+		normals.Reset();
+		depth.Reset();
+		worldPos.Reset();
+		lightAccumulation.Reset();
+	}
 };
 
 class DX11Renderer
@@ -69,7 +96,8 @@ public:
 
 	HRESULT Init(HWND hwnd);
 	void CreateFullScreenQuad();
-	void DrawFullScreenQuad();
+	void DrawFullScreenQuad(bool lightingQuad);
+	void DrawDepthScreenQuad();
 
 	void SetSceneDrawData();
 
@@ -94,10 +122,11 @@ public:
 
 private: // methods
 	HRESULT InitDevice(HWND hwnd);
-	GBufferComponent CreateGBufferComponent(UINT width, UINT height);
-	GBufferDepthComponent CreateGBufferDepthComponent(UINT width, UINT height);
 	void    CleanupDevice();
-
+	//void	initIMGUI(HWND hwnd);
+	//void	IMGUIDraw(const unsigned int FPS);
+	//void	startIMGUIDraw();
+	//void	completeIMGUIDraw();
 	void	CentreMouseInWindow(HWND hWnd);
 
 private: // properties
@@ -117,23 +146,28 @@ private: // properties
 	Microsoft::WRL::ComPtr <IDXGISwapChain>			m_pSwapChain;
 	Microsoft::WRL::ComPtr <IDXGISwapChain1>		m_pSwapChain1;
 
+	GBuffer m_gBuffer;
+
 	Microsoft::WRL::ComPtr <ID3D11VertexShader>		m_pVertexShader;
 	Microsoft::WRL::ComPtr <ID3D11PixelShader>		m_pPixelShader;
 	Microsoft::WRL::ComPtr <ID3D11PixelShader>		m_pSolidPixelShader;
 	Microsoft::WRL::ComPtr <ID3D11PixelShader>		m_pTextureUnLitPixelShader;
+	Microsoft::WRL::ComPtr <ID3D11PixelShader>	m_WriteGBuffer;
+	Microsoft::WRL::ComPtr <ID3D11PixelShader>	m_WriteAlbedo;
+	Microsoft::WRL::ComPtr <ID3D11PixelShader>	m_LightAccumulationWrite;
+	Microsoft::WRL::ComPtr <ID3D11PixelShader> m_visualiseDepth;
+
 	Microsoft::WRL::ComPtr <ID3D11InputLayout>		m_pVertexLayout;
 
 	Microsoft::WRL::ComPtr <ID3D11RenderTargetView> m_PresentedRenderTargetView;
 
-	Microsoft::WRL::ComPtr <ID3D11Texture2D> g_RenderTargetTexture;
+	Microsoft::WRL::ComPtr <ID3D11Texture2D> g_SceneRenderTargetTexture;
 
 	D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
-	Microsoft::WRL::ComPtr <ID3D11RenderTargetView> g_RenderTargetView;
+	Microsoft::WRL::ComPtr <ID3D11RenderTargetView> g_SceneRenderTargetView;
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
-	Microsoft::WRL::ComPtr <ID3D11ShaderResourceView> g_ShaderResourceView;
-
-	GBuffer m_gBuffer;
+	Microsoft::WRL::ComPtr <ID3D11ShaderResourceView> g_SceneShaderResourceView;
 
 	Scene* m_pScene;
 
@@ -142,8 +176,5 @@ private: // properties
 	Microsoft::WRL::ComPtr <ID3D11InputLayout> g_pQuadLayout = nullptr;
 	Microsoft::WRL::ComPtr <ID3D11VertexShader> g_pQuadVS = nullptr;
 	Microsoft::WRL::ComPtr <ID3D11PixelShader> g_pQuadPS = nullptr;
-	Microsoft::WRL::ComPtr <ID3D11PixelShader> g_pQuadDepthPS = nullptr;
-	Microsoft::WRL::ComPtr <ID3D11PixelShader> g_pQuadAlbedoPS = nullptr;
-
 	Microsoft::WRL::ComPtr < ID3D11SamplerState> m_textureSampler = nullptr;
 };

@@ -1,5 +1,4 @@
 ﻿#include "ImGuiRendering.h"
-
 #include "imgui/imgui_internal.h"
 
 ImGuiRendering::ImGuiRendering(HWND hwnd, ID3D11Device* m_pd3dDevice, ID3D11DeviceContext* m_pImmediateContext)
@@ -27,7 +26,7 @@ void ImGuiRendering::ShutDownImGui()
 	ImGui::DestroyContext();
 }
 
-void ImGuiRendering::ImGuiDrawAllWindows(const unsigned int FPS, float totalAppTime, Scene* currentScene, ID3D11DeviceContext* pContext, ID3D11ShaderResourceView* depthTexture, ID3D11ShaderResourceView* albedoTexture)
+void ImGuiRendering::ImGuiDrawAllWindows(const unsigned int FPS, float totalAppTime, Scene* currentScene, ID3D11DeviceContext* pContext, ID3D11ShaderResourceView* depthTexture, ID3D11ShaderResourceView* normalTexture, ID3D11ShaderResourceView* worldPosTexture, ID3D11ShaderResourceView* albedoTexture, ID3D11ShaderResourceView* lightAccTexture)
 {
 	m_currentScene = currentScene;
 
@@ -41,28 +40,32 @@ void ImGuiRendering::ImGuiDrawAllWindows(const unsigned int FPS, float totalAppT
 		DrawSelectLightWindow();
 		DrawLightUpdateWindow();
 		DrawObjectSelectionWindow();
-		DrawUpdateObjectMaterialBufferWindow(pContext);
+		//DrawUpdateObjectMaterialBufferWindow(pContext);
 		DrawObjectMovementWindow();
-		DrawPixelShaderSelectionWindow();
+		//DrawPixelShaderSelectionWindow();
 		DrawTextureSelectionWindow(pContext);
 		DrawNormalMapSelectionWindow(pContext);
 		DrawCameraStatsWindow();
 		DrawMeshSelectionWindow();
 		if (showCameraSplineWindow)DrawCameraSplineWindow();
 
+		ImVec2 displaySize(SCREEN_WIDTH * 0.25f, SCREEN_HEIGHT * 0.25f);
+
+		ImGui::Begin("Deferred Lighting Textures");
+		ImGui::Text("Depth Texture");
+		ImGui::Image((ImTextureID)(intptr_t)depthTexture, ImVec2(displaySize.x, displaySize.y));
+		ImGui::Text("Normal Texture");
+		ImGui::Image((ImTextureID)(intptr_t)normalTexture, ImVec2(displaySize.x, displaySize.y));
+		ImGui::Text("World Position Texture");
+		ImGui::Image((ImTextureID)(intptr_t)worldPosTexture, ImVec2(displaySize.x, displaySize.y));
+		ImGui::Text("Albedo Texture");
+		ImGui::Image((ImTextureID)(intptr_t)albedoTexture, ImVec2(displaySize.x, displaySize.y));
+		ImGui::Text("Light Accumulation Texture");
+		ImGui::Image((ImTextureID)(intptr_t)lightAccTexture, ImVec2(displaySize.x, displaySize.y));
+
+		ImGui::End();
+
 		DrawObjectGimzo();
-
-		ImGui::Begin("Depth Texture");
-		ImGui::Text("pointer = %p", depthTexture);
-		ImGui::Text("size = %d x %d", 200, 400);
-		ImGui::Image((ImTextureID)(intptr_t)depthTexture, ImVec2(200, 400));
-		ImGui::End();
-
-		ImGui::Begin("Albedo Texture");
-		ImGui::Text("pointer = %p", albedoTexture);
-		ImGui::Text("size = %d x %d", 200, 400);
-		ImGui::Image((ImTextureID)(intptr_t)albedoTexture, ImVec2(200, 400));
-		ImGui::End();
 	}
 
 	CompleteIMGUIDraw();
@@ -304,7 +307,7 @@ void ImGuiRendering::DrawUpdateObjectMaterialBufferWindow(ID3D11DeviceContext* p
 {
 	if (m_selectedObject != nullptr)
 	{
-		if (m_selectedObject->GetPixelShader() == m_currentScene->GetPixelShader("Solid Pixel Shader") || m_selectedObject->GetPixelShader() == m_currentScene->GetPixelShader("Texture UnLit Pixel Shader")) return;
+		//if (m_selectedObject->GetPixelShader() == m_currentScene->GetPixelShader("Solid Pixel Shader") || m_selectedObject->GetPixelShader() == m_currentScene->GetPixelShader("Texture UnLit Pixel Shader")) return;
 
 		static ImVec2 windowPos = ImVec2(1582, 341);
 		static string windowName = "Object Material Buffer Window";

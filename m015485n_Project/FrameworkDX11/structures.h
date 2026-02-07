@@ -35,7 +35,6 @@ struct SCREEN_VERTEX
 	XMFLOAT2 tex;
 };
 
-
 inline void CalculateTangentBinormal(SimpleVertex v0, SimpleVertex v1, SimpleVertex v2, XMFLOAT3& normal, XMFLOAT3& tangent, XMFLOAT3& binormal)
 {
 	XMVECTOR vv0 = XMLoadFloat3(&v0.Pos);
@@ -249,7 +248,7 @@ struct _Material
 {
 	_Material()
 		: Emissive(0.0f, 0.0f, 0.0f, 1.0f)
-		, Ambient(0.1f, 0.1f, 0.1f, 1.0f)
+		, Ambient(0.3f, 0.3f, 0.3f, 1.0f)
 		, Diffuse(1.0f, 1.0f, 1.0f, 1.0f)
 		, Specular(1.0f, 1.0f, 1.0f, 1.0f)
 		, SpecularPower(128.0f)
