@@ -1,7 +1,7 @@
 ﻿#include "ImGuiRendering.h"
 #include "imgui/imgui_internal.h"
 
-ImGuiRendering::ImGuiRendering(HWND hwnd, ID3D11Device* m_pd3dDevice, ID3D11DeviceContext* m_pImmediateContext)
+ImGuiRendering::ImGuiRendering(HWND hwnd, ID3D11Device* m_pd3dDevice, ID3D11DeviceContext* m_pImmediateContext, vector<Microsoft::WRL::ComPtr <ID3D11ShaderResourceView>> renderSRVs)
 {
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
@@ -17,6 +17,8 @@ ImGuiRendering::ImGuiRendering(HWND hwnd, ID3D11Device* m_pd3dDevice, ID3D11Devi
 	io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
 	io.IniFilename = nullptr;
+
+	UpdateSRVs(renderSRVs);
 }
 
 void ImGuiRendering::ShutDownImGui()
@@ -26,7 +28,7 @@ void ImGuiRendering::ShutDownImGui()
 	ImGui::DestroyContext();
 }
 
-void ImGuiRendering::ImGuiDrawAllWindows(const unsigned int FPS, float totalAppTime, Scene* currentScene, ID3D11DeviceContext* pContext, ID3D11ShaderResourceView* depthTexture, ID3D11ShaderResourceView* normalTexture, ID3D11ShaderResourceView* worldPosTexture, ID3D11ShaderResourceView* albedoTexture, ID3D11ShaderResourceView* lightAccTexture)
+void ImGuiRendering::ImGuiDrawAllWindows(const unsigned int FPS, float totalAppTime, Scene* currentScene, ID3D11DeviceContext* pContext)
 {
 	m_currentScene = currentScene;
 
@@ -48,22 +50,7 @@ void ImGuiRendering::ImGuiDrawAllWindows(const unsigned int FPS, float totalAppT
 		DrawCameraStatsWindow();
 		DrawMeshSelectionWindow();
 		if (showCameraSplineWindow)DrawCameraSplineWindow();
-
-		ImVec2 displaySize(SCREEN_WIDTH * 0.25f, SCREEN_HEIGHT * 0.25f);
-
-		ImGui::Begin("Deferred Lighting Textures");
-		ImGui::Text("Depth Texture");
-		ImGui::Image((ImTextureID)(intptr_t)depthTexture, ImVec2(displaySize.x, displaySize.y));
-		ImGui::Text("Normal Texture");
-		ImGui::Image((ImTextureID)(intptr_t)normalTexture, ImVec2(displaySize.x, displaySize.y));
-		ImGui::Text("World Position Texture");
-		ImGui::Image((ImTextureID)(intptr_t)worldPosTexture, ImVec2(displaySize.x, displaySize.y));
-		ImGui::Text("Albedo Texture");
-		ImGui::Image((ImTextureID)(intptr_t)albedoTexture, ImVec2(displaySize.x, displaySize.y));
-		ImGui::Text("Light Accumulation Texture");
-		ImGui::Image((ImTextureID)(intptr_t)lightAccTexture, ImVec2(displaySize.x, displaySize.y));
-
-		ImGui::End();
+		DrawDeferredRenderingWindow();
 
 		DrawObjectGimzo();
 	}
@@ -771,6 +758,56 @@ void ImGuiRendering::DrawCameraSplineWindow()
 		}
 	}
 	ImGui::Text("(Drag the box or enter a number)");
+
+	ImGui::End();
+}
+
+void ImGuiRendering::DrawDeferredRenderingWindow()
+{
+	ImVec2 displaySize(SCREEN_WIDTH * 0.25f, SCREEN_HEIGHT * 0.25f);
+
+	ImGui::Begin("Deferred Lighting Textures");
+	ImGui::Checkbox("Deferred Rendering", &m_deferredRendering);
+
+	if (m_deferredRendering)
+	{
+		ImGui::BeginGroup();
+		ImGui::Text("Depth Buffer View");
+		ImGui::Image(static_cast<ImTextureID>(reinterpret_cast<intptr_t>(m_textureSRVs[0].Get())), displaySize);
+		ImGui::EndGroup();
+
+		ImGui::SameLine();
+
+		ImGui::BeginGroup();
+		ImGui::Text("World Normal Buffer View");
+		ImGui::Image(static_cast<ImTextureID>(reinterpret_cast<intptr_t>(m_textureSRVs[1].Get())), displaySize);
+		ImGui::EndGroup();
+
+		ImGui::SameLine();
+
+		ImGui::BeginGroup();
+		ImGui::Text("World Position Buffer View");
+		ImGui::Image(static_cast<ImTextureID>(reinterpret_cast<intptr_t>(m_textureSRVs[2].Get())), displaySize);
+		ImGui::EndGroup();
+
+		ImGui::SameLine();
+
+		ImGui::BeginGroup();
+		ImGui::Text("Albedo Buffer View");
+		ImGui::Image(static_cast<ImTextureID>(reinterpret_cast<intptr_t>(m_textureSRVs[3].Get())), displaySize);
+		ImGui::EndGroup();
+
+		ImGui::SameLine();
+
+		ImGui::BeginGroup();
+		ImGui::Text("Light Accumulation Buffer View");
+		ImGui::Image(static_cast<ImTextureID>(reinterpret_cast<intptr_t>(m_textureSRVs[4].Get())), displaySize);
+		ImGui::EndGroup();
+	}
+	else
+	{
+		ImGui::Text("Forward Rendering Is Enabled!");
+	}
 
 	ImGui::End();
 }

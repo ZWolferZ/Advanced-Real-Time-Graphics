@@ -66,7 +66,15 @@ HRESULT DX11Renderer::Init(HWND hwnd)
 
 	m_pScene = new Scene;
 
-	m_imguiRenderer = new ImGuiRendering(hwnd, m_pd3dDevice.Get(), m_pImmediateContext.Get());
+	vector<Microsoft::WRL::ComPtr <ID3D11ShaderResourceView>> renderSRVs = {
+		m_gBuffer.depth.rendersrv,
+		m_gBuffer.normals.srv,
+		m_gBuffer.worldPos.srv,
+		m_gBuffer.albedo.srv,
+		m_gBuffer.lightAccumulation.srv
+	};
+
+	m_imguiRenderer = new ImGuiRendering(hwnd, m_pd3dDevice.Get(), m_pImmediateContext.Get(), renderSRVs);
 
 	// Compile the vertex shader
 	ID3DBlob* pVSBlob = nullptr;
@@ -1028,6 +1036,16 @@ void DX11Renderer::OnResize(UINT width, UINT height)
 
 	// Update camera projection
 	m_pScene->GetCamera()->SetProjectionMatrix(width, height);
+
+	vector<Microsoft::WRL::ComPtr <ID3D11ShaderResourceView>> renderSRVs = {
+	m_gBuffer.depth.rendersrv,
+	m_gBuffer.normals.srv,
+	m_gBuffer.worldPos.srv,
+	m_gBuffer.albedo.srv,
+	m_gBuffer.lightAccumulation.srv
+	};
+
+	m_imguiRenderer->UpdateSRVs(renderSRVs);
 }
 
 // Function to center the mouse in the window
@@ -1155,63 +1173,74 @@ void DX11Renderer::Update(const float deltaTime)
 	}
 
 	float clearColor[4] = { 0.f, 0.f, 0.f, 1.f };
-
-	//FIRST GEOMETRY PASS TO FILL SMALLER G-BUFFER (DEPTH, NORMALS, WORLD POS)
-	//  Geometry Pass
-	ID3D11RenderTargetView* rtvs[] =
+	if (m_imguiRenderer->m_deferredRendering)
 	{
-		m_gBuffer.normals.rtv.Get(),
-		 m_gBuffer.worldPos.rtv.Get(),
-		m_gBuffer.depth.rtv.Get()
-	};
+		//FIRST GEOMETRY PASS TO FILL SMALLER G-BUFFER (DEPTH, NORMALS, WORLD POS)
+		//  Geometry Pass
+		ID3D11RenderTargetView* rtvs[] =
+		{
+			m_gBuffer.normals.rtv.Get(),
+			 m_gBuffer.worldPos.rtv.Get(),
+			m_gBuffer.depth.rtv.Get()
+		};
 
-	m_pImmediateContext->OMSetRenderTargets(3, rtvs, m_gBuffer.depth.m_pDepthStencilView.Get());
-	m_pImmediateContext->ClearRenderTargetView(m_gBuffer.normals.rtv.Get(), clearColor);
-	m_pImmediateContext->ClearRenderTargetView(m_gBuffer.worldPos.rtv.Get(), clearColor);
-	m_pImmediateContext->ClearRenderTargetView(m_gBuffer.depth.rtv.Get(), clearColor);
-	m_pImmediateContext->ClearDepthStencilView(m_gBuffer.depth.m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+		m_pImmediateContext->OMSetRenderTargets(3, rtvs, m_gBuffer.depth.m_pDepthStencilView.Get());
+		m_pImmediateContext->ClearRenderTargetView(m_gBuffer.normals.rtv.Get(), clearColor);
+		m_pImmediateContext->ClearRenderTargetView(m_gBuffer.worldPos.rtv.Get(), clearColor);
+		m_pImmediateContext->ClearRenderTargetView(m_gBuffer.depth.rtv.Get(), clearColor);
+		m_pImmediateContext->ClearDepthStencilView(m_gBuffer.depth.m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 
-	m_pScene->Update(deltaTime);
-	m_pImmediateContext->VSSetShader(m_pVertexShader.Get(), nullptr, 0);
-	m_pImmediateContext->PSSetShader(m_WriteGBuffer.Get(), nullptr, 0); // Normal Write // Depth Write // World Pos Write
-	m_pImmediateContext->IASetInputLayout(m_pVertexLayout.Get());;
-	m_pScene->Draw();
+		m_pScene->Update(deltaTime);
+		m_pImmediateContext->VSSetShader(m_pVertexShader.Get(), nullptr, 0);
+		m_pImmediateContext->PSSetShader(m_WriteGBuffer.Get(), nullptr, 0); // Normal Write // Depth Write // World Pos Write
+		m_pImmediateContext->IASetInputLayout(m_pVertexLayout.Get());;
+		m_pScene->Draw();
 
-	m_pImmediateContext->OMSetRenderTargets(0, nullptr, nullptr);
-	//////
+		m_pImmediateContext->OMSetRenderTargets(0, nullptr, nullptr);
+		//////
 
-	DrawDepthScreenQuad();
+		DrawDepthScreenQuad();
 
-	//////////////
+		//////////////
 
-	//SECOND PASS TO FILL FULL SCREEN RENDER TARGET WITH LIGHTING
-	m_pImmediateContext->OMSetRenderTargets(1, m_gBuffer.lightAccumulation.rtv.GetAddressOf(), nullptr);
-	m_pImmediateContext->ClearRenderTargetView(m_gBuffer.lightAccumulation.rtv.Get(), clearColor);
+		//SECOND PASS TO FILL FULL SCREEN RENDER TARGET WITH LIGHTING
+		m_pImmediateContext->OMSetRenderTargets(1, m_gBuffer.lightAccumulation.rtv.GetAddressOf(), nullptr);
+		m_pImmediateContext->ClearRenderTargetView(m_gBuffer.lightAccumulation.rtv.Get(), clearColor);
 
-	DrawFullScreenQuad(true);
-	//////////////
-	m_pImmediateContext->OMSetRenderTargets(0, nullptr, nullptr);
+		DrawFullScreenQuad(true);
+		//////////////
+		m_pImmediateContext->OMSetRenderTargets(0, nullptr, nullptr);
 
-	// THIRD PASS TO DRAW FULL SCREEN QUAD AND SAMPLE FROM G-BUFFER TO APPLY LIGHTING
-	// Full Screen Quad / Post Processing Pass / Sampling Pass
+		// THIRD PASS TO DRAW FULL SCREEN QUAD AND SAMPLE FROM G-BUFFER TO APPLY LIGHTING
+		// Full Screen Quad / Post Processing Pass / Sampling Pass
 
-	m_pImmediateContext->OMSetRenderTargets(1, m_gBuffer.albedo.rtv.GetAddressOf(), m_gBuffer.depth.m_pDepthStencilView.Get());
-	m_pImmediateContext->ClearRenderTargetView(m_gBuffer.albedo.rtv.Get(), clearColor);
-	m_pImmediateContext->ClearDepthStencilView(m_gBuffer.depth.m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+		m_pImmediateContext->OMSetRenderTargets(1, m_gBuffer.albedo.rtv.GetAddressOf(), m_gBuffer.depth.m_pDepthStencilView.Get());
+		m_pImmediateContext->ClearRenderTargetView(m_gBuffer.albedo.rtv.Get(), clearColor);
+		m_pImmediateContext->ClearDepthStencilView(m_gBuffer.depth.m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 
-	m_pImmediateContext->IASetInputLayout(m_pVertexLayout.Get());;
-	m_pImmediateContext->VSSetShader(m_pVertexShader.Get(), nullptr, 0);
+		m_pImmediateContext->IASetInputLayout(m_pVertexLayout.Get());;
+		m_pImmediateContext->VSSetShader(m_pVertexShader.Get(), nullptr, 0);
 
-	m_pImmediateContext->PSSetShader(m_WriteAlbedo.Get(), nullptr, 0);
+		m_pImmediateContext->PSSetShader(m_WriteAlbedo.Get(), nullptr, 0);
 
-	m_pScene->Draw();
-	m_pImmediateContext->OMSetRenderTargets(0, nullptr, nullptr);
+		m_pScene->Draw();
 
-	m_pImmediateContext->OMSetRenderTargets(1, m_PresentedRenderTargetView.GetAddressOf(), nullptr);
-	DrawFullScreenQuad(false);
+		m_pImmediateContext->OMSetRenderTargets(0, nullptr, nullptr);
 
+		m_pImmediateContext->OMSetRenderTargets(1, m_PresentedRenderTargetView.GetAddressOf(), nullptr);
+		DrawFullScreenQuad(false);
+	}
+	else
+	{
+		m_pImmediateContext->OMSetRenderTargets(1, m_PresentedRenderTargetView.GetAddressOf(), m_gBuffer.depth.m_pDepthStencilView.Get());
+		m_pImmediateContext->ClearRenderTargetView(m_PresentedRenderTargetView.Get(), clearColor);
+		m_pImmediateContext->ClearDepthStencilView(m_gBuffer.depth.m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+		m_pScene->Update(deltaTime);
+		SetSceneDrawData();
+		m_pScene->Draw();
+	}
 	// ImGui Pass
-	m_imguiRenderer->ImGuiDrawAllWindows(FPS, m_totalTime, m_pScene, m_pImmediateContext.Get(), m_gBuffer.depth.rendersrv.Get(), m_gBuffer.normals.srv.Get(), m_gBuffer.worldPos.srv.Get(), m_gBuffer.albedo.srv.Get(), m_gBuffer.lightAccumulation.srv.Get());
+	m_imguiRenderer->ImGuiDrawAllWindows(FPS, m_totalTime, m_pScene, m_pImmediateContext.Get());
 
 	if (m_imguiRenderer->VSyncEnabled)
 	{

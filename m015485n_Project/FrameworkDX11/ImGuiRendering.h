@@ -13,15 +13,18 @@
 class ImGuiRendering
 {
 public:
-	ImGuiRendering(HWND hwnd, ID3D11Device* m_pd3dDevice, ID3D11DeviceContext* m_pImmediateContext);
+	ImGuiRendering(HWND hwnd, ID3D11Device* m_pd3dDevice, ID3D11DeviceContext* m_pImmediateContext, vector<Microsoft::WRL::ComPtr <ID3D11ShaderResourceView>> renderSRVs);
 
 	void ShutDownImGui();
 
-	void ImGuiDrawAllWindows(const unsigned int FPS, float totalAppTime, Scene* currentScene, ID3D11DeviceContext* pContext, ID3D11ShaderResourceView* depthTexture, ID3D11ShaderResourceView* normalTexture, ID3D11ShaderResourceView* worldPosTexture, ID3D11ShaderResourceView* albedoTexture, ID3D11ShaderResourceView* lightAccTexture);
+	void ImGuiDrawAllWindows(const unsigned int FPS, float totalAppTime, Scene* currentScene, ID3D11DeviceContext* pContext);
 
 	void	ResetAllWindowsPositions();
 
+	void	UpdateSRVs(vector<Microsoft::WRL::ComPtr <ID3D11ShaderResourceView>> updatedSRVs) { m_textureSRVs = updatedSRVs; }
+
 	bool VSyncEnabled = true;
+	bool m_deferredRendering = true;
 
 private:
 	void	DrawVersionWindow(const unsigned int FPS, float totalAppTime);
@@ -38,9 +41,11 @@ private:
 	void	DrawNormalMapSelectionWindow(ID3D11DeviceContext* pContext);
 	void	DrawCameraStatsWindow();
 	void    DrawCameraSplineWindow();
+	void	DrawDeferredRenderingWindow();
 	void	StartIMGUIDraw();
 	void	CompleteIMGUIDraw();
 	unordered_map<std::string, ImVec2> m_originalWindowPositions;
+	vector<Microsoft::WRL::ComPtr <ID3D11ShaderResourceView>> m_textureSRVs;
 	bool showWindows = false;
 	bool showCameraSplineWindow = false;
 	Scene* m_currentScene = nullptr;
