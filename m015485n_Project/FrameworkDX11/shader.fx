@@ -18,6 +18,7 @@ Texture2D WorldPosBuffer : register(t4);
 Texture2D AlbedoBuffer : register(t5);
 Texture2D LightAccBuffer : register(t6);
 Texture2D DepthTex : register(t7);
+Texture2D ForwardRenderedTexture : register(t8);
 SamplerState samLinear : register(s0);
 
 // Light types.
@@ -521,7 +522,12 @@ struct QuadVS_Output
     float2 Tex : TEXCOORD0;
 };
 
-
+float4 QuadPSFowardRendered(QuadVS_Output IN) : SV_TARGET
+{
+    float4 scene = ForwardRenderedTexture.Sample(samLinear, IN.Tex);
+        
+    return scene;
+}
 
 QuadVS_Output QuadVS(QuadVS_Input Input)
 {
@@ -539,9 +545,6 @@ QuadVS_Output QuadVS(QuadVS_Input Input)
 float4 QuadPS(QuadVS_Output IN) : SV_TARGET
 {
     float2 uv = IN.Tex;
-
-
-
 
     float4 light = LightAccBuffer.Sample(samLinear, uv);
 
@@ -617,4 +620,5 @@ float4 PS_DeferredLighting(QuadVS_Output IN) : SV_TARGET
 
     return float4(diffuseLighting, 1.0f);
 }
+
 

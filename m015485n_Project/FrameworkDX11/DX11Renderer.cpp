@@ -195,6 +195,19 @@ HRESULT DX11Renderer::Init(HWND hwnd)
 	// Create the pixel shader
 	hr = m_pd3dDevice->CreatePixelShader(pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize(), nullptr, &m_visualiseDepth);
 
+
+	hr = CompileShaderFromFile(L"shader.fx", "QuadPSFowardRendered", "ps_4_0", &pPSBlob);
+	if (FAILED(hr))
+	{
+		MessageBox(nullptr,
+			L"The FX file cannot be compiled.  Please run this executable from the directory that contains the FX file.", L"Error", MB_OK);
+		return hr;
+	}
+
+	// Create the pixel shader
+	hr = m_pd3dDevice->CreatePixelShader(pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize(), nullptr, &m_ForwardRendering);
+
+
 	pPSBlob->Release();
 	if (FAILED(hr))
 		return hr;
@@ -1067,9 +1080,8 @@ void DX11Renderer::CentreMouseInWindow(HWND hWnd)
 	SetCursorPos(center.x, center.y);
 }
 
-void DX11Renderer::DrawFullScreenQuad(bool lightingQuad)
+void DX11Renderer::DrawFullScreenQuad(FullScreenQuadOptions options)
 {
-	m_pImmediateContext->PSSetShaderResources(0, 1, g_SceneShaderResourceView.GetAddressOf());
 	m_pImmediateContext->IASetInputLayout(g_pQuadLayout.Get());
 	m_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
@@ -1082,7 +1094,7 @@ void DX11Renderer::DrawFullScreenQuad(bool lightingQuad)
 	ID3D11SamplerState* ss = m_textureSampler.Get();
 	m_pImmediateContext->PSSetSamplers(0, 1, &ss);
 
-	if (lightingQuad)
+	if (options == FullScreenQuadOptions::LightingQuad)
 	{
 		m_pImmediateContext->PSSetShader(m_LightAccumulationWrite.Get(), nullptr, 0);
 		m_pImmediateContext->PSSetShaderResources(2, 1, m_gBuffer.normals.srv.GetAddressOf());
@@ -1096,7 +1108,7 @@ void DX11Renderer::DrawFullScreenQuad(bool lightingQuad)
 		m_pImmediateContext->PSSetShaderResources(2, 1, &nullSRV);
 		m_pImmediateContext->PSSetShaderResources(4, 1, &nullSRV);
 	}
-	else
+	else if (options == FullScreenQuadOptions::FullDeferredQuad)
 	{
 		m_pImmediateContext->PSSetShader(g_pQuadPS.Get(), nullptr, 0);
 		m_pImmediateContext->PSSetShaderResources(2, 1, m_gBuffer.normals.srv.GetAddressOf());
@@ -1116,6 +1128,19 @@ void DX11Renderer::DrawFullScreenQuad(bool lightingQuad)
 		m_pImmediateContext->PSSetShaderResources(5, 1, &nullSRV);
 		m_pImmediateContext->PSSetShaderResources(6, 1, &nullSRV);
 		m_pImmediateContext->PSSetShaderResources(7, 1, &nullSRV);
+	}
+	else if (options == FullScreenQuadOptions::ForwardRenderingQuad)
+	{
+		m_pImmediateContext->PSSetShader(m_ForwardRendering.Get(), nullptr, 0);
+
+		m_pImmediateContext->PSSetShaderResources(8, 1, g_SceneShaderResourceView.GetAddressOf());
+
+
+		m_pImmediateContext->Draw(4, 0);
+
+		ID3D11ShaderResourceView* nullSRV = nullptr;
+		m_pImmediateContext->PSSetShaderResources(8, 1, &nullSRV);
+
 	}
 }
 
@@ -1207,7 +1232,7 @@ void DX11Renderer::Update(const float deltaTime)
 		m_pImmediateContext->OMSetRenderTargets(1, m_gBuffer.lightAccumulation.rtv.GetAddressOf(), nullptr);
 		m_pImmediateContext->ClearRenderTargetView(m_gBuffer.lightAccumulation.rtv.Get(), clearColor);
 
-		DrawFullScreenQuad(true);
+		DrawFullScreenQuad(FullScreenQuadOptions::LightingQuad);
 		//////////////
 		m_pImmediateContext->OMSetRenderTargets(0, nullptr, nullptr);
 
@@ -1228,16 +1253,20 @@ void DX11Renderer::Update(const float deltaTime)
 		m_pImmediateContext->OMSetRenderTargets(0, nullptr, nullptr);
 
 		m_pImmediateContext->OMSetRenderTargets(1, m_PresentedRenderTargetView.GetAddressOf(), nullptr);
-		DrawFullScreenQuad(false);
+		DrawFullScreenQuad(FullScreenQuadOptions::FullDeferredQuad);
 	}
 	else
 	{
-		m_pImmediateContext->OMSetRenderTargets(1, m_PresentedRenderTargetView.GetAddressOf(), m_gBuffer.depth.m_pDepthStencilView.Get());
-		m_pImmediateContext->ClearRenderTargetView(m_PresentedRenderTargetView.Get(), clearColor);
+		m_pImmediateContext->OMSetRenderTargets(1, g_SceneRenderTargetView.GetAddressOf(), m_gBuffer.depth.m_pDepthStencilView.Get());
+		m_pImmediateContext->ClearRenderTargetView(g_SceneRenderTargetView.Get(), clearColor);
 		m_pImmediateContext->ClearDepthStencilView(m_gBuffer.depth.m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 		m_pScene->Update(deltaTime);
 		SetSceneDrawData();
 		m_pScene->Draw();
+		m_pImmediateContext->OMSetRenderTargets(0, nullptr, nullptr);
+		m_pImmediateContext->OMSetRenderTargets(1, m_PresentedRenderTargetView.GetAddressOf(), nullptr);
+		DrawFullScreenQuad(FullScreenQuadOptions::ForwardRenderingQuad);
+
 	}
 	// ImGui Pass
 	m_imguiRenderer->ImGuiDrawAllWindows(FPS, m_totalTime, m_pScene, m_pImmediateContext.Get());

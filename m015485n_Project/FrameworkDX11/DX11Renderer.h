@@ -86,6 +86,13 @@ struct GBuffer
 	}
 };
 
+enum FullScreenQuadOptions
+{
+	LightingQuad,
+	FullDeferredQuad,
+	ForwardRenderingQuad
+};
+
 class DX11Renderer
 {
 public:
@@ -96,7 +103,7 @@ public:
 
 	HRESULT Init(HWND hwnd);
 	void CreateFullScreenQuad();
-	void DrawFullScreenQuad(bool lightingQuad);
+	void DrawFullScreenQuad(FullScreenQuadOptions options);
 	void DrawDepthScreenQuad();
 
 	void SetSceneDrawData();
@@ -148,6 +155,7 @@ private: // properties
 
 	GBuffer m_gBuffer;
 
+
 	Microsoft::WRL::ComPtr <ID3D11VertexShader>		m_pVertexShader;
 	Microsoft::WRL::ComPtr <ID3D11PixelShader>		m_pPixelShader;
 	Microsoft::WRL::ComPtr <ID3D11PixelShader>		m_pSolidPixelShader;
@@ -156,6 +164,9 @@ private: // properties
 	Microsoft::WRL::ComPtr <ID3D11PixelShader>	m_WriteAlbedo;
 	Microsoft::WRL::ComPtr <ID3D11PixelShader>	m_LightAccumulationWrite;
 	Microsoft::WRL::ComPtr <ID3D11PixelShader> m_visualiseDepth;
+	Microsoft::WRL::ComPtr <ID3D11PixelShader> m_ForwardRendering;
+
+
 
 	Microsoft::WRL::ComPtr <ID3D11InputLayout>		m_pVertexLayout;
 
