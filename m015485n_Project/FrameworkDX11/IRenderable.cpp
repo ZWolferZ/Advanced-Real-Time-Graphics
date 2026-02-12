@@ -54,7 +54,7 @@ void IRenderable::Update(const float deltaTime, ID3D11DeviceContext* pContext)
 	XMStoreFloat4x4(&m_world, world);
 }
 
-void IRenderable::Draw(ID3D11DeviceContext* pContext, Camera* camera, ID3D11Buffer* m_pConstantBuffer, bool skybox)
+void IRenderable::Draw(ID3D11DeviceContext* pContext, Camera* camera, ID3D11Buffer* m_pConstantBuffer, bool skybox,int renderpass)
 {
 	if (skybox) pContext->PSSetShader(m_pixelShader.Get(), nullptr, 0);
 
@@ -86,13 +86,16 @@ void IRenderable::Draw(ID3D11DeviceContext* pContext, Camera* camera, ID3D11Buff
 	//if (m_textureResourceView != nullptr)
 
 	{
-		ID3D11ShaderResourceView* srv = m_textureResourceView.Get();
-		pContext->PSSetShaderResources(0, 1, &srv);
-		//if (m_normalMapResourceView != nullptr)
+		if (renderpass != 0)
 		{
+			ID3D11ShaderResourceView* srv = m_textureResourceView.Get();
+			pContext->PSSetShaderResources(0, 1, &srv);
+		}
+	
+		
 			ID3D11ShaderResourceView* nrv = m_normalMapResourceView.Get();
 			pContext->PSSetShaderResources(1, 1, &nrv);
-		}
+		
 
 		ID3D11SamplerState* ss = m_textureSampler.Get();
 		pContext->PSSetSamplers(0, 1, &ss);
@@ -101,8 +104,14 @@ void IRenderable::Draw(ID3D11DeviceContext* pContext, Camera* camera, ID3D11Buff
 	// draw
 	pContext->DrawIndexed(m_meshData.VertexCount, 0, 0);
 
-	ID3D11ShaderResourceView* nullSRVs[2] = { nullptr, nullptr };
-	pContext->PSSetShaderResources(0, 2, nullSRVs);
+	ID3D11ShaderResourceView* nullSRVs[1] = { nullptr };
+
+	if (renderpass != 0)
+	{
+		pContext->PSSetShaderResources(0, 1, nullSRVs);
+
+	}
+	pContext->PSSetShaderResources(1, 1, nullSRVs);
 }
 
 void IRenderable::Cleanup()

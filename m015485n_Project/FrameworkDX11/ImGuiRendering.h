@@ -25,6 +25,7 @@ public:
 
 	bool VSyncEnabled = true;
 	bool m_deferredRendering = true;
+	PostProcessConstantBuffer m_postProcessCBData;
 
 private:
 	void	DrawVersionWindow(const unsigned int FPS, float totalAppTime);
@@ -42,6 +43,7 @@ private:
 	void	DrawCameraStatsWindow();
 	void    DrawCameraSplineWindow();
 	void	DrawDeferredRenderingWindow();
+	void	DrawPostProcessingWindow();
 	void	StartIMGUIDraw();
 	void	CompleteIMGUIDraw();
 	unordered_map<std::string, ImVec2> m_originalWindowPositions;
@@ -52,4 +54,5 @@ private:
 	GameObject* m_selectedObject = nullptr;
 	Light* m_selectedLight = nullptr;
 	int lightIndex = 0;
+	bool grayscalemode = false;
 };

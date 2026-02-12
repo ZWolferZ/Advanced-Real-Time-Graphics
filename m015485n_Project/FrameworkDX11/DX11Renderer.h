@@ -157,7 +157,6 @@ private: // properties
 
 	GBuffer m_gBuffer;
 
-	PostProcessConstantBuffer m_postProcessCBData;
 	Microsoft::WRL::ComPtr < ID3D11Buffer>						m_postProcessConstantBuffer = nullptr;
 
 

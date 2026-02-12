@@ -21,6 +21,7 @@
 #include "structures.h"
 #include <utility>
 #include "Camera.h"
+#include <string>
 
 using namespace DirectX;
 
@@ -31,7 +32,7 @@ public:
 	virtual ~IRenderable();
 
 	virtual void	Update(const float deltaTime, ID3D11DeviceContext* pContext);
-	virtual void	Draw(ID3D11DeviceContext* pContext, Camera* camera, ID3D11Buffer* m_pConstantBuffer, bool skybox);
+	virtual void	Draw(ID3D11DeviceContext* pContext, Camera* camera, ID3D11Buffer* m_pConstantBuffer, bool skybox,int renderpass);
 	virtual void	Cleanup();
 
 	const ID3D11Buffer* GetVertexBuffer() const { return m_meshData.VertexBuffer.Get(); }
@@ -75,6 +76,8 @@ public:
 
 	float m_autoRotationSpeed = 50.0f;
 	MeshData m_meshData;
+	string m_textureName;
+
 protected:
 
 	XMFLOAT4X4													m_world;

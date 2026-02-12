@@ -66,8 +66,6 @@ HRESULT DX11Renderer::Init(HWND hwnd)
 
 	m_pScene = new Scene;
 
-	CreatePostProcessConstantBuffer();
-
 	vector<Microsoft::WRL::ComPtr <ID3D11ShaderResourceView>> renderSRVs = {
 		m_gBuffer.depth.rendersrv,
 		m_gBuffer.normals.srv,
@@ -76,7 +74,19 @@ HRESULT DX11Renderer::Init(HWND hwnd)
 		m_gBuffer.lightAccumulation.srv
 	};
 
+	m_pScene->m_textureMap.push_back({ "Depth View Texture", m_gBuffer.depth.rendersrv });
+
+	m_pScene->m_textureMap.push_back({ "Normal View Texture", m_gBuffer.normals.srv });
+
+	m_pScene->m_textureMap.push_back({ "World Pos View Texture", m_gBuffer.worldPos.srv });
+
+	m_pScene->m_textureMap.push_back({ "Light Accumulation View Texture", m_gBuffer.lightAccumulation.srv });
+
+
+
 	m_imguiRenderer = new ImGuiRendering(hwnd, m_pd3dDevice.Get(), m_pImmediateContext.Get(), renderSRVs);
+
+	CreatePostProcessConstantBuffer();
 
 	// Compile the vertex shader
 	ID3DBlob* pVSBlob = nullptr;
@@ -1061,6 +1071,44 @@ void DX11Renderer::OnResize(UINT width, UINT height)
 	};
 
 	m_imguiRenderer->UpdateSRVs(renderSRVs);
+
+	m_pScene->GetTexture(m_pScene->m_textureMap, "Depth View Texture") = m_gBuffer.depth.rendersrv;
+
+	m_pScene->GetTexture(m_pScene->m_textureMap, "Normal View Texture") = m_gBuffer.normals.srv;
+
+	m_pScene->GetTexture(m_pScene->m_textureMap, "World Pos View Texture") = m_gBuffer.worldPos.srv;
+
+	m_pScene->GetTexture(m_pScene->m_textureMap, "Light Accumulation View Texture") = m_gBuffer.lightAccumulation.srv;
+
+	for (auto& obj : m_pScene->m_vecDrawables)
+	{
+		if (obj->m_textureName ==  "Depth View Texture")
+		{
+			obj->SetTextureResourceView(m_gBuffer.depth.rendersrv);
+		}
+
+		if (obj->m_textureName == "Normal View Texture")
+		{
+			obj->SetTextureResourceView(m_gBuffer.normals.srv);
+		}
+		if (obj->m_textureName == "World Pos View Texture")
+		{
+			obj->SetTextureResourceView(m_gBuffer.worldPos.srv);
+		}
+
+		if (obj->m_textureName == "Light Accumulation View Texture")
+		{
+			obj->SetTextureResourceView(m_gBuffer.lightAccumulation.srv);
+		}
+	}
+
+
+
+
+
+
+
+
 }
 
 // Function to center the mouse in the window
@@ -1097,9 +1145,9 @@ void DX11Renderer::CreatePostProcessConstantBuffer()
 			L"Failed to create post-process constant buffer.", L"Error", MB_OK);
 	}
 
-	m_pImmediateContext->UpdateSubresource(m_postProcessConstantBuffer.Get(), 0, nullptr, &m_postProcessCBData, 0, 0);
+	m_pImmediateContext->UpdateSubresource(m_postProcessConstantBuffer.Get(), 0, nullptr, &m_imguiRenderer->m_postProcessCBData, 0, 0);
 
-	m_pImmediateContext->PSSetConstantBuffers(2, 1, &m_postProcessConstantBuffer);
+	m_pImmediateContext->PSSetConstantBuffers(2, 1, m_postProcessConstantBuffer.GetAddressOf());
 
 
 }
@@ -1224,7 +1272,7 @@ void DX11Renderer::Update(const float deltaTime)
 
 	float clearColor[4] = { 0.f, 0.f, 0.f, 1.f };
 
-	m_pImmediateContext->UpdateSubresource(m_postProcessConstantBuffer.Get(), 0, nullptr, &m_postProcessCBData, 0, 0);
+	m_pImmediateContext->UpdateSubresource(m_postProcessConstantBuffer.Get(), 0, nullptr, &m_imguiRenderer->m_postProcessCBData, 0, 0);
 
 	if (m_imguiRenderer->m_deferredRendering)
 	{
@@ -1247,7 +1295,7 @@ void DX11Renderer::Update(const float deltaTime)
 		m_pImmediateContext->VSSetShader(m_pVertexShader.Get(), nullptr, 0);
 		m_pImmediateContext->PSSetShader(m_WriteGBuffer.Get(), nullptr, 0); // Normal Write // Depth Write // World Pos Write
 		m_pImmediateContext->IASetInputLayout(m_pVertexLayout.Get());;
-		m_pScene->Draw();
+		m_pScene->Draw(0);
 
 		m_pImmediateContext->OMSetRenderTargets(0, nullptr, nullptr);
 		//////
@@ -1276,7 +1324,7 @@ void DX11Renderer::Update(const float deltaTime)
 
 		m_pImmediateContext->PSSetShader(m_WriteAlbedo.Get(), nullptr, 0);
 
-		m_pScene->Draw();
+		m_pScene->Draw(1);
 
 		m_pImmediateContext->OMSetRenderTargets(0, nullptr, nullptr);
 
@@ -1290,7 +1338,7 @@ void DX11Renderer::Update(const float deltaTime)
 		m_pImmediateContext->ClearDepthStencilView(m_gBuffer.depth.m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 		m_pScene->Update(deltaTime);
 		SetSceneDrawData();
-		m_pScene->Draw();
+		m_pScene->Draw(1);
 		m_pImmediateContext->OMSetRenderTargets(0, nullptr, nullptr);
 		m_pImmediateContext->OMSetRenderTargets(1, m_PresentedRenderTargetView.GetAddressOf(), nullptr);
 		DrawFullScreenQuad(FullScreenQuadOptions::ForwardRenderingQuad);
@@ -1298,6 +1346,8 @@ void DX11Renderer::Update(const float deltaTime)
 	}
 	// ImGui Pass
 	m_imguiRenderer->ImGuiDrawAllWindows(FPS, m_totalTime, m_pScene, m_pImmediateContext.Get());
+
+
 
 	if (m_imguiRenderer->VSyncEnabled)
 	{

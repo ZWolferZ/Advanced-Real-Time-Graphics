@@ -51,6 +51,7 @@ void ImGuiRendering::ImGuiDrawAllWindows(const unsigned int FPS, float totalAppT
 		DrawMeshSelectionWindow();
 		if (showCameraSplineWindow)DrawCameraSplineWindow();
 		DrawDeferredRenderingWindow();
+		DrawPostProcessingWindow();
 
 		DrawObjectGimzo();
 	}
@@ -550,7 +551,7 @@ void ImGuiRendering::DrawTextureSelectionWindow(ID3D11DeviceContext* pContext)
 {
 	if (m_selectedObject != nullptr)
 	{
-		static ImVec2 windowPos = ImVec2(14, 381);
+		static ImVec2 windowPos = ImVec2(14, 150);
 		static string windowName = "Texture Selection";
 
 		m_originalWindowPositions.try_emplace(windowName, windowPos);
@@ -579,11 +580,6 @@ void ImGuiRendering::DrawTextureSelectionWindow(ID3D11DeviceContext* pContext)
 		{
 			const auto& shaderPair = textures[i];
 
-			if (shaderPair.first == "RenderTargetViewPass0" || shaderPair.first == "RenderTargetViewPass1")
-			{
-				continue;
-			}
-
 			bool isSelected = (m_selectedObject->GetTextureResourceView() == shaderPair.second.Get());
 
 			if (ImGui::Selectable(shaderPair.first.c_str(), isSelected))
@@ -592,6 +588,7 @@ void ImGuiRendering::DrawTextureSelectionWindow(ID3D11DeviceContext* pContext)
 				buffer.Material.UseTexture = true;
 				m_selectedObject->UpdateMaterialConstantBuffer(buffer, pContext);
 				m_selectedObject->SetTextureResourceView(shaderPair.second);
+				m_selectedObject->m_textureName = shaderPair.first;
 			}
 		}
 		ImGui::End();
@@ -637,7 +634,7 @@ void ImGuiRendering::DrawNormalMapSelectionWindow(ID3D11DeviceContext* pContext)
 {
 	if (m_selectedObject != nullptr)
 	{
-		static ImVec2 windowPos = ImVec2(14, 631);
+		static ImVec2 windowPos = ImVec2(14, 460);
 		static string windowName = "Normal Map Selection";
 
 		m_originalWindowPositions.try_emplace(windowName, windowPos);
@@ -807,6 +804,51 @@ void ImGuiRendering::DrawDeferredRenderingWindow()
 	else
 	{
 		ImGui::Text("Forward Rendering Is Enabled!");
+	}
+
+	ImGui::End();
+}
+
+void ImGuiRendering::DrawPostProcessingWindow()
+{
+	static ImVec2 windowPos = ImVec2(20, 625);
+	static string windowName = "Post-Processing Window";
+
+	m_originalWindowPositions.try_emplace(windowName, windowPos);
+
+	ImGui::SetNextWindowPos(windowPos, ImGuiCond_FirstUseEver);
+	ImGui::Begin(windowName.c_str(),nullptr ,ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove);
+
+	ImGui::Text("Screen Output Tint");
+
+	float colour[4] = { m_postProcessCBData.vOutputColor.x,m_postProcessCBData.vOutputColor.y,m_postProcessCBData.vOutputColor.z,m_postProcessCBData.vOutputColor.w };
+	if(ImGui::ColorPicker4("Output Tint", colour))
+	{
+		m_postProcessCBData.vOutputColor = { colour[0],colour[1],colour[2] ,colour[3] };
+	}
+	ImGui::Separator();
+	ImGui::Text("Screen Output Brightness");
+
+	float brightness = m_postProcessCBData.Brightness;
+	if (ImGui::DragFloat("Brightness", &brightness, 0.05f, 0.0f, 20.0f))
+	{
+		m_postProcessCBData.Brightness = brightness;
+	}
+
+	ImGui::Separator();
+	ImGui::Text("Screen Grayscale Mode");
+
+	if (ImGui::Checkbox("Grayscale", &grayscalemode))
+	{
+		if (grayscalemode)
+		{
+			m_postProcessCBData.GrayScaleMode = 1;
+
+		}
+		else
+		{
+			m_postProcessCBData.GrayScaleMode = 0;
+		}
 	}
 
 	ImGui::End();

@@ -247,6 +247,9 @@ struct ConstantBuffer
 struct PostProcessConstantBuffer
 {
 	XMFLOAT4 vOutputColor = { 1,1,1,1 };
+	float Brightness = 2.0f;
+	UINT GrayScaleMode = 0.0f;
+	XMFLOAT2 Padding;
 };
 
 struct _Material

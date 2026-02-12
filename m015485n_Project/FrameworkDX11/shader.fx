@@ -51,6 +51,9 @@ cbuffer MaterialProperties : register(b1)
 cbuffer PostProcessProperties : register(b2)
 {
     float4 PostProcessColor;
+    float Brightness;
+    uint GrayScaleMode;
+    float2 Padding;
 };
 
 struct Light
@@ -531,6 +534,15 @@ float4 QuadPSFowardRendered(QuadVS_Output IN) : SV_TARGET
 {
     float4 scene = ForwardRenderedTexture.Sample(samLinear, IN.Tex);
         
+    scene *= PostProcessColor;
+    
+    scene *= Brightness;
+    
+    if (GrayScaleMode == 1.0f)
+    {
+        scene.rgb = dot(scene.rgb, float3(0.3, 0.59, 0.11));
+    }
+    
     return scene;
 }
 
@@ -553,21 +565,21 @@ float4 QuadPS(QuadVS_Output IN) : SV_TARGET
 
     float4 light = LightAccBuffer.Sample(samLinear, uv);
 
-
-
-
     float4 albedo = AlbedoBuffer.Sample(samLinear, uv);
-    return  albedo * light;
+    
+    float4 scene = albedo * light;
+    
+    scene *= PostProcessColor;
+    
+    scene *= Brightness;
+    
+    if (GrayScaleMode == 1.0f)
+    {
+        scene.rgb = dot(scene.rgb, float3(0.3, 0.59, 0.11));
 
-    float4 worldPos = WorldPosBuffer.Sample(samLinear, uv);
-    return worldPos;
-
-    //float3 normal = NormalBuffer.Sample(samLinear, IN.Tex).xyz;
-    //return float4(normal, 1);
-
-
-
-
+    }
+    
+    return scene;
 }
 
 float4 PS_VisualiseDepth(QuadVS_Output IN) : SV_Target

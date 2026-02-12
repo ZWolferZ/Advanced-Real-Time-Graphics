@@ -24,7 +24,7 @@ GameObject::GameObject(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, str
 	CreateMaterialBuffer(m_pd3dDevice, m_pImmediateContext);
 }
 
-GameObject::GameObject(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, string ObjectName, MeshData meshData, ID3D11Device* m_pd3dDevice, ID3D11DeviceContext* m_pImmediateContext, Microsoft::WRL::ComPtr <ID3D11PixelShader> pixelShader, Microsoft::WRL::ComPtr < ID3D11ShaderResourceView> texture)
+GameObject::GameObject(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, string ObjectName, MeshData meshData, ID3D11Device* m_pd3dDevice, ID3D11DeviceContext* m_pImmediateContext, Microsoft::WRL::ComPtr <ID3D11PixelShader> pixelShader, Microsoft::WRL::ComPtr < ID3D11ShaderResourceView> texture, string textureName)
 {
 	SetPosition(Position);
 	SetRotate(Rotation);
@@ -35,6 +35,7 @@ GameObject::GameObject(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, str
 	objectName = ObjectName;
 	m_pixelShader = pixelShader;
 	m_textureResourceView = texture;
+	m_textureName = textureName;
 	m_material.Material.UseTexture = true;
 	m_material.Material.Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 	m_material.Material.Specular = XMFLOAT4(0.2f, 0.2f, 0.2f, 1.0f);
@@ -47,7 +48,7 @@ GameObject::GameObject(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, str
 	CreateMaterialBuffer(m_pd3dDevice, m_pImmediateContext);
 }
 
-GameObject::GameObject(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, string ObjectName, MeshData meshData, ID3D11Device* m_pd3dDevice, ID3D11DeviceContext* m_pImmediateContext, Microsoft::WRL::ComPtr <ID3D11PixelShader> pixelShader, Microsoft::WRL::ComPtr < ID3D11ShaderResourceView> texture, Microsoft::WRL::ComPtr < ID3D11ShaderResourceView> normalMap)
+GameObject::GameObject(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, string ObjectName, MeshData meshData, ID3D11Device* m_pd3dDevice, ID3D11DeviceContext* m_pImmediateContext, Microsoft::WRL::ComPtr <ID3D11PixelShader> pixelShader, Microsoft::WRL::ComPtr < ID3D11ShaderResourceView> texture, string textureName,Microsoft::WRL::ComPtr < ID3D11ShaderResourceView> normalMap)
 {
 	SetPosition(Position);
 	SetRotate(Rotation);
@@ -58,6 +59,7 @@ GameObject::GameObject(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, str
 	objectName = ObjectName;
 	m_pixelShader = pixelShader;
 	m_textureResourceView = texture;
+	m_textureName = textureName;
 	m_normalMapResourceView = normalMap;
 	m_material.Material.UseTexture = true;
 	m_material.Material.UseNormalMap = true;
