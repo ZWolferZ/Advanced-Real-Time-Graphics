@@ -53,7 +53,8 @@ cbuffer PostProcessProperties : register(b2)
     float4 PostProcessColor;
     float Brightness;
     uint GrayScaleMode;
-    float2 Padding;
+    uint BlurMode;
+    int BlurSteps;
 };
 
 struct Light
@@ -530,10 +531,43 @@ struct QuadVS_Output
     float2 Tex : TEXCOORD0;
 };
 
-float4 QuadPSFowardRendered(QuadVS_Output IN) : SV_TARGET
+float4 QuadPSForwardRendered(QuadVS_Output IN) : SV_TARGET
 {
     float4 scene = ForwardRenderedTexture.Sample(samLinear, IN.Tex);
-        
+    
+    if (BlurMode == 1.0f)
+    {
+        float3 blur = float3(0, 0, 0);
+        float tex_width, tex_height;
+        ForwardRenderedTexture.GetDimensions(tex_width, tex_height);
+        float2 uv_scale = 1.0f / float2(tex_width, tex_height);
+	 
+        float scalar = 1;
+        float scalar_sum = 0;
+        for (int i = -BlurSteps + 1; i < BlurSteps; i++)
+        {
+            float scalar_tmp = scalar;
+            for (int j = -BlurSteps + 1; j < BlurSteps; j++)
+            {
+                blur += ForwardRenderedTexture.Sample(samLinear, IN.Tex + float2(i * uv_scale.x, j * uv_scale.y)).rgb * scalar_tmp;
+                scalar_sum += scalar_tmp;
+                if (j <= 0)
+                    scalar_tmp *= 2.0f;
+                else
+                    scalar_tmp /= 2.0f;
+            }
+            if (i <= 0)
+                scalar *= 2.0f;
+            else
+                scalar /= 2.0f;
+        }
+        float actual_radius = (BlurSteps * 2) + 1;
+	 
+        blur /= scalar_sum;
+   
+        scene.rgb = blur;
+    }
+    
     scene *= PostProcessColor;
     
     scene *= Brightness;
@@ -567,6 +601,40 @@ float4 QuadPS(QuadVS_Output IN) : SV_TARGET
 
     float4 albedo = AlbedoBuffer.Sample(samLinear, uv);
     
+    if (BlurMode == 1.0f)
+    {
+        float3 blur = float3(0, 0, 0);
+        float tex_width, tex_height;
+        AlbedoBuffer.GetDimensions(tex_width, tex_height);
+        float2 uv_scale = 1.0f / float2(tex_width, tex_height);
+	 
+        float scalar = 1;
+        float scalar_sum = 0;
+        for (int i = -BlurSteps + 1; i < BlurSteps; i++)
+        {
+            float scalar_tmp = scalar;
+            for (int j = -BlurSteps + 1; j < BlurSteps; j++)
+            {
+                blur += AlbedoBuffer.Sample(samLinear, uv + float2(i * uv_scale.x, j * uv_scale.y)).rgb * scalar_tmp;
+                scalar_sum += scalar_tmp;
+                if (j <= 0)
+                    scalar_tmp *= 2.0f;
+                else
+                    scalar_tmp /= 2.0f;
+            }
+            if (i <= 0)
+                scalar *= 2.0f;
+            else
+                scalar /= 2.0f;
+        }
+        
+        float actual_radius = (BlurSteps * 2) + 1;
+	 
+        blur /= scalar_sum;
+        
+        albedo.rgb = blur;
+    }
+    
     float4 scene = albedo * light;
     
     scene *= PostProcessColor;
@@ -577,7 +645,7 @@ float4 QuadPS(QuadVS_Output IN) : SV_TARGET
     {
         scene.rgb = dot(scene.rgb, float3(0.3, 0.59, 0.11));
 
-    }
+    } 
     
     return scene;
 }

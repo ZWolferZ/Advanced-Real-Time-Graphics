@@ -208,7 +208,7 @@ HRESULT DX11Renderer::Init(HWND hwnd)
 	hr = m_pd3dDevice->CreatePixelShader(pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize(), nullptr, &m_visualiseDepth);
 
 
-	hr = CompileShaderFromFile(L"shader.fx", "QuadPSFowardRendered", "ps_4_0", &pPSBlob);
+	hr = CompileShaderFromFile(L"shader.fx", "QuadPSForwardRendered", "ps_4_0", &pPSBlob);
 	if (FAILED(hr))
 	{
 		MessageBox(nullptr,

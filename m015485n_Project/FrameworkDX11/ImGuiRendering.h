@@ -55,4 +55,5 @@ private:
 	Light* m_selectedLight = nullptr;
 	int lightIndex = 0;
 	bool grayscalemode = false;
+	bool blurmode = false;
 };

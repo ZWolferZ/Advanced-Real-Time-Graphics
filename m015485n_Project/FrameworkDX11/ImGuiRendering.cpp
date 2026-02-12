@@ -836,9 +836,8 @@ void ImGuiRendering::DrawPostProcessingWindow()
 	}
 
 	ImGui::Separator();
-	ImGui::Text("Screen Grayscale Mode");
 
-	if (ImGui::Checkbox("Grayscale", &grayscalemode))
+	if (ImGui::Checkbox("Grayscale Mode", &grayscalemode))
 	{
 		if (grayscalemode)
 		{
@@ -850,6 +849,26 @@ void ImGuiRendering::DrawPostProcessingWindow()
 			m_postProcessCBData.GrayScaleMode = 0;
 		}
 	}
+
+	ImGui::Separator();
+	if (ImGui::Checkbox("Gussian Blur Mode", &blurmode)) 
+	{
+		if (blurmode)
+		{
+			m_postProcessCBData.BlurMode = 1;
+		}
+		else 
+		{ 
+			m_postProcessCBData.BlurMode = 0;
+		}
+	}
+	int blursteps = m_postProcessCBData.BlurSteps;
+	if (ImGui::SliderInt("Blur Steps", &blursteps, 1, 20))
+	{
+		m_postProcessCBData.BlurSteps = blursteps;
+	}
+
+
 
 	ImGui::End();
 }

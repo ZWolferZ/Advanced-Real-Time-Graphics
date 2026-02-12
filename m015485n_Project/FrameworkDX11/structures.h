@@ -249,7 +249,8 @@ struct PostProcessConstantBuffer
 	XMFLOAT4 vOutputColor = { 1,1,1,1 };
 	float Brightness = 2.0f;
 	UINT GrayScaleMode = 0.0f;
-	XMFLOAT2 Padding;
+	UINT BlurMode = 0.0f;
+	int BlurSteps = 5;
 };
 
 struct _Material
