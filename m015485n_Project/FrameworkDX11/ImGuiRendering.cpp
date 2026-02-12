@@ -96,11 +96,6 @@ void ImGuiRendering::DrawVersionWindow(const unsigned int FPS, float totalAppTim
 		m_wireframeMode = false;
 	}
 
-
-
-
-
-
 	ImGui::End();
 }
 
@@ -849,7 +844,7 @@ void ImGuiRendering::DrawPostProcessingWindow()
 		}
 	}
 	int blursteps = m_postProcessCBData.BlurSteps;
-	if (ImGui::SliderInt("Blur Steps", &blursteps, 1, 20))
+	if (ImGui::SliderInt("Blur Steps", &blursteps, 1, 8))
 	{
 		m_postProcessCBData.BlurSteps = blursteps;
 	}

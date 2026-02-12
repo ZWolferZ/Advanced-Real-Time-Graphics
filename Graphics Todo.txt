@@ -10,4 +10,8 @@ Window Title Info (Copy Raytracing)
 
 Fix Compiler Warnings
 
+Make David EZ Mode
+
+David Document
+
 Add Audio
