@@ -110,7 +110,7 @@ void Scene::CreateGameObjects()
 	// CREATE A SIMPLE game object
 	GameObject* go5 = new GameObject(XMFLOAT3(0, -1.5, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(10, 0.1, 10), "Floor 1", GetModelData("Cube"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture(m_textureMap, "Depth View Texture"),"Depth View Texture");
 
-	GameObject* go6 = new GameObject(XMFLOAT3(0, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(-50, -50, -50), "Skybox", GetModelData("Cube"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture UnLit Pixel Shader"), GetTexture(m_textureMap, "Stars.dds"),"Stars.dds");
+	GameObject* go6 = new GameObject(XMFLOAT3(0, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(50, 50, 50), "Skybox", GetModelData("skybox.obj"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture UnLit Pixel Shader"), GetTexture(m_textureMap, "Stars.dds"),"Stars.dds");
 
 	go->m_autoRotateX = true;
 	go->m_autoRotateY = true;
