@@ -441,6 +441,9 @@ float4 PSWriteAlbedoBuffer(PS_INPUT IN) : SV_TARGET
     if (Material.UseTexture)
     {
         texColor = txDiffuse.Sample(samLinear, IN.Tex);
+        
+        texColor *= Material.Diffuse;
+        
         if (texColor.a < 0.1f)
         {
             discard;
@@ -591,16 +594,28 @@ QuadVS_Output QuadVS(QuadVS_Input Input)
 
 
 
+float4 ComputeScene(float2 uv)
+{
+
+    float4 light = LightAccBuffer.Sample(samLinear, uv);
+
+    float4 albedo = AlbedoBuffer.Sample(samLinear, uv);
+    float4 scene = albedo * light;
+    
+    scene *= PostProcessColor;
+    
+    scene *= Brightness;
+    
+    return scene;
+}
+
 
 
 float4 QuadPS(QuadVS_Output IN) : SV_TARGET
 {
     float2 uv = IN.Tex;
-
-    float4 light = LightAccBuffer.Sample(samLinear, uv);
-
-    float4 albedo = AlbedoBuffer.Sample(samLinear, uv);
     
+    float4 scene = ComputeScene(uv);
     if (BlurMode == 1.0f)
     {
         float3 blur = float3(0, 0, 0);
@@ -615,7 +630,7 @@ float4 QuadPS(QuadVS_Output IN) : SV_TARGET
             float scalar_tmp = scalar;
             for (int j = -BlurSteps + 1; j < BlurSteps; j++)
             {
-                blur += AlbedoBuffer.Sample(samLinear, uv + float2(i * uv_scale.x, j * uv_scale.y)).rgb * scalar_tmp;
+                blur += ComputeScene(uv + float2(i * uv_scale.x, j * uv_scale.y)).rgb * scalar_tmp;
                 scalar_sum += scalar_tmp;
                 if (j <= 0)
                     scalar_tmp *= 2.0f;
@@ -632,14 +647,8 @@ float4 QuadPS(QuadVS_Output IN) : SV_TARGET
 	 
         blur /= scalar_sum;
         
-        albedo.rgb = blur;
+        scene.rgb = blur;
     }
-    
-    float4 scene = albedo * light;
-    
-    scene *= PostProcessColor;
-    
-    scene *= Brightness;
     
     if (GrayScaleMode == 1.0f)
     {
@@ -663,8 +672,11 @@ float4 PS_DeferredLighting(QuadVS_Output IN) : SV_TARGET
     float3 N = NormalBuffer.Sample(samLinear, IN.Tex).xyz * 2.0f - 1.0f;
     float3 worldPos = WorldPosBuffer.Sample(samLinear, IN.Tex).xyz;
 
-
     float3 diffuseLighting = float3(0.03f, 0.03f, 0.03f);
+    float3 ambient = GlobalAmbient.rgb * Material.Ambient.rgb;
+    float3 specularLighting = float3(0, 0, 0);
+
+    float3 pixelToEyeVector = normalize(EyePosition.xyz - worldPos);
 
     for (uint i = 0; i < LightCount; ++i)
     {
@@ -697,13 +709,20 @@ float4 PS_DeferredLighting(QuadVS_Output IN) : SV_TARGET
         }
 
         float diff = max(dot(N, lightDir), 0.0f);
-
         diffuseLighting += Lights[i].Color.rgb * diff * attenuation;
+
+        float lightIntensity = saturate(dot(N, lightDir));
+        if (lightIntensity > 0.0f)
+        {
+            float3 reflection = reflect(-lightDir, N);
+            float specular = pow(saturate(dot(reflection, pixelToEyeVector)), Material.SpecularPower);
+            specularLighting += Lights[i].Color.rgb * specular * attenuation;
+        }
     }
 
+    float3 finalLighting =  ambient + diffuseLighting + (specularLighting * Material.Specular.rgb);
 
-
-    return float4(diffuseLighting, 1.0f);
+    return float4(finalLighting, 1.0f);
 }
 
 

@@ -28,7 +28,7 @@ void ImGuiRendering::ShutDownImGui()
 	ImGui::DestroyContext();
 }
 
-void ImGuiRendering::ImGuiDrawAllWindows(const unsigned int FPS, float totalAppTime, Scene* currentScene, ID3D11DeviceContext* pContext)
+void ImGuiRendering::ImGuiDrawAllWindows(const unsigned int FPS, float totalAppTime, Scene* currentScene, ID3D11DeviceContext* pContext,std::function<void()> toggleFullScreen)
 {
 	m_currentScene = currentScene;
 
@@ -38,11 +38,11 @@ void ImGuiRendering::ImGuiDrawAllWindows(const unsigned int FPS, float totalAppT
 
 	if (showWindows)
 	{
-		DrawVersionWindow(FPS, totalAppTime);
+		DrawVersionWindow(FPS, totalAppTime,pContext,toggleFullScreen);
 		DrawSelectLightWindow();
 		DrawLightUpdateWindow();
 		DrawObjectSelectionWindow();
-		//DrawUpdateObjectMaterialBufferWindow(pContext);
+		DrawUpdateObjectMaterialBufferWindow(pContext);
 		DrawObjectMovementWindow();
 		//DrawPixelShaderSelectionWindow();
 		DrawTextureSelectionWindow(pContext);
@@ -67,7 +67,7 @@ void ImGuiRendering::ResetAllWindowsPositions()
 	}
 }
 
-void ImGuiRendering::DrawVersionWindow(const unsigned int FPS, float totalAppTime)
+void ImGuiRendering::DrawVersionWindow(const unsigned int FPS, float totalAppTime, ID3D11DeviceContext* pContext,std::function<void()> toggleFullScreen)
 {
 	static ImVec2 windowPos = ImVec2(10, 10);
 	static string windowName = "LucyLabs DX11 Renderer";
@@ -79,7 +79,28 @@ void ImGuiRendering::DrawVersionWindow(const unsigned int FPS, float totalAppTim
 	ImGui::Text("ImGUI version: (%s)", IMGUI_VERSION);
 	ImGui::Text("Application Runtime (%f)", totalAppTime);
 	ImGui::Text("FPS %d", FPS);
+	bool fullscreenCheckboxDisabled = m_isBorderlessFullscreen;
+	if (ImGui::Checkbox("FullScreen Mode", &fullscreenCheckboxDisabled))
+	{
+		toggleFullScreen();
+	}
 	ImGui::Checkbox("VSync Enabled", &VSyncEnabled);
+	if (!m_deferredRendering)
+	{
+		ImGui::Checkbox("Wireframe Mode", &m_wireframeMode);
+	
+	}
+	else 
+	{
+		ImGui::Text("Wireframe Mode Not Available In Deferred Lighting Mode");
+		m_wireframeMode = false;
+	}
+
+
+
+
+
+
 	ImGui::End();
 }
 
@@ -295,8 +316,6 @@ void ImGuiRendering::DrawUpdateObjectMaterialBufferWindow(ID3D11DeviceContext* p
 {
 	if (m_selectedObject != nullptr)
 	{
-		//if (m_selectedObject->GetPixelShader() == m_currentScene->GetPixelShader("Solid Pixel Shader") || m_selectedObject->GetPixelShader() == m_currentScene->GetPixelShader("Texture UnLit Pixel Shader")) return;
-
 		static ImVec2 windowPos = ImVec2(1582, 341);
 		static string windowName = "Object Material Buffer Window";
 
@@ -306,30 +325,12 @@ void ImGuiRendering::DrawUpdateObjectMaterialBufferWindow(ID3D11DeviceContext* p
 		ImGui::Begin(windowName.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove);
 
 		MaterialPropertiesConstantBuffer currentMaterialBuffer = m_selectedObject->GetMaterialConstantBufferData();
-
-		if (m_selectedObject->GetPixelShader() != m_currentScene->GetPixelShader("Texture UnLit Pixel Shader"))
-		{
-			float ambient[3] = { currentMaterialBuffer.Material.Ambient.x, currentMaterialBuffer.Material.Ambient.y, currentMaterialBuffer.Material.Ambient.z };
-			if (ImGui::ColorEdit3("Ambient Color", ambient))
-			{
-				currentMaterialBuffer.Material.Ambient = XMFLOAT4(ambient[0], ambient[1], ambient[2], 1.0f);
-			}
+		
 			float diffuse[3] = { currentMaterialBuffer.Material.Diffuse.x, currentMaterialBuffer.Material.Diffuse.y, currentMaterialBuffer.Material.Diffuse.z };
-			if (ImGui::ColorEdit3("Diffuse Color", diffuse))
+			if (ImGui::ColorEdit3("Object Color", diffuse))
 			{
 				currentMaterialBuffer.Material.Diffuse = XMFLOAT4(diffuse[0], diffuse[1], diffuse[2], 1.0f);
 			}
-			float emissive[3] = { currentMaterialBuffer.Material.Emissive.x, currentMaterialBuffer.Material.Emissive.y, currentMaterialBuffer.Material.Emissive.z };
-			if (ImGui::ColorEdit3("Emissive Color", emissive))
-			{
-				currentMaterialBuffer.Material.Emissive = XMFLOAT4(emissive[0], emissive[1], emissive[2], 1.0f);
-			}
-			float specular[3] = { currentMaterialBuffer.Material.Specular.x, currentMaterialBuffer.Material.Specular.y, currentMaterialBuffer.Material.Specular.z };
-			if (ImGui::ColorEdit3("Specular Color", specular))
-			{
-				currentMaterialBuffer.Material.Specular = XMFLOAT4(specular[0], specular[1], specular[2], 1.0f);
-			}
-			ImGui::SliderFloat("Specular Power", &currentMaterialBuffer.Material.SpecularPower, 1.0f, 256.0f);
 
 			ImGui::Separator();
 			if (m_selectedObject->GetTextureResourceView() != nullptr)
@@ -349,27 +350,7 @@ void ImGuiRendering::DrawUpdateObjectMaterialBufferWindow(ID3D11DeviceContext* p
 				}
 			}
 			ImGui::Separator();
-		}
-		else
-		{
-			float ambient[3] = { currentMaterialBuffer.Material.Ambient.x, currentMaterialBuffer.Material.Ambient.y, currentMaterialBuffer.Material.Ambient.z };
-			if (ImGui::ColorEdit3("Ambient Color", ambient))
-			{
-				currentMaterialBuffer.Material.Ambient = XMFLOAT4(ambient[0], ambient[1], ambient[2], 1.0f);
-			}
 
-			ImGui::Separator();
-			if (m_selectedObject->GetTextureResourceView() != nullptr)
-			{
-				bool useTexture = currentMaterialBuffer.Material.UseTexture;
-				if (ImGui::Checkbox("Use Texture", &useTexture))
-				{
-					currentMaterialBuffer.Material.UseTexture = useTexture;
-				}
-			}
-
-			ImGui::Separator();
-		}
 		m_selectedObject->UpdateMaterialConstantBuffer(currentMaterialBuffer, pContext);
 
 		if (ImGui::Button("Reset Material Values"))
@@ -551,7 +532,7 @@ void ImGuiRendering::DrawTextureSelectionWindow(ID3D11DeviceContext* pContext)
 {
 	if (m_selectedObject != nullptr)
 	{
-		static ImVec2 windowPos = ImVec2(14, 150);
+		static ImVec2 windowPos = ImVec2(14, 170);
 		static string windowName = "Texture Selection";
 
 		m_originalWindowPositions.try_emplace(windowName, windowPos);

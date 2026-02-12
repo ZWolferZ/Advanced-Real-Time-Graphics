@@ -8,9 +8,9 @@
 
 void DX11Renderer::ToggleFullScreen()
 {
-	m_isBorderlessFullscreen = !m_isBorderlessFullscreen;
+	m_imguiRenderer->m_isBorderlessFullscreen = !m_imguiRenderer->m_isBorderlessFullscreen;
 
-	if (m_isBorderlessFullscreen)
+	if (m_imguiRenderer->m_isBorderlessFullscreen)
 	{
 		// Save windowed rect
 		GetWindowRect(m_handle, &m_windowedRect);
@@ -230,6 +230,8 @@ HRESULT DX11Renderer::Init(HWND hwnd)
 	CreateFullScreenQuad();
 
 	m_pScene->Init(hwnd, m_pd3dDevice, m_pImmediateContext);
+
+	ToggleFullScreen();
 
 	return hr;
 }
@@ -659,6 +661,21 @@ HRESULT DX11Renderer::InitDevice(HWND hwnd)
 	vp.TopLeftX = 0;
 	vp.TopLeftY = 0;
 	m_pImmediateContext->RSSetViewports(1, &vp);
+	
+	
+	D3D11_RASTERIZER_DESC wfdesc;
+	ZeroMemory(&wfdesc, sizeof(D3D11_RASTERIZER_DESC));
+	wfdesc.FillMode = D3D11_FILL_WIREFRAME;
+	wfdesc.CullMode = D3D11_CULL_NONE;
+	hr = m_pd3dDevice->CreateRasterizerState(&wfdesc, &m_WireFrame);
+
+	D3D11_RASTERIZER_DESC filldesc;
+	ZeroMemory(&filldesc, sizeof(D3D11_RASTERIZER_DESC));
+	filldesc.FillMode = D3D11_FILL_SOLID;
+	filldesc.CullMode = D3D11_CULL_NONE;
+	hr = m_pd3dDevice->CreateRasterizerState(&filldesc, &m_SolidFill);
+
+
 
 	return S_OK;
 }
@@ -1272,7 +1289,13 @@ void DX11Renderer::Update(const float deltaTime)
 
 	float clearColor[4] = { 0.f, 0.f, 0.f, 1.f };
 
+
 	m_pImmediateContext->UpdateSubresource(m_postProcessConstantBuffer.Get(), 0, nullptr, &m_imguiRenderer->m_postProcessCBData, 0, 0);
+
+
+	if (m_imguiRenderer->m_wireframeMode) { m_pImmediateContext->RSSetState(m_WireFrame.Get()); }
+	else { m_pImmediateContext->RSSetState(m_SolidFill.Get()); }
+
 
 	if (m_imguiRenderer->m_deferredRendering)
 	{
@@ -1299,6 +1322,7 @@ void DX11Renderer::Update(const float deltaTime)
 
 		m_pImmediateContext->OMSetRenderTargets(0, nullptr, nullptr);
 		//////
+		m_pImmediateContext->RSSetState(m_SolidFill.Get());
 
 		DrawDepthScreenQuad();
 
@@ -1329,6 +1353,7 @@ void DX11Renderer::Update(const float deltaTime)
 		m_pImmediateContext->OMSetRenderTargets(0, nullptr, nullptr);
 
 		m_pImmediateContext->OMSetRenderTargets(1, m_PresentedRenderTargetView.GetAddressOf(), nullptr);
+		m_pImmediateContext->RSSetState(m_SolidFill.Get());
 		DrawFullScreenQuad(FullScreenQuadOptions::FullDeferredQuad);
 	}
 	else
@@ -1341,11 +1366,13 @@ void DX11Renderer::Update(const float deltaTime)
 		m_pScene->Draw(1);
 		m_pImmediateContext->OMSetRenderTargets(0, nullptr, nullptr);
 		m_pImmediateContext->OMSetRenderTargets(1, m_PresentedRenderTargetView.GetAddressOf(), nullptr);
+		m_pImmediateContext->RSSetState(m_SolidFill.Get());
 		DrawFullScreenQuad(FullScreenQuadOptions::ForwardRenderingQuad);
 
 	}
+
 	// ImGui Pass
-	m_imguiRenderer->ImGuiDrawAllWindows(FPS, m_totalTime, m_pScene, m_pImmediateContext.Get());
+	m_imguiRenderer->ImGuiDrawAllWindows(FPS, m_totalTime, m_pScene, m_pImmediateContext.Get(), [&] {ToggleFullScreen(); });
 
 
 

@@ -143,7 +143,6 @@ private: // properties
 	ImGuiRendering* m_imguiRenderer = nullptr;
 	std::unordered_map<UINT8, bool > inputs;
 	std::unordered_map<UINT8, bool > previnputs;
-	bool m_isBorderlessFullscreen = false;
 	RECT m_windowedRect = {};
 
 	D3D_DRIVER_TYPE									m_driverType = D3D_DRIVER_TYPE_NULL;
@@ -159,6 +158,8 @@ private: // properties
 
 	Microsoft::WRL::ComPtr < ID3D11Buffer>						m_postProcessConstantBuffer = nullptr;
 
+	Microsoft::WRL::ComPtr < ID3D11RasterizerState> m_WireFrame;
+	Microsoft::WRL::ComPtr < ID3D11RasterizerState> m_SolidFill;
 
 	Microsoft::WRL::ComPtr <ID3D11VertexShader>		m_pVertexShader;
 	Microsoft::WRL::ComPtr <ID3D11PixelShader>		m_pPixelShader;

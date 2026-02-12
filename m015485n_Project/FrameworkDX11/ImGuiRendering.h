@@ -7,6 +7,7 @@
 #include <string>
 #include <d3d11_1.h>
 #include <unordered_map>
+#include <functional>
 
 #include "Scene.h"
 
@@ -17,18 +18,20 @@ public:
 
 	void ShutDownImGui();
 
-	void ImGuiDrawAllWindows(const unsigned int FPS, float totalAppTime, Scene* currentScene, ID3D11DeviceContext* pContext);
+	void ImGuiDrawAllWindows(const unsigned int FPS, float totalAppTime, Scene* currentScene, ID3D11DeviceContext* pContext, std::function<void()> toggleFullScreen);
 
 	void	ResetAllWindowsPositions();
 
 	void	UpdateSRVs(vector<Microsoft::WRL::ComPtr <ID3D11ShaderResourceView>> updatedSRVs) { m_textureSRVs = updatedSRVs; }
 
 	bool VSyncEnabled = true;
+	bool m_wireframeMode = false;
 	bool m_deferredRendering = true;
+	bool m_isBorderlessFullscreen = false;
 	PostProcessConstantBuffer m_postProcessCBData;
 
 private:
-	void	DrawVersionWindow(const unsigned int FPS, float totalAppTime);
+	void	DrawVersionWindow(const unsigned int FPS, float totalAppTime, ID3D11DeviceContext* pContext, std::function<void()> toggleFullScreen);
 	void	DrawHideAllWindows();
 	void	DrawSelectLightWindow();
 	void	DrawLightUpdateWindow();
