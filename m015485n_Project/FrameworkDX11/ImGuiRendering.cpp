@@ -762,9 +762,14 @@ void ImGuiRendering::DrawCameraSplineWindow()
 void ImGuiRendering::DrawDeferredRenderingWindow()
 {
 	ImVec2 displaySize(SCREEN_WIDTH * 0.25f, SCREEN_HEIGHT * 0.25f);
+	static ImVec2 windowPos = ImVec2(200, 850);
+	static std::string windowName = "Deferred Lighting Textures";
 
-	ImGui::Begin("Deferred Lighting Textures");
-	ImGui::Checkbox("Deferred Rendering", &m_deferredRendering);
+	m_originalWindowPositions.try_emplace(windowName, windowPos);
+
+	ImGui::SetNextWindowPos(windowPos, ImGuiCond_FirstUseEver);
+	ImGui::Begin(windowName.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove);
+	ImGui::Checkbox("Deferred Lighting", &m_deferredRendering);
 
 	if (m_deferredRendering)
 	{

@@ -108,7 +108,7 @@ void Scene::CreateGameObjects()
 	GameObject* go4 = new GameObject(XMFLOAT3(-8, -1.4, -8.4), XMFLOAT3(0, -47, 0), XMFLOAT3(10, 10, 10), "Bunny", GetModelData("bunny.obj"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture(m_textureMap, "BunnyTex.dds"),"BunnyTex.dds");
 
 	// CREATE A SIMPLE game object
-	GameObject* go5 = new GameObject(XMFLOAT3(0, -1.5, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(10, 0.1, 10), "Floor 1", GetModelData("Cube"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture(m_textureMap, "Pathway.dds"),"Pathway.dds",GetTexture(m_normalMapTextureMap, "PathwayNormal.dds"));
+	GameObject* go5 = new GameObject(XMFLOAT3(0, -1.5, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(10, 0.1, 10), "Floor 1", GetModelData("Cube"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture(m_textureMap, "Depth View Texture"),"Depth View Texture");
 
 	GameObject* go6 = new GameObject(XMFLOAT3(0, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(-50, -50, -50), "Skybox", GetModelData("Cube"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture UnLit Pixel Shader"), GetTexture(m_textureMap, "Stars.dds"),"Stars.dds");
 
