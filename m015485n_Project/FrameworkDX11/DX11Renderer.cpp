@@ -66,6 +66,8 @@ HRESULT DX11Renderer::Init(HWND hwnd)
 
 	m_pScene = new Scene;
 
+	CreatePostProcessConstantBuffer();
+
 	vector<Microsoft::WRL::ComPtr <ID3D11ShaderResourceView>> renderSRVs = {
 		m_gBuffer.depth.rendersrv,
 		m_gBuffer.normals.srv,
@@ -1080,6 +1082,28 @@ void DX11Renderer::CentreMouseInWindow(HWND hWnd)
 	SetCursorPos(center.x, center.y);
 }
 
+void DX11Renderer::CreatePostProcessConstantBuffer()
+{
+	D3D11_BUFFER_DESC bd = {};
+	bd.Usage = D3D11_USAGE_DEFAULT;
+	bd.ByteWidth = sizeof(PostProcessConstantBuffer);
+	bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	bd.CPUAccessFlags = 0;
+	Microsoft::WRL::ComPtr <ID3D11Buffer>* buf_out = &m_postProcessConstantBuffer;
+	HRESULT hr = m_pd3dDevice->CreateBuffer(&bd, nullptr, buf_out->GetAddressOf());
+	if (FAILED(hr))
+	{
+		MessageBox(nullptr,
+			L"Failed to create post-process constant buffer.", L"Error", MB_OK);
+	}
+
+	m_pImmediateContext->UpdateSubresource(m_postProcessConstantBuffer.Get(), 0, nullptr, &m_postProcessCBData, 0, 0);
+
+	m_pImmediateContext->PSSetConstantBuffers(2, 1, &m_postProcessConstantBuffer);
+
+
+}
+
 void DX11Renderer::DrawFullScreenQuad(FullScreenQuadOptions options)
 {
 	m_pImmediateContext->IASetInputLayout(g_pQuadLayout.Get());
@@ -1093,6 +1117,7 @@ void DX11Renderer::DrawFullScreenQuad(FullScreenQuadOptions options)
 	m_pImmediateContext->VSSetShader(g_pQuadVS.Get(), nullptr, 0);
 	ID3D11SamplerState* ss = m_textureSampler.Get();
 	m_pImmediateContext->PSSetSamplers(0, 1, &ss);
+
 
 	if (options == FullScreenQuadOptions::LightingQuad)
 	{
@@ -1198,6 +1223,9 @@ void DX11Renderer::Update(const float deltaTime)
 	}
 
 	float clearColor[4] = { 0.f, 0.f, 0.f, 1.f };
+
+	m_pImmediateContext->UpdateSubresource(m_postProcessConstantBuffer.Get(), 0, nullptr, &m_postProcessCBData, 0, 0);
+
 	if (m_imguiRenderer->m_deferredRendering)
 	{
 		//FIRST GEOMETRY PASS TO FILL SMALLER G-BUFFER (DEPTH, NORMALS, WORLD POS)

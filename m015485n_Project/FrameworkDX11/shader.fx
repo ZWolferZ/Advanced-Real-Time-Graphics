@@ -48,6 +48,11 @@ cbuffer MaterialProperties : register(b1)
     _Material Material;
 };
 
+cbuffer PostProcessProperties : register(b2)
+{
+    float4 PostProcessColor;
+};
+
 struct Light
 {
     float4 Position; // 16 bytes

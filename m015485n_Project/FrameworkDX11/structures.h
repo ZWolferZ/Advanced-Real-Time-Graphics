@@ -244,6 +244,11 @@ struct ConstantBuffer
 	XMFLOAT4 vOutputColor;
 };
 
+struct PostProcessConstantBuffer
+{
+	XMFLOAT4 vOutputColor = { 1,1,1,1 };
+};
+
 struct _Material
 {
 	_Material()

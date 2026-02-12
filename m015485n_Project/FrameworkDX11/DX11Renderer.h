@@ -136,6 +136,8 @@ private: // methods
 	//void	completeIMGUIDraw();
 	void	CentreMouseInWindow(HWND hWnd);
 
+	void CreatePostProcessConstantBuffer();
+
 private: // properties
 	HWND m_handle = nullptr;
 	ImGuiRendering* m_imguiRenderer = nullptr;
@@ -154,6 +156,9 @@ private: // properties
 	Microsoft::WRL::ComPtr <IDXGISwapChain1>		m_pSwapChain1;
 
 	GBuffer m_gBuffer;
+
+	PostProcessConstantBuffer m_postProcessCBData;
+	Microsoft::WRL::ComPtr < ID3D11Buffer>						m_postProcessConstantBuffer = nullptr;
 
 
 	Microsoft::WRL::ComPtr <ID3D11VertexShader>		m_pVertexShader;
