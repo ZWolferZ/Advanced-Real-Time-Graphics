@@ -1,17 +1,18 @@
 #include "Scene.h"
 
-#include <iostream>
-#include <unordered_map>
 
-#include "DDSTextureLoader.h"
-#include "WaveFrontReader.h"
 
 HRESULT Scene::Init(HWND hwnd, const Microsoft::WRL::ComPtr<ID3D11Device>& device, const Microsoft::WRL::ComPtr<ID3D11DeviceContext>& context)
 {
 	m_pd3dDevice = device;
 	m_pImmediateContext = context;
-	LoadTextures();
-	LoadModels();
+
+	std::thread DDSThread(&Scene::LoadDDSs, this);
+	std::thread ModelThread(&Scene::LoadModels, this);
+
+
+	DDSThread.join();
+	ModelThread.join();
 	CreateGameObjects();
 
 	RECT rc;
@@ -57,6 +58,11 @@ void Scene::LoadTextures()
 		m_textureMap.push_back({ entry.path().filename().string(), textureResourceView });
 	}
 
+
+}
+
+void Scene::LoadNormalMaps()
+{
 	for (const auto& entry : filesystem::directory_iterator(L"resources\\NormalMaps"))
 	{
 		if (!entry.is_regular_file()) continue;
@@ -75,6 +81,15 @@ void Scene::LoadTextures()
 
 		m_normalMapTextureMap.push_back({ entry.path().filename().string(), normalMapResourceView });
 	}
+}
+
+void Scene::LoadDDSs()
+{
+	std::thread texThread(&Scene::LoadTextures, this);
+	std::thread normThread(&Scene::LoadNormalMaps, this);
+
+	texThread.join();
+	normThread.join();
 }
 
 void Scene::LoadModels()

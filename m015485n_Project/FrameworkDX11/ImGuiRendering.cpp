@@ -92,7 +92,8 @@ void ImGuiRendering::DrawVersionWindow(const unsigned int FPS, float totalAppTim
 	}
 	else 
 	{
-		ImGui::Text("Wireframe Mode Not Available In Deferred Lighting Mode");
+		ImGui::Text("Wireframe Mode Not Available,");
+		ImGui::Text("In Deferred Lighting Mode."); 
 		m_wireframeMode = false;
 	}
 
@@ -101,7 +102,7 @@ void ImGuiRendering::DrawVersionWindow(const unsigned int FPS, float totalAppTim
 
 void ImGuiRendering::DrawHideAllWindows()
 {
-	static ImVec2 windowPos = ImVec2(1425, 853);
+	static ImVec2 windowPos = ImVec2(1750, 965);
 	static string windowName = "Show/Hide UI";
 
 	m_originalWindowPositions.try_emplace(windowName, windowPos);
@@ -401,10 +402,25 @@ void ImGuiRendering::DrawObjectGimzo()
 		static ImGuizmo::OPERATION operation = ImGuizmo::TRANSLATE;
 		static ImGuizmo::MODE mode = ImGuizmo::LOCAL;
 
+		if (ImGui::IsKeyPressed(ImGuiKey_1) )
+		{
+			operation = ImGuizmo::TRANSLATE;
+		}
+
+		if (ImGui::IsKeyPressed(ImGuiKey_2))
+		{
+			operation = ImGuizmo::ROTATE;
+		}
+
+		if (ImGui::IsKeyPressed(ImGuiKey_3))
+		{
+			operation = ImGuizmo::SCALE;
+		}
+
 		if (ImGui::RadioButton("Translate", operation == ImGuizmo::TRANSLATE)) operation = ImGuizmo::TRANSLATE; ImGui::SameLine();
 		if (ImGui::RadioButton("Rotate", operation == ImGuizmo::ROTATE)) operation = ImGuizmo::ROTATE; ImGui::SameLine();
 		if (ImGui::RadioButton("Scale", operation == ImGuizmo::SCALE)) operation = ImGuizmo::SCALE;
-
+		ImGui::Text("Use 1,2,3 For Hot KeyBinds");
 		if (ImGuizmo::Manipulate(view, proj, operation, mode, objMat))
 		{
 			XMMATRIX newObjectMatrix = XMLoadFloat4x4(reinterpret_cast<XMFLOAT4X4*>(objMat));
@@ -527,7 +543,7 @@ void ImGuiRendering::DrawTextureSelectionWindow(ID3D11DeviceContext* pContext)
 {
 	if (m_selectedObject != nullptr)
 	{
-		static ImVec2 windowPos = ImVec2(14, 170);
+		static ImVec2 windowPos = ImVec2(10, 185);
 		static string windowName = "Texture Selection";
 
 		m_originalWindowPositions.try_emplace(windowName, windowPos);
@@ -610,7 +626,7 @@ void ImGuiRendering::DrawNormalMapSelectionWindow(ID3D11DeviceContext* pContext)
 {
 	if (m_selectedObject != nullptr)
 	{
-		static ImVec2 windowPos = ImVec2(14, 460);
+		static ImVec2 windowPos = ImVec2(280, 185);
 		static string windowName = "Normal Map Selection";
 
 		m_originalWindowPositions.try_emplace(windowName, windowPos);
@@ -657,7 +673,7 @@ void ImGuiRendering::DrawNormalMapSelectionWindow(ID3D11DeviceContext* pContext)
 void ImGuiRendering::DrawCameraStatsWindow()
 {
 	XMFLOAT3 cameraPosition = m_currentScene->GetCamera()->GetPosition();
-	static ImVec2 windowPos = ImVec2(342, 687);
+	static ImVec2 windowPos = ImVec2(342, 590);
 	static string windowName = "Camera Statistics";
 
 	m_originalWindowPositions.try_emplace(windowName, windowPos);
@@ -738,7 +754,7 @@ void ImGuiRendering::DrawCameraSplineWindow()
 void ImGuiRendering::DrawDeferredRenderingWindow()
 {
 	ImVec2 displaySize(SCREEN_WIDTH * 0.20f, SCREEN_HEIGHT * 0.20f);
-	static ImVec2 windowPos = ImVec2(350, 920);
+	static ImVec2 windowPos = ImVec2(350, 800);
 	static std::string windowName = "Deferred Lighting Textures";
 
 	m_originalWindowPositions.try_emplace(windowName, windowPos);
@@ -792,7 +808,7 @@ void ImGuiRendering::DrawDeferredRenderingWindow()
 
 void ImGuiRendering::DrawPostProcessingWindow()
 {
-	static ImVec2 windowPos = ImVec2(20, 625);
+	static ImVec2 windowPos = ImVec2(20, 590);
 	static string windowName = "Post-Processing Window";
 
 	m_originalWindowPositions.try_emplace(windowName, windowPos);

@@ -22,6 +22,12 @@
 #include <vector>
 #include  <filesystem>
 #include <map>
+#include <iostream>
+#include <unordered_map>
+
+#include "DDSTextureLoader.h"
+#include "WaveFrontReader.h"
+#include <thread>
 
 class Scene
 {
@@ -31,7 +37,10 @@ public:
 
 	HRESULT		Init(HWND hwnd, const Microsoft::WRL::ComPtr<ID3D11Device>& device, const Microsoft::WRL::ComPtr<ID3D11DeviceContext>& context);
 	void LoadTextures();
+	void LoadNormalMaps();
+	void LoadDDSs();
 	void LoadModels();
+	void OBJLoad(ID3D11Device* pd3dDevice, const filesystem::directory_entry& entry);
 	void CreateGameObjects();
 	void		CleanUp();
 	Camera* GetCamera() { return m_pCamera; }
