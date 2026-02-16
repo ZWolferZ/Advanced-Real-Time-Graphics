@@ -43,7 +43,7 @@ void ImGuiRendering::ImGuiDrawAllWindows(const unsigned int FPS, float totalAppT
 
 	if (showWindows)
 	{
-		DrawVersionWindow(FPS, totalAppTime, pContext, toggleFullScreen);
+		DrawVersionWindow(FPS, totalAppTime, toggleFullScreen);
 		DrawSelectLightWindow();
 		DrawLightUpdateWindow();
 		DrawObjectSelectionWindow();
@@ -72,7 +72,7 @@ void ImGuiRendering::ResetAllWindowsPositions()
 	}
 }
 
-void ImGuiRendering::DrawVersionWindow(const unsigned int FPS, float totalAppTime, ID3D11DeviceContext* pContext, std::function<void()> toggleFullScreen)
+void ImGuiRendering::DrawVersionWindow(const unsigned int FPS, float totalAppTime, std::function<void()> toggleFullScreen)
 {
 	static ImVec2 windowPos = ImVec2(10, 10);
 	static string windowName = "RyanLabs DX11 Renderer";
@@ -311,7 +311,7 @@ void ImGuiRendering::DrawObjectMovementWindow()
 		}
 
 		XMFLOAT3 scale = m_selectedObject->GetScale();
-		if (ImGui::DragFloat3("Scale", reinterpret_cast<float*>(&scale), 0.01f, -INFINITY, INFINITY))
+		if (ImGui::DragFloat3("Scale", reinterpret_cast<float*>(&scale), 0.01f, -FLT_MAX, FLT_MAX))
 		{
 			m_selectedObject->SetScale(scale);
 		}
@@ -658,7 +658,7 @@ void ImGuiRendering::DrawMeshSelectionWindow()
 	if (m_selectedObject != nullptr)
 	{
 		if (m_selectedObject->m_isDialog) return;
-		static ImVec2 windowPos = ImVec2(1666, 560);
+		static ImVec2 windowPos = ImVec2(1580, 560);
 		static string windowName = "Mesh/Model Selection";
 
 		m_originalWindowPositions.try_emplace(windowName, windowPos);
@@ -694,7 +694,7 @@ void ImGuiRendering::DrawNormalMapSelectionWindow(ID3D11DeviceContext* pContext)
 	if (m_selectedObject != nullptr)
 	{
 		if (m_selectedObject->m_isDialog) return;
-		static ImVec2 windowPos = ImVec2(280, 185);
+		static ImVec2 windowPos = ImVec2(300, 185);
 		static string windowName = "Normal Map Selection";
 
 		m_originalWindowPositions.try_emplace(windowName, windowPos);
@@ -755,7 +755,7 @@ void ImGuiRendering::DrawCameraStatsWindow()
 	ImGui::Text("Camera Position: Z - %.3f", cameraPosition.z);
 	ImGui::Separator();
 
-	if (ImGui::DragFloat3("Camera Position", reinterpret_cast<float*>(&cameraPosition), 0.01f, -INFINITY, INFINITY))
+	if (ImGui::DragFloat3("Camera Position", reinterpret_cast<float*>(&cameraPosition), 0.01f, -FLT_MAX, FLT_MAX))
 	{
 		m_currentScene->GetCamera()->SetPosition(cameraPosition);
 	}

@@ -52,6 +52,9 @@
     <ClCompile Include="imgui\ImGuizmo.cpp">
       <Filter>Imgui</Filter>
     </ClCompile>
+    <ClCompile Include="miniaudio.c">
+      <Filter>Resources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="imgui\imgui_impl_win32.h">
@@ -123,6 +126,9 @@
     <ClInclude Include="WaveFrontReader.h">
       <Filter>Graphics</Filter>
     </ClInclude>
+    <ClInclude Include="miniaudio.h">
+      <Filter>Resources</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="App">
@@ -140,9 +146,6 @@
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="shader.fx">
-      <Filter>Resources</Filter>
-    </FxCompile>
-    <FxCompile Include="quadShader.fx">
       <Filter>Resources</Filter>
     </FxCompile>
   </ItemGroup>

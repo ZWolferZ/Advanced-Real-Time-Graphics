@@ -49,7 +49,7 @@ public:
 
 	void PushBackPixelShaders(string name, Microsoft::WRL::ComPtr <ID3D11PixelShader>& pixelShader) { m_pixelShadersMap.push_back({ name, pixelShader }); }
 	MeshData GetModelData(const string& modelToFind);
-	MeshData InitCubeMesh(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pContext);
+	MeshData InitCubeMesh(ID3D11Device* pd3dDevice);
 	MeshData LoadOBJMesh(ID3D11Device* device, const std::string& filename);
 
 	Microsoft::WRL::ComPtr <ID3D11PixelShader>& GetPixelShader(const string& shaderToFind);

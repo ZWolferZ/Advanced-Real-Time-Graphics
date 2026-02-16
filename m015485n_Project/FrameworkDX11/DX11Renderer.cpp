@@ -879,17 +879,17 @@ void DX11Renderer::UpdateKeyInputs()
 
 bool DX11Renderer::KeyHeld(int key)
 {
-	return inputs[key];
+	return inputs[static_cast<UINT8>(key)];
 }
 
 bool DX11Renderer::KeyPressed(int key)
 {
-	return inputs[key] && !previnputs[key];
+	return inputs[static_cast<UINT8>(key)] && !previnputs[static_cast<UINT8>(key)];
 }
 
 bool DX11Renderer::KeyReleased(int key)
 {
-	return !inputs[key] && previnputs[key];
+	return !inputs[static_cast<UINT8>(key)] && previnputs[static_cast<UINT8>(key)];
 }
 
 void DX11Renderer::OnResize(UINT width, UINT height)

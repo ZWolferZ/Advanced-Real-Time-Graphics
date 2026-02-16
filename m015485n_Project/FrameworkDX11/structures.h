@@ -250,8 +250,8 @@ struct PostProcessConstantBuffer
 {
 	XMFLOAT4 vOutputColor = { 1,1,1,1 };
 	float Brightness = 2.0f;
-	UINT GrayScaleMode = 0.0f;
-	UINT BlurMode = 0.0f;
+	UINT GrayScaleMode = 0;
+	UINT BlurMode = 0;
 	int BlurSteps = 5;
 	UINT ScanLineMode = 0;
 	float ScanLineSize = 800.0f;

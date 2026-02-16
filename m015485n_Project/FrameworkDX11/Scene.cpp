@@ -89,7 +89,7 @@ void Scene::LoadDDSs()
 
 void Scene::LoadModels()
 {
-	MeshData cube = InitCubeMesh(m_pd3dDevice.Get(), m_pImmediateContext.Get());
+	MeshData cube = InitCubeMesh(m_pd3dDevice.Get());
 
 	m_models.push_back({ "Cube", cube });
 
@@ -218,7 +218,7 @@ MeshData Scene::GetModelData(const string& modelToFind)
 	return m_models[0].second;
 }
 
-MeshData Scene::InitCubeMesh(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pContext)
+MeshData Scene::InitCubeMesh(ID3D11Device* pd3dDevice)
 {
 	MeshData meshData;
 
@@ -726,7 +726,7 @@ void Scene::Update(const float deltaTime)
 		{
 			m_vecDrawables[i]->SetPosition(GetCamera()->GetPosition());
 		}
-		m_vecDrawables[i]->Update(deltaTime, m_pImmediateContext.Get());
+		m_vecDrawables[i]->Update(deltaTime);
 	}
 }
 

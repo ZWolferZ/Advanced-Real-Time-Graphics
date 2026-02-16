@@ -17,7 +17,7 @@ IRenderable::~IRenderable()
 	Cleanup();
 }
 
-void IRenderable::Update(const float deltaTime, ID3D11DeviceContext* pContext)
+void IRenderable::Update(const float deltaTime)
 {
 	// Don't overflow the rotation
 	if (m_rotation.x > 360.0f) m_rotation.x = 0.0f;

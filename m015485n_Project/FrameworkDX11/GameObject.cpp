@@ -19,7 +19,7 @@ GameObject::GameObject(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, str
 	m_material.Material.SpecularPower = 128.0f;
 	m_originalMaterial = m_material;
 	m_meshData = meshData;
-	CreateSampler(m_pd3dDevice, m_pImmediateContext);
+	CreateSampler(m_pd3dDevice);
 	if (!messageWavPath.empty())
 	{
 		m_isDialog = true;
@@ -53,7 +53,7 @@ GameObject::GameObject(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, str
 	m_originalMaterial = m_material;
 	m_meshData = meshData;
 
-	CreateSampler(m_pd3dDevice, m_pImmediateContext);
+	CreateSampler(m_pd3dDevice);
 
 	CreateMaterialBuffer(m_pd3dDevice, m_pImmediateContext);
 }
@@ -79,7 +79,7 @@ GameObject::GameObject(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, str
 	m_originalMaterial = m_material;
 	m_meshData = meshData;
 
-	CreateSampler(m_pd3dDevice, m_pImmediateContext);
+	CreateSampler(m_pd3dDevice);
 
 	CreateMaterialBuffer(m_pd3dDevice, m_pImmediateContext);
 }
@@ -87,7 +87,7 @@ GameObject::GameObject(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, str
 GameObject::~GameObject()
 = default;
 
-void GameObject::CreateSampler(ID3D11Device* m_pd3dDevice, ID3D11DeviceContext* m_pImmediateContext)
+void GameObject::CreateSampler(ID3D11Device* m_pd3dDevice)
 {
 	D3D11_SAMPLER_DESC sampDesc;
 	ZeroMemory(&sampDesc, sizeof(sampDesc));

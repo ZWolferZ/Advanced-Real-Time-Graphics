@@ -37,7 +37,7 @@ public:
 
 	string GetObjectName() { return objectName; }
 
-	void CreateSampler(ID3D11Device* m_pd3dDevice, ID3D11DeviceContext* m_pImmediateContext);
+	void CreateSampler(ID3D11Device* m_pd3dDevice);
 
 	void CreateMaterialBuffer(ID3D11Device* m_pd3dDevice, ID3D11DeviceContext* m_pImmediateContext);
 	bool m_isDialog = false;

@@ -35,7 +35,7 @@ public:
 	bool showWindows = false;
 
 private:
-	void	DrawVersionWindow(const unsigned int FPS, float totalAppTime, ID3D11DeviceContext* pContext, std::function<void()> toggleFullScreen);
+	void	DrawVersionWindow(const unsigned int FPS, float totalAppTime, std::function<void()> toggleFullScreen);
 	void	DrawHideAllWindows();
 	void	DrawSelectLightWindow();
 	void	DrawLightUpdateWindow();
