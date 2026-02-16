@@ -1,7 +1,5 @@
 #include "Scene.h"
 
-
-
 HRESULT Scene::Init(HWND hwnd, const Microsoft::WRL::ComPtr<ID3D11Device>& device, const Microsoft::WRL::ComPtr<ID3D11DeviceContext>& context)
 {
 	m_pd3dDevice = device;
@@ -9,7 +7,6 @@ HRESULT Scene::Init(HWND hwnd, const Microsoft::WRL::ComPtr<ID3D11Device>& devic
 
 	std::thread DDSThread(&Scene::LoadDDSs, this);
 	std::thread ModelThread(&Scene::LoadModels, this);
-
 
 	DDSThread.join();
 	ModelThread.join();
@@ -57,8 +54,6 @@ void Scene::LoadTextures()
 
 		m_textureMap.push_back({ entry.path().filename().string(), textureResourceView });
 	}
-
-
 }
 
 void Scene::LoadNormalMaps()
@@ -112,36 +107,90 @@ void Scene::LoadModels()
 
 void Scene::CreateGameObjects()
 {
-	// CREATE A SIMPLE game object
-	GameObject* go = new GameObject(XMFLOAT3(2.0f, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), "Cube 1", GetModelData("Cube"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture(m_textureMap, "stone.dds"), "stone.dds", GetTexture(m_normalMapTextureMap, "conenormal.dds"));
+	GameObject* NormalMapCube1 = new GameObject(XMFLOAT3(2.0f, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), "Normal Mapped Cube 1", GetModelData("Cube"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture(m_textureMap, "stone.dds"), "stone.dds", GetTexture(m_normalMapTextureMap, "conenormal.dds"));
 
-	GameObject* go2 = new GameObject(XMFLOAT3(-2.0f, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), "Cube 2", GetModelData("Cube"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture(m_textureMap, "Crate_COLOR.dds"), "Crate_COLOR.dds",GetTexture(m_normalMapTextureMap, "Crate_NRM.dds"));
+	GameObject* NormalMapCube2 = new GameObject(XMFLOAT3(-2.0f, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), "Normal Mapped Cube 2", GetModelData("Cube"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture(m_textureMap, "Crate_COLOR.dds"), "Crate_COLOR.dds", GetTexture(m_normalMapTextureMap, "Crate_NRM.dds"));
 
-	// CREATE A SIMPLE game object
-	GameObject* go3 = new GameObject(XMFLOAT3(7.6, -1.3, -7.1), XMFLOAT3(0, -31, 0), XMFLOAT3(2, 2, 2), "Asha", GetModelData("asha.obj"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture(m_textureMap, "AshaTex.dds"),"AshaTex.dds");
+	GameObject* NormalMapCube3 = new GameObject(XMFLOAT3(7.7, 0, -7.7), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), "Normal Mapped Cube 3", GetModelData("Cube"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture(m_textureMap, "Glass.dds"), "Glass.dds", GetTexture(m_normalMapTextureMap, "CircleMap.dds"));
 
-	GameObject* go4 = new GameObject(XMFLOAT3(-8, -1.4, -8.4), XMFLOAT3(0, -47, 0), XMFLOAT3(10, 10, 10), "Bunny", GetModelData("bunny.obj"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture(m_textureMap, "BunnyTex.dds"),"BunnyTex.dds");
+	GameObject* NormalMapCube4 = new GameObject(XMFLOAT3(-7.7, 0, -7.7), XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1), "Normal Mapped Cube 4", GetModelData("Cube"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture(m_textureMap, "MetalTex.dds"), "MetalTex.dds", GetTexture(m_normalMapTextureMap, "Metal.dds"));
 
-	// CREATE A SIMPLE game object
-	GameObject* go5 = new GameObject(XMFLOAT3(0, -1.5, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(10, 0.1, 10), "Floor 1", GetModelData("Cube"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture(m_textureMap, "Depth View Texture"),"Depth View Texture");
+	GameObject* Obj1 = new GameObject(XMFLOAT3(7.6 + 200, -1.3, -7.1), XMFLOAT3(0, -31, 0), XMFLOAT3(2, 2, 2), "Asha", GetModelData("asha.obj"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture(m_textureMap, "AshaTex.dds"), "AshaTex.dds");
 
-	GameObject* go6 = new GameObject(XMFLOAT3(0, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(50, 50, 50), "Skybox", GetModelData("skybox.obj"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture UnLit Pixel Shader"), GetTexture(m_textureMap, "Stars.dds"),"Stars.dds");
+	GameObject* Obj2 = new GameObject(XMFLOAT3(-8 + 200, -1.4, -8.4), XMFLOAT3(0, -47, 0), XMFLOAT3(10, 10, 10), "Bunny", GetModelData("bunny.obj"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture(m_textureMap, "BunnyTex.dds"), "BunnyTex.dds");
 
-	go->m_autoRotateX = true;
-	go->m_autoRotateY = true;
-	go2->m_autoRotateX = true;
-	go2->m_autoRotateY = true;
+	GameObject* Floor1 = new GameObject(XMFLOAT3(0, -1.5, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(10, 0.1, 10), "Floor 1", GetModelData("Cube"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture(m_textureMap, "Depth View Texture"), "Depth View Texture");
 
-	go6->m_autoRotateX = true;
-	go6->m_autoRotateY = true;
-	go6->m_autoRotationSpeed = 1.5f;
+	GameObject* Floor2 = new GameObject(XMFLOAT3(200, -1.5, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(10, 0.1, 10), "Floor 2", GetModelData("Cube"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture(m_textureMap, "Bunny.dds"), "Bunny.dds");
 
-	m_vecDrawables.push_back(go);
-	m_vecDrawables.push_back(go2);
-	m_vecDrawables.push_back(go3);
-	m_vecDrawables.push_back(go4);
-	m_vecDrawables.push_back(go5);
-	m_vecDrawables.push_back(go6);
+	GameObject* Floor3 = new GameObject(XMFLOAT3(-200, -1.5, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(10, 0.1, 10), "Floor 3", GetModelData("Cube"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture(m_textureMap, "Glass.dds"), "Glass.dds");
+
+	GameObject* messageboxNormalMapping = new GameObject(XMFLOAT3(0.0f, 2, 0), XMFLOAT3(0, 180, 0), XMFLOAT3(1, 1, 1), "Normal Mapping Message", GetModelData("SpeechBubble.obj"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), "resources\\Audio\\Normal Mapping Message.wav");
+
+	GameObject* messageboxPostProcessing = new GameObject(XMFLOAT3(200, 2, 0), XMFLOAT3(0, 180, 0), XMFLOAT3(1, 1, 1), "Post Processing Message", GetModelData("SpeechBubble.obj"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), "resources\\Audio\\Post Processing Message.wav");
+
+	GameObject* messageboxDeferrredLighting = new GameObject(XMFLOAT3(-195, 3.8, 0), XMFLOAT3(0, 180, 0), XMFLOAT3(1, 1, 1), "Deferred Lighting Message", GetModelData("SpeechBubble.obj"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), "resources\\Audio\\Deferred Lighting Message.wav");
+
+	GameObject* CassetteTV = new GameObject(XMFLOAT3(200, -1.3, -7.7), XMFLOAT3(-90, 0, 0), XMFLOAT3(.1, .1, .1), "CassetteTV", GetModelData("TV.obj"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture(m_textureMap, "TV.dds"), "TV.dds");
+
+	GameObject* CassetteImage = new GameObject(XMFLOAT3(200, 2.643, -7.623), XMFLOAT3(0, 0, 0), XMFLOAT3(4.4, 2.7, 0.04), "CassetteImage", GetModelData("Cube"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture(m_textureMap, "Cassette.dds"), "Cassette.dds");
+
+	GameObject* skybox = new GameObject(XMFLOAT3(0, 0, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(50, 50, 50), "Skybox", GetModelData("skybox.obj"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture UnLit Pixel Shader"), GetTexture(m_textureMap, "Stars.dds"), "Stars.dds");
+
+	GameObject* DepthTV = new GameObject(XMFLOAT3(-193, -1.3, -7.7), XMFLOAT3(-90, -31, 0), XMFLOAT3(.05, .05, .05), "DepthTV", GetModelData("TV.obj"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture(m_textureMap, "TV.dds"), "TV.dds");
+
+	GameObject* DepthImage = new GameObject(XMFLOAT3(-192.965, 0.766, -7.665), XMFLOAT3(0, -31, 0), XMFLOAT3(2.181, 1.35, 0.04), "DepthImage", GetModelData("Cube"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture(m_textureMap, "Depth View Texture"), "Depth View Texture");
+
+	GameObject* WorldNormalTV = new GameObject(XMFLOAT3(-197.9, -1.3, -9.1), XMFLOAT3(-90, 0, 0), XMFLOAT3(.05, .05, .05), "WorldNormalTV", GetModelData("TV.obj"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture(m_textureMap, "TV.dds"), "TV.dds");
+
+	GameObject* WorldNormalImage = new GameObject(XMFLOAT3(-197.883, 0.766, -9.088), XMFLOAT3(0, 0, 0), XMFLOAT3(2.181, 1.35, 0.04), "WorldNormalImage", GetModelData("Cube"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture(m_textureMap, "Normal View Texture"), "Normal View Texture");
+
+	GameObject* WorldPositionTV = new GameObject(XMFLOAT3(-203.2, -1.3, -9.1), XMFLOAT3(-90, 0, 0), XMFLOAT3(.05, .05, .05), "WorldPositionTV", GetModelData("TV.obj"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture(m_textureMap, "TV.dds"), "TV.dds");
+
+	GameObject* WorldPositionImage = new GameObject(XMFLOAT3(-203.198, 0.766, -9.088), XMFLOAT3(0, 0, 0), XMFLOAT3(2.181, 1.35, 0.04), "WorldPositionImage", GetModelData("Cube"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture(m_textureMap, "World Pos View Texture"), "World Pos View Texture");
+
+	GameObject* LightAccTV = new GameObject(XMFLOAT3(-208.2, -1.3, -7.7), XMFLOAT3(-90, 31, 0), XMFLOAT3(.05, .05, .05), "LightAccTV", GetModelData("TV.obj"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture(m_textureMap, "TV.dds"), "TV.dds");
+
+	GameObject* LightAccImage = new GameObject(XMFLOAT3(-208.195, 0.766, -7.6), XMFLOAT3(0, 31, 0), XMFLOAT3(2.181, 1.35, 0.04), "LightAccImage", GetModelData("Cube"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture(m_textureMap, "Light Accumulation View Texture"), "Light Accumulation View Texture");
+
+	NormalMapCube1->m_autoRotateX = true;
+	NormalMapCube1->m_autoRotateY = true;
+	NormalMapCube2->m_autoRotateX = true;
+	NormalMapCube2->m_autoRotateY = true;
+	NormalMapCube3->m_autoRotateX = true;
+	NormalMapCube3->m_autoRotateY = true;
+	NormalMapCube4->m_autoRotateX = true;
+	NormalMapCube4->m_autoRotateY = true;
+	skybox->m_autoRotateX = true;
+	skybox->m_autoRotateY = true;
+	skybox->m_autoRotationSpeed = 1.5f;
+
+	m_vecDrawables.push_back(NormalMapCube1);
+	m_vecDrawables.push_back(NormalMapCube2);
+	m_vecDrawables.push_back(NormalMapCube3);
+	m_vecDrawables.push_back(NormalMapCube4);
+
+	m_vecDrawables.push_back(Obj1);
+	m_vecDrawables.push_back(Obj2);
+	m_vecDrawables.push_back(Floor1);
+	m_vecDrawables.push_back(Floor2);
+	m_vecDrawables.push_back(Floor3);
+	m_vecDrawables.push_back(messageboxNormalMapping);
+	m_vecDrawables.push_back(messageboxPostProcessing);
+	m_vecDrawables.push_back(messageboxDeferrredLighting);
+	m_vecDrawables.push_back(CassetteTV);
+	m_vecDrawables.push_back(CassetteImage);
+	m_vecDrawables.push_back(DepthImage);
+	m_vecDrawables.push_back(DepthTV);
+	m_vecDrawables.push_back(WorldNormalTV);
+	m_vecDrawables.push_back(WorldNormalImage);
+
+	m_vecDrawables.push_back(WorldPositionTV);
+	m_vecDrawables.push_back(WorldPositionImage);
+	m_vecDrawables.push_back(LightAccTV);
+	m_vecDrawables.push_back(LightAccImage);
+
+	m_vecDrawables.push_back(skybox); // Last thing to be pushed back must be skybox
 }
 
 void Scene::CleanUp()
@@ -450,29 +499,104 @@ void Scene::SetupLightProperties()
 		light4.Direction = { 0,-1,0,0 };
 		m_lights.push_back(light4);
 	}
-	//for (unsigned int i = 0; i < MAX_LIGHTS; i++)
-	//{
-	//	Light light;
-	//	light.Enabled = static_cast<int>(true);
-	//	light.LightType = PointLight;
-	//	light.Color = XMFLOAT4(0.0f, 0.765f, 1, 1);
-	//	light.SpotAngle = XMConvertToRadians(45.0f);
-	//	light.ConstantAttenuation = 1.0f;
-	//	light.LinearAttenuation = 1.0f;
-	//	light.QuadraticAttenuation = 1;
 
-	//	// set up the light
-	//	XMFLOAT4 LightPosition(0, 0, 1.2f, 1);
+	{
+		Light light5;
+		light5.Enabled = static_cast<int>(true);
+		light5.LightType = PointLight;
+		light5.Color = { 1.00f,0.559,0,1.0f };
+		light5.SpotAngle = XMConvertToRadians(45);
+		light5.ConstantAttenuation = .1f;
+		light5.LinearAttenuation = .1f;
+		light5.QuadraticAttenuation = .1;
+		light5.Position = { 200, 2,0,1 };
+		light5.Direction = { 0,-1,0,0 };
+		m_lights.push_back(light5);
+	}
 
-	//	if (i == 1)
-	//	{
-	//		light.Color = { 1.00f,0.00f,0.559f,1.0f };
-	//		LightPosition = { 3,0,1.5f,1 };
-	//	}
+	{
+		Light light6;
+		light6.Enabled = static_cast<int>(true);
+		light6.LightType = PointLight;
+		light6.Color = { 1.00f,0.559,0,1.0f };
+		light6.SpotAngle = XMConvertToRadians(45);
+		light6.ConstantAttenuation = .1f;
+		light6.LinearAttenuation = .1f;
+		light6.QuadraticAttenuation = .1;
+		light6.Position = { 206, 4,-5.4,1 };
+		light6.Direction = { 0,-1,0,0 };
+		m_lights.push_back(light6);
+	}
 
-	//	light.Position = LightPosition;
-	//	m_lightProperties.Lights[i] = light;
-	//}
+	{
+		Light light7;
+		light7.Enabled = static_cast<int>(true);
+		light7.LightType = PointLight;
+		light7.Color = { 1.00f,0.559,0,1.0f };
+		light7.SpotAngle = XMConvertToRadians(45);
+		light7.ConstantAttenuation = .1f;
+		light7.LinearAttenuation = .1f;
+		light7.QuadraticAttenuation = .1;
+		light7.Position = { 193, 3.2,-5.4,1 };
+		light7.Direction = { 0,-1,0,0 };
+		m_lights.push_back(light7);
+	}
+
+	{
+		Light light8;
+		light8.Enabled = static_cast<int>(true);
+		light8.LightType = SpotLight;
+		light8.Color = { 1.00f,1,1,1.0f };
+		light8.SpotAngle = XMConvertToRadians(0);
+		light8.ConstantAttenuation = .1f;
+		light8.LinearAttenuation = .1f;
+		light8.QuadraticAttenuation = .1;
+		light8.Position = { -195, 2,-4.2,1 };
+		light8.Direction = { 0,-1,0,0 };
+		m_lights.push_back(light8);
+	}
+
+	{
+		Light light9;
+		light9.Enabled = static_cast<int>(true);
+		light9.LightType = SpotLight;
+		light9.Color = { 1.00f,1,1,1.0f };
+		light9.SpotAngle = XMConvertToRadians(0);
+		light9.ConstantAttenuation = .1f;
+		light9.LinearAttenuation = .1f;
+		light9.QuadraticAttenuation = .1;
+		light9.Position = { -200, 2,-4.0,1 };
+		light9.Direction = { 0,-1,0,0 };
+		m_lights.push_back(light9);
+	}
+
+	{
+		Light light10;
+		light10.Enabled = static_cast<int>(true);
+		light10.LightType = SpotLight;
+		light10.Color = { 1.00f,1,1,1.0f };
+		light10.SpotAngle = XMConvertToRadians(0);
+		light10.ConstantAttenuation = .1f;
+		light10.LinearAttenuation = .1f;
+		light10.QuadraticAttenuation = .1;
+		light10.Position = { -204, 2,-4.0,1 };
+		light10.Direction = { 0,-1,0,0 };
+		m_lights.push_back(light10);
+	}
+
+	{
+		Light light11;
+		light11.Enabled = static_cast<int>(true);
+		light11.LightType = SpotLight;
+		light11.Color = { 1.00f,1,1,1.0f };
+		light11.SpotAngle = XMConvertToRadians(0);
+		light11.ConstantAttenuation = .1f;
+		light11.LinearAttenuation = .1f;
+		light11.QuadraticAttenuation = .1;
+		light11.Position = { -200, 2,2,1 };
+		light11.Direction = { 0,-1,0,0 };
+		m_lights.push_back(light11);
+	}
 
 	m_lightProperties.EyePosition = XMFLOAT4(GetCamera()->GetPosition().x, GetCamera()->GetPosition().y, GetCamera()->GetPosition().z, 1);
 
@@ -606,16 +730,20 @@ void Scene::Update(const float deltaTime)
 	}
 }
 
-void Scene::Draw(int renderpass)
+void Scene::Draw(int renderpass, bool deferredRendering, bool showDialogBoxes)
 {
 	for (unsigned int i = 0; i < m_vecDrawables.size(); i++)
 	{
 		if (m_vecDrawables[i]->GetObjectName() == "Skybox")
 		{
-			m_vecDrawables[i]->Draw(m_pImmediateContext.Get(), GetCamera(), m_pConstantBuffer.Get(), true,renderpass);
+			m_vecDrawables[i]->Draw(m_pImmediateContext.Get(), GetCamera(), m_pConstantBuffer.Get(), true, renderpass);
 		}
 		else
 		{
+			if ((m_vecDrawables[i]->m_isDialog && !deferredRendering) || (m_vecDrawables[i]->m_isDialog && !showDialogBoxes))
+			{
+				continue;
+			}
 			m_vecDrawables[i]->Draw(m_pImmediateContext.Get(), GetCamera(), m_pConstantBuffer.Get(), false, renderpass);
 		}
 	}

@@ -40,13 +40,12 @@ public:
 	void LoadNormalMaps();
 	void LoadDDSs();
 	void LoadModels();
-	void OBJLoad(ID3D11Device* pd3dDevice, const filesystem::directory_entry& entry);
 	void CreateGameObjects();
 	void		CleanUp();
 	Camera* GetCamera() { return m_pCamera; }
 
 	void		Update(const float deltaTime);
-	void		Draw(int renderpass);
+	void		Draw(int renderpass, bool deferredRendering, bool showDialogBoxes);
 
 	void PushBackPixelShaders(string name, Microsoft::WRL::ComPtr <ID3D11PixelShader>& pixelShader) { m_pixelShadersMap.push_back({ name, pixelShader }); }
 	MeshData GetModelData(const string& modelToFind);

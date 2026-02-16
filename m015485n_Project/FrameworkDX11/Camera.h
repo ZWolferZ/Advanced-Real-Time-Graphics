@@ -5,6 +5,7 @@
 #include <DirectXMath.h>
 #include <windows.h>
 #include <windowsx.h>
+#include <cmath>
 #include  <vector>
 using namespace DirectX;
 #pragma endregion
@@ -264,14 +265,14 @@ public:
 		}
 		else
 		{
-			smoothTransition = 1.0f - (pow(-2.0f * m_splineTransition + 2.0f, 2) / 2.0f);
+			smoothTransition = static_cast<float>(1.0f - (pow(-2.0f * m_splineTransition + 2.0f, 2) / 2.0f));
 		}
 
-		int sections = controlPoints.size() - 3; // Why 3 and not 2, I have no clue
+		int sections = static_cast<int>(controlPoints.size()) - 3; // Why 3 and not 2, I have no clue
 
 		// Super fucked way to find the which part of the spline we are on
 		float currentSplinePosition = smoothTransition * static_cast<float>(sections);
-		int sectionIndex = static_cast<int>(floor(currentSplinePosition));
+		int sectionIndex = static_cast<int>(std::floor(currentSplinePosition));
 
 		// Uhh, don't go out of bounds forehead
 		if (sectionIndex >= sections)

@@ -242,6 +242,8 @@ struct ConstantBuffer
 	XMMATRIX mView;
 	XMMATRIX mProjection;
 	XMFLOAT4 vOutputColor;
+	XMMATRIX InvView;
+	XMMATRIX InvProjection;
 };
 
 struct PostProcessConstantBuffer
@@ -251,6 +253,10 @@ struct PostProcessConstantBuffer
 	UINT GrayScaleMode = 0.0f;
 	UINT BlurMode = 0.0f;
 	int BlurSteps = 5;
+	UINT ScanLineMode = 0;
+	float ScanLineSize = 800.0f;
+	float ScanLinesOpacity = 0.04f;
+	float Time = 0.0f;
 };
 
 struct _Material

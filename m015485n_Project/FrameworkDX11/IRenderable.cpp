@@ -54,7 +54,7 @@ void IRenderable::Update(const float deltaTime, ID3D11DeviceContext* pContext)
 	XMStoreFloat4x4(&m_world, world);
 }
 
-void IRenderable::Draw(ID3D11DeviceContext* pContext, Camera* camera, ID3D11Buffer* m_pConstantBuffer, bool skybox,int renderpass)
+void IRenderable::Draw(ID3D11DeviceContext* pContext, Camera* camera, ID3D11Buffer* m_pConstantBuffer, bool skybox, int renderpass)
 {
 	if (skybox) pContext->PSSetShader(m_pixelShader.Get(), nullptr, 0);
 
@@ -64,6 +64,8 @@ void IRenderable::Draw(ID3D11DeviceContext* pContext, Camera* camera, ID3D11Buff
 	cb.vOutputColor = XMFLOAT4(0, 0, 0, 0);
 	// store world and the view / projection in a constant buffer for the vertex shader to use
 	cb.mWorld = XMMatrixTranspose(XMLoadFloat4x4(GetTransform()));
+	cb.InvView = XMMatrixTranspose(XMMatrixInverse(nullptr, camera->GetViewMatrix()));
+	cb.InvProjection = XMMatrixTranspose(XMMatrixInverse(nullptr, camera->GetProjectionMatrix()));
 	pContext->UpdateSubresource(m_pConstantBuffer, 0, nullptr, &cb, 0, 0);
 
 	// Render a cube
@@ -91,11 +93,9 @@ void IRenderable::Draw(ID3D11DeviceContext* pContext, Camera* camera, ID3D11Buff
 			ID3D11ShaderResourceView* srv = m_textureResourceView.Get();
 			pContext->PSSetShaderResources(0, 1, &srv);
 		}
-	
-		
-			ID3D11ShaderResourceView* nrv = m_normalMapResourceView.Get();
-			pContext->PSSetShaderResources(1, 1, &nrv);
-		
+
+		ID3D11ShaderResourceView* nrv = m_normalMapResourceView.Get();
+		pContext->PSSetShaderResources(1, 1, &nrv);
 
 		ID3D11SamplerState* ss = m_textureSampler.Get();
 		pContext->PSSetSamplers(0, 1, &ss);
@@ -109,7 +109,6 @@ void IRenderable::Draw(ID3D11DeviceContext* pContext, Camera* camera, ID3D11Buff
 	if (renderpass != 0)
 	{
 		pContext->PSSetShaderResources(0, 1, nullSRVs);
-
 	}
 	pContext->PSSetShaderResources(1, 1, nullSRVs);
 }

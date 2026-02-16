@@ -53,16 +53,14 @@ HRESULT DX11App::initWindow(HINSTANCE hInstance, int nCmdShow)
 	m_viewWidth = SCREEN_WIDTH;
 	m_viewHeight = SCREEN_HEIGHT;
 
-
 	int screenWidth = GetSystemMetrics(SM_CXSCREEN);
 	int screenHeight = GetSystemMetrics(SM_CYSCREEN);
-
 
 	int xPos = (screenWidth - m_viewWidth) / 2;
 	int yPos = (screenHeight - m_viewHeight) / 2;
 
 	AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
-	m_hWnd = CreateWindow(L"lWindowClass", L"LucyLabs Proprietary Advanced Realtime Graphics Framework",
+	m_hWnd = CreateWindow(L"lWindowClass", L"RyanLabs Proprietary Advanced Realtime Graphics Framework",
 		WS_OVERLAPPEDWINDOW,
 		xPos, yPos, rc.right - rc.left, rc.bottom - rc.top, nullptr, nullptr, hInstance,
 		nullptr);
@@ -128,6 +126,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 	case WM_MOUSEMOVE:
 		break;
+	case WM_LBUTTONDOWN:
+
+		if (gThisApp->getRenderer())
+		{
+			POINTS mouse = MAKEPOINTS(lParam);
+
+			gThisApp->getRenderer()->PickObjectAtPixel(mouse.x, mouse.y);
+		}
+
+		break;
 
 	case WM_ACTIVATE:
 		break;
@@ -137,7 +145,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 
 	case WM_DESTROY:
-		PostQuitMessage(0);
+		if (gThisApp->getRenderer()) gThisApp->getRenderer()->QuitApp();
+
 		break;
 
 	case WM_SIZE:

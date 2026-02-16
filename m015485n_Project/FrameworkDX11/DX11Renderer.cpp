@@ -5,8 +5,7 @@
 #include <string>
 
 #include "globals.h"
-
-void DX11Renderer::ToggleFullScreen()
+void DX11Renderer::ToggleFullScreen(bool playSound)
 {
 	m_imguiRenderer->m_isBorderlessFullscreen = !m_imguiRenderer->m_isBorderlessFullscreen;
 
@@ -57,12 +56,20 @@ void DX11Renderer::ToggleFullScreen()
 			SWP_FRAMECHANGED | SWP_NOOWNERZORDER
 		);
 	}
+
+	if (playSound) ma_engine_play_sound(&m_audioEngine, "resources\\Audio\\FullScreen.wav", NULL);
 }
 
 HRESULT DX11Renderer::Init(HWND hwnd)
 {
 	m_handle = hwnd;
 	InitDevice(hwnd);
+
+	// Initialize audio engine
+	if (ma_engine_init(NULL, &m_audioEngine) != MA_SUCCESS) {
+		printf("Failed to initialize audio engine\n");
+		return -1;
+	}
 
 	m_pScene = new Scene;
 
@@ -82,9 +89,7 @@ HRESULT DX11Renderer::Init(HWND hwnd)
 
 	m_pScene->m_textureMap.push_back({ "Light Accumulation View Texture", m_gBuffer.lightAccumulation.srv });
 
-
-
-	m_imguiRenderer = new ImGuiRendering(hwnd, m_pd3dDevice.Get(), m_pImmediateContext.Get(), renderSRVs);
+	m_imguiRenderer = new ImGuiRendering(hwnd, m_pd3dDevice.Get(), m_pImmediateContext.Get(), renderSRVs, m_audioEngine);
 
 	CreatePostProcessConstantBuffer();
 
@@ -207,7 +212,6 @@ HRESULT DX11Renderer::Init(HWND hwnd)
 	// Create the pixel shader
 	hr = m_pd3dDevice->CreatePixelShader(pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize(), nullptr, &m_visualiseDepth);
 
-
 	hr = CompileShaderFromFile(L"shader.fx", "QuadPSForwardRendered", "ps_4_0", &pPSBlob);
 	if (FAILED(hr))
 	{
@@ -218,7 +222,6 @@ HRESULT DX11Renderer::Init(HWND hwnd)
 
 	// Create the pixel shader
 	hr = m_pd3dDevice->CreatePixelShader(pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize(), nullptr, &m_ForwardRendering);
-
 
 	pPSBlob->Release();
 	if (FAILED(hr))
@@ -231,7 +234,9 @@ HRESULT DX11Renderer::Init(HWND hwnd)
 
 	m_pScene->Init(hwnd, m_pd3dDevice, m_pImmediateContext);
 
-	ToggleFullScreen();
+	ToggleFullScreen(false);
+
+	ma_engine_play_sound(&m_audioEngine, "resources\\Audio\\Start.wav", NULL);
 
 	return hr;
 }
@@ -661,8 +666,7 @@ HRESULT DX11Renderer::InitDevice(HWND hwnd)
 	vp.TopLeftX = 0;
 	vp.TopLeftY = 0;
 	m_pImmediateContext->RSSetViewports(1, &vp);
-	
-	
+
 	D3D11_RASTERIZER_DESC wfdesc;
 	ZeroMemory(&wfdesc, sizeof(D3D11_RASTERIZER_DESC));
 	wfdesc.FillMode = D3D11_FILL_WIREFRAME;
@@ -675,7 +679,14 @@ HRESULT DX11Renderer::InitDevice(HWND hwnd)
 	filldesc.CullMode = D3D11_CULL_NONE;
 	hr = m_pd3dDevice->CreateRasterizerState(&filldesc, &m_SolidFill);
 
+	D3D11_TEXTURE2D_DESC stagingDesc = {};
+	m_gBuffer.worldPos.texture->GetDesc(&stagingDesc);
+	stagingDesc.Usage = D3D11_USAGE_STAGING;
+	stagingDesc.BindFlags = 0;
+	stagingDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+	stagingDesc.MiscFlags = 0;
 
+	hr = m_pd3dDevice->CreateTexture2D(&stagingDesc, nullptr, &m_stagingWorldPos);
 
 	return S_OK;
 }
@@ -688,6 +699,13 @@ void DX11Renderer::CleanUp()
 
 	m_pScene->CleanUp();
 	delete m_pScene;
+
+	if (m_dialogInitialized)
+	{
+		ma_sound_uninit(&dialogSound);
+	}
+
+	ma_engine_uninit(&m_audioEngine);
 }
 
 void DX11Renderer::CleanupDevice()
@@ -841,15 +859,20 @@ void DX11Renderer::UpdateKeyInputs()
 		m_pScene->GetCamera()->MoveDown(m_pScene->GetCamera()->m_cameraMoveSpeed * m_currentDeltaTime);
 
 	if (KeyPressed('R'))
+	{
 		m_pScene->GetCamera()->Reset();
+		ma_engine_play_sound(&m_audioEngine, "resources\\Audio\\Reset Camera.wav", NULL);
+	}
 
 	if (KeyPressed(VK_ESCAPE))
-		PostQuitMessage(0);
+	{
+		QuitApp();
+	}
 
 	if (KeyPressed(VK_F1))
 		m_imguiRenderer->VSyncEnabled = !m_imguiRenderer->VSyncEnabled;
 
-	if (KeyPressed(VK_F11) || KeyPressed('F')) ToggleFullScreen();
+	if (KeyPressed(VK_F11) || KeyPressed('F')) ToggleFullScreen(true);
 
 	previnputs = inputs;
 }
@@ -1099,7 +1122,7 @@ void DX11Renderer::OnResize(UINT width, UINT height)
 
 	for (auto& obj : m_pScene->m_vecDrawables)
 	{
-		if (obj->m_textureName ==  "Depth View Texture")
+		if (obj->m_textureName == "Depth View Texture")
 		{
 			obj->SetTextureResourceView(m_gBuffer.depth.rendersrv);
 		}
@@ -1119,13 +1142,104 @@ void DX11Renderer::OnResize(UINT width, UINT height)
 		}
 	}
 
+	m_stagingWorldPos.Reset();
+	D3D11_TEXTURE2D_DESC stagingDesc = {};
+	m_gBuffer.worldPos.texture->GetDesc(&stagingDesc);
+	stagingDesc.Usage = D3D11_USAGE_STAGING;
+	stagingDesc.BindFlags = 0;
+	stagingDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+	stagingDesc.MiscFlags = 0;
 
+	hr = m_pd3dDevice->CreateTexture2D(&stagingDesc, nullptr, &m_stagingWorldPos);
+}
 
+void DX11Renderer::PickObjectAtPixel(int mouseX, int mouseY)
+{
+	if (ImGui::GetIO().WantCaptureMouse)
+		return;
 
+	if (!m_gBuffer.worldPos.texture || !m_stagingWorldPos || !m_imguiRenderer->m_deferredRendering || !m_imguiRenderer->showWindows) return;
 
+	m_pImmediateContext->CopyResource(m_stagingWorldPos.Get(), m_gBuffer.worldPos.texture.Get());
 
+	D3D11_MAPPED_SUBRESOURCE mapped;
+	HRESULT hr = m_pImmediateContext->Map(m_stagingWorldPos.Get(), 0, D3D11_MAP_READ, 0, &mapped);
+	if (FAILED(hr)) return;
 
+	D3D11_TEXTURE2D_DESC desc;
+	m_stagingWorldPos->GetDesc(&desc);
+	mouseX = std::clamp(mouseX, 0, static_cast<int>(desc.Width) - 1);
+	mouseY = std::clamp(mouseY, 0, static_cast<int>(desc.Height) - 1);
 
+	float* pixelData = static_cast<float*>(mapped.pData);
+	int rowPitchFloats = mapped.RowPitch / sizeof(float);
+	int idx = mouseY * rowPitchFloats + mouseX * 4;
+
+	XMFLOAT3 clickedWorldPos(pixelData[idx], pixelData[idx + 1], pixelData[idx + 2]);
+
+	m_pImmediateContext->Unmap(m_stagingWorldPos.Get(), 0);
+
+	GameObject* pickedObj = nullptr;
+	float closestDistSq = FLT_MAX;
+
+	for (auto& obj : m_pScene->m_vecDrawables)
+	{
+		XMFLOAT3 objPos = obj->GetPosition();
+		float dx = objPos.x - clickedWorldPos.x;
+		float dy = objPos.y - clickedWorldPos.y;
+		float dz = objPos.z - clickedWorldPos.z;
+		float distSq = dx * dx + dy * dy + dz * dz;
+
+		if (distSq < closestDistSq)
+		{
+			closestDistSq = distSq;
+			pickedObj = obj;
+		}
+	}
+
+	if (pickedObj)
+	{
+		if (pickedObj == m_imguiRenderer->m_selectedObject)
+		{
+			m_imguiRenderer->m_selectedObject = nullptr;
+			ma_engine_play_sound(&m_audioEngine, "resources\\Audio\\ObjectDeselect.wav", NULL);
+
+			return;
+		}
+
+		m_imguiRenderer->m_selectedObject = pickedObj;
+		m_imguiRenderer->m_selectedLight = nullptr;
+		ma_engine_play_sound(&m_audioEngine, "resources\\Audio\\ObjectSelect.wav", NULL);
+
+		if (m_imguiRenderer->m_selectedObject->m_isDialog)
+		{
+			if (m_dialogInitialized)
+			{
+				ma_sound_stop(&dialogSound);
+				ma_sound_uninit(&dialogSound);
+				m_dialogInitialized = false;
+			}
+
+			if (ma_sound_init_from_file(
+				&m_audioEngine,
+				m_imguiRenderer->m_selectedObject->m_msgWavPath.c_str(),
+				0,
+				NULL,
+				NULL,
+				&dialogSound) == MA_SUCCESS)
+			{
+				m_dialogInitialized = true;
+				ma_sound_start(&dialogSound);
+			}
+		}
+	}
+}
+
+void DX11Renderer::QuitApp()
+{
+	ma_engine_play_sound(&m_audioEngine, "resources\\Audio\\End.wav", NULL);
+	std::this_thread::sleep_for(std::chrono::milliseconds(500));
+	PostQuitMessage(0);
 }
 
 // Function to center the mouse in the window
@@ -1165,8 +1279,6 @@ void DX11Renderer::CreatePostProcessConstantBuffer()
 	m_pImmediateContext->UpdateSubresource(m_postProcessConstantBuffer.Get(), 0, nullptr, &m_imguiRenderer->m_postProcessCBData, 0, 0);
 
 	m_pImmediateContext->PSSetConstantBuffers(2, 1, m_postProcessConstantBuffer.GetAddressOf());
-
-
 }
 
 void DX11Renderer::DrawFullScreenQuad(FullScreenQuadOptions options)
@@ -1182,7 +1294,6 @@ void DX11Renderer::DrawFullScreenQuad(FullScreenQuadOptions options)
 	m_pImmediateContext->VSSetShader(g_pQuadVS.Get(), nullptr, 0);
 	ID3D11SamplerState* ss = m_textureSampler.Get();
 	m_pImmediateContext->PSSetSamplers(0, 1, &ss);
-
 
 	if (options == FullScreenQuadOptions::LightingQuad)
 	{
@@ -1225,12 +1336,10 @@ void DX11Renderer::DrawFullScreenQuad(FullScreenQuadOptions options)
 
 		m_pImmediateContext->PSSetShaderResources(8, 1, g_SceneShaderResourceView.GetAddressOf());
 
-
 		m_pImmediateContext->Draw(4, 0);
 
 		ID3D11ShaderResourceView* nullSRV = nullptr;
 		m_pImmediateContext->PSSetShaderResources(8, 1, &nullSRV);
-
 	}
 }
 
@@ -1289,13 +1398,10 @@ void DX11Renderer::Update(const float deltaTime)
 
 	float clearColor[4] = { 0.f, 0.f, 0.f, 1.f };
 
-
 	m_pImmediateContext->UpdateSubresource(m_postProcessConstantBuffer.Get(), 0, nullptr, &m_imguiRenderer->m_postProcessCBData, 0, 0);
-
 
 	if (m_imguiRenderer->m_wireframeMode) { m_pImmediateContext->RSSetState(m_WireFrame.Get()); }
 	else { m_pImmediateContext->RSSetState(m_SolidFill.Get()); }
-
 
 	if (m_imguiRenderer->m_deferredRendering)
 	{
@@ -1318,7 +1424,7 @@ void DX11Renderer::Update(const float deltaTime)
 		m_pImmediateContext->VSSetShader(m_pVertexShader.Get(), nullptr, 0);
 		m_pImmediateContext->PSSetShader(m_WriteGBuffer.Get(), nullptr, 0); // Normal Write // Depth Write // World Pos Write
 		m_pImmediateContext->IASetInputLayout(m_pVertexLayout.Get());;
-		m_pScene->Draw(0);
+		m_pScene->Draw(0, m_imguiRenderer->m_deferredRendering, m_imguiRenderer->showWindows);
 
 		m_pImmediateContext->OMSetRenderTargets(0, nullptr, nullptr);
 		//////
@@ -1348,7 +1454,7 @@ void DX11Renderer::Update(const float deltaTime)
 
 		m_pImmediateContext->PSSetShader(m_WriteAlbedo.Get(), nullptr, 0);
 
-		m_pScene->Draw(1);
+		m_pScene->Draw(1, m_imguiRenderer->m_deferredRendering, m_imguiRenderer->showWindows);
 
 		m_pImmediateContext->OMSetRenderTargets(0, nullptr, nullptr);
 
@@ -1363,18 +1469,15 @@ void DX11Renderer::Update(const float deltaTime)
 		m_pImmediateContext->ClearDepthStencilView(m_gBuffer.depth.m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 		m_pScene->Update(deltaTime);
 		SetSceneDrawData();
-		m_pScene->Draw(1);
+		m_pScene->Draw(1, m_imguiRenderer->m_deferredRendering, m_imguiRenderer->showWindows);
 		m_pImmediateContext->OMSetRenderTargets(0, nullptr, nullptr);
 		m_pImmediateContext->OMSetRenderTargets(1, m_PresentedRenderTargetView.GetAddressOf(), nullptr);
 		m_pImmediateContext->RSSetState(m_SolidFill.Get());
 		DrawFullScreenQuad(FullScreenQuadOptions::ForwardRenderingQuad);
-
 	}
 
 	// ImGui Pass
-	m_imguiRenderer->ImGuiDrawAllWindows(FPS, m_totalTime, m_pScene, m_pImmediateContext.Get(), [&] {ToggleFullScreen(); });
-
-
+	m_imguiRenderer->ImGuiDrawAllWindows(FPS, m_totalTime, m_pScene, m_pImmediateContext.Get(), [&] {ToggleFullScreen(true); });
 
 	if (m_imguiRenderer->VSyncEnabled)
 	{

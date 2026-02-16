@@ -21,8 +21,8 @@
 
 #include <vector>
 #include <unordered_map>
-
 #include "ImGuiRendering.h"
+#include "miniaudio.h"
 
 class Scene;
 
@@ -99,7 +99,7 @@ public:
 	DX11Renderer() = default;
 	~DX11Renderer() = default;
 
-	void ToggleFullScreen();
+	void ToggleFullScreen(bool playSound);
 
 	HRESULT Init(HWND hwnd);
 	void CreateFullScreenQuad();
@@ -123,6 +123,10 @@ public:
 	bool KeyReleased(int key);
 
 	void OnResize(UINT width, UINT height);
+
+	void PickObjectAtPixel(int mouseX, int mouseY);
+
+	void QuitApp();
 
 	float m_currentDeltaTime = 0.0f;
 	float m_totalTime = 0.0f;
@@ -171,8 +175,6 @@ private: // properties
 	Microsoft::WRL::ComPtr <ID3D11PixelShader> m_visualiseDepth;
 	Microsoft::WRL::ComPtr <ID3D11PixelShader> m_ForwardRendering;
 
-
-
 	Microsoft::WRL::ComPtr <ID3D11InputLayout>		m_pVertexLayout;
 
 	Microsoft::WRL::ComPtr <ID3D11RenderTargetView> m_PresentedRenderTargetView;
@@ -193,4 +195,10 @@ private: // properties
 	Microsoft::WRL::ComPtr <ID3D11VertexShader> g_pQuadVS = nullptr;
 	Microsoft::WRL::ComPtr <ID3D11PixelShader> g_pQuadPS = nullptr;
 	Microsoft::WRL::ComPtr < ID3D11SamplerState> m_textureSampler = nullptr;
+
+	Microsoft::WRL::ComPtr <ID3D11Texture2D> m_stagingWorldPos;
+
+	ma_engine m_audioEngine;
+	ma_sound dialogSound;
+	bool m_dialogInitialized = false;
 };

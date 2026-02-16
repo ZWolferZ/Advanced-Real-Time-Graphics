@@ -29,9 +29,9 @@ using namespace DirectX;
 class GameObject : public IRenderable
 {
 public:
-	GameObject(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, string ObjectName, MeshData meshData, ID3D11Device* m_pd3dDevice, ID3D11DeviceContext* m_pImmediateContext, Microsoft::WRL::ComPtr <ID3D11PixelShader> pixelShader);
-	GameObject(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, string ObjectName, MeshData meshData, ID3D11Device* m_pd3dDevice, ID3D11DeviceContext* m_pImmediateContext, Microsoft::WRL::ComPtr <ID3D11PixelShader> pixelShader, Microsoft::WRL::ComPtr < ID3D11ShaderResourceView> texture,string textureName);
-	GameObject(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, string ObjectName, MeshData meshData, ID3D11Device* m_pd3dDevice, ID3D11DeviceContext* m_pImmediateContext, Microsoft::WRL::ComPtr <ID3D11PixelShader> pixelShader, Microsoft::WRL::ComPtr < ID3D11ShaderResourceView> texture,string textureName, Microsoft::WRL::ComPtr < ID3D11ShaderResourceView> normalMap);
+	GameObject(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, string ObjectName, MeshData meshData, ID3D11Device* m_pd3dDevice, ID3D11DeviceContext* m_pImmediateContext, Microsoft::WRL::ComPtr <ID3D11PixelShader> pixelShader, string messageWavPath);
+	GameObject(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, string ObjectName, MeshData meshData, ID3D11Device* m_pd3dDevice, ID3D11DeviceContext* m_pImmediateContext, Microsoft::WRL::ComPtr <ID3D11PixelShader> pixelShader, Microsoft::WRL::ComPtr < ID3D11ShaderResourceView> texture, string textureName);
+	GameObject(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, string ObjectName, MeshData meshData, ID3D11Device* m_pd3dDevice, ID3D11DeviceContext* m_pImmediateContext, Microsoft::WRL::ComPtr <ID3D11PixelShader> pixelShader, Microsoft::WRL::ComPtr < ID3D11ShaderResourceView> texture, string textureName, Microsoft::WRL::ComPtr < ID3D11ShaderResourceView> normalMap);
 
 	~GameObject();
 
@@ -40,6 +40,8 @@ public:
 	void CreateSampler(ID3D11Device* m_pd3dDevice, ID3D11DeviceContext* m_pImmediateContext);
 
 	void CreateMaterialBuffer(ID3D11Device* m_pd3dDevice, ID3D11DeviceContext* m_pImmediateContext);
+	bool m_isDialog = false;
+	string m_msgWavPath;
 
 private: // variables
 

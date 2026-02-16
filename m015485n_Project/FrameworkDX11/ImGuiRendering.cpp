@@ -1,7 +1,8 @@
 ﻿#include "ImGuiRendering.h"
+
 #include "imgui/imgui_internal.h"
 
-ImGuiRendering::ImGuiRendering(HWND hwnd, ID3D11Device* m_pd3dDevice, ID3D11DeviceContext* m_pImmediateContext, vector<Microsoft::WRL::ComPtr <ID3D11ShaderResourceView>> renderSRVs)
+ImGuiRendering::ImGuiRendering(HWND hwnd, ID3D11Device* m_pd3dDevice, ID3D11DeviceContext* m_pImmediateContext, vector<Microsoft::WRL::ComPtr <ID3D11ShaderResourceView>> renderSRVs, ma_engine& audioEngine)
 {
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
@@ -19,6 +20,8 @@ ImGuiRendering::ImGuiRendering(HWND hwnd, ID3D11Device* m_pd3dDevice, ID3D11Devi
 	io.IniFilename = nullptr;
 
 	UpdateSRVs(renderSRVs);
+
+	m_audioEngine = audioEngine;
 }
 
 void ImGuiRendering::ShutDownImGui()
@@ -28,9 +31,11 @@ void ImGuiRendering::ShutDownImGui()
 	ImGui::DestroyContext();
 }
 
-void ImGuiRendering::ImGuiDrawAllWindows(const unsigned int FPS, float totalAppTime, Scene* currentScene, ID3D11DeviceContext* pContext,std::function<void()> toggleFullScreen)
+void ImGuiRendering::ImGuiDrawAllWindows(const unsigned int FPS, float totalAppTime, Scene* currentScene, ID3D11DeviceContext* pContext, std::function<void()> toggleFullScreen)
 {
 	m_currentScene = currentScene;
+
+	m_postProcessCBData.Time = totalAppTime;
 
 	StartIMGUIDraw();
 
@@ -38,7 +43,7 @@ void ImGuiRendering::ImGuiDrawAllWindows(const unsigned int FPS, float totalAppT
 
 	if (showWindows)
 	{
-		DrawVersionWindow(FPS, totalAppTime,pContext,toggleFullScreen);
+		DrawVersionWindow(FPS, totalAppTime, pContext, toggleFullScreen);
 		DrawSelectLightWindow();
 		DrawLightUpdateWindow();
 		DrawObjectSelectionWindow();
@@ -67,10 +72,10 @@ void ImGuiRendering::ResetAllWindowsPositions()
 	}
 }
 
-void ImGuiRendering::DrawVersionWindow(const unsigned int FPS, float totalAppTime, ID3D11DeviceContext* pContext,std::function<void()> toggleFullScreen)
+void ImGuiRendering::DrawVersionWindow(const unsigned int FPS, float totalAppTime, ID3D11DeviceContext* pContext, std::function<void()> toggleFullScreen)
 {
 	static ImVec2 windowPos = ImVec2(10, 10);
-	static string windowName = "LucyLabs DX11 Renderer";
+	static string windowName = "RyanLabs DX11 Renderer";
 
 	m_originalWindowPositions.try_emplace(windowName, windowPos);
 
@@ -88,12 +93,11 @@ void ImGuiRendering::DrawVersionWindow(const unsigned int FPS, float totalAppTim
 	if (!m_deferredRendering)
 	{
 		ImGui::Checkbox("Wireframe Mode", &m_wireframeMode);
-	
 	}
-	else 
+	else
 	{
 		ImGui::Text("Wireframe Mode Not Available,");
-		ImGui::Text("In Deferred Lighting Mode."); 
+		ImGui::Text("In Deferred Lighting Mode.");
 		m_wireframeMode = false;
 	}
 
@@ -102,7 +106,7 @@ void ImGuiRendering::DrawVersionWindow(const unsigned int FPS, float totalAppTim
 
 void ImGuiRendering::DrawHideAllWindows()
 {
-	static ImVec2 windowPos = ImVec2(1750, 965);
+	static ImVec2 windowPos = ImVec2(1275, 100);
 	static string windowName = "Show/Hide UI";
 
 	m_originalWindowPositions.try_emplace(windowName, windowPos);
@@ -110,6 +114,30 @@ void ImGuiRendering::DrawHideAllWindows()
 	ImGui::SetNextWindowPos(windowPos, ImGuiCond_FirstUseEver);
 	ImGui::Begin(windowName.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove);
 	ImGui::Checkbox("Show All Windows", &showWindows);
+	ImGui::Separator();
+	ImGui::Text("Teleport Menu:");
+	if (ImGui::Button("Normal Map Area"))
+	{
+		m_currentScene->GetCamera()->Reset();
+		ma_engine_play_sound(&m_audioEngine, "resources\\Audio\\Teleport.wav", NULL);
+	}
+	if (ImGui::Button("Cassette's Area (Post-Processing Area)"))
+	{
+		m_currentScene->GetCamera()->Reset();
+
+		m_currentScene->GetCamera()->SetPosition(XMFLOAT3(200, 3, 4.5f));
+		m_currentScene->GetCamera()->RotatePitch(-0.4f);
+		ma_engine_play_sound(&m_audioEngine, "resources\\Audio\\Teleport.wav", NULL);
+	}
+	if (ImGui::Button("Deferred Lighting Area"))
+	{
+		m_currentScene->GetCamera()->Reset();
+
+		m_currentScene->GetCamera()->SetPosition(XMFLOAT3(-200, 3, 4.5f));
+		m_currentScene->GetCamera()->RotatePitch(-0.4f);
+		ma_engine_play_sound(&m_audioEngine, "resources\\Audio\\Teleport.wav", NULL);
+	}
+
 	ImGui::End();
 }
 
@@ -144,12 +172,14 @@ void ImGuiRendering::DrawSelectLightWindow()
 			if (isSelected)
 			{
 				m_selectedLight = nullptr;
+				ma_engine_play_sound(&m_audioEngine, "resources\\Audio\\LightDeselect.wav", NULL);
 			}
 			else
 			{
 				m_selectedLight = light;
 				m_selectedObject = nullptr;
 				lightIndex = i;
+				ma_engine_play_sound(&m_audioEngine, "resources\\Audio\\LightSelect.wav", NULL);
 			}
 		}
 	}
@@ -254,6 +284,8 @@ void ImGuiRendering::DrawObjectMovementWindow()
 {
 	if (m_selectedObject != nullptr)
 	{
+		if (m_selectedObject->m_isDialog) return;
+
 		static ImVec2 windowPos = ImVec2(1582, 12);
 		static string windowName = "Object Movement Window";
 
@@ -312,6 +344,7 @@ void ImGuiRendering::DrawUpdateObjectMaterialBufferWindow(ID3D11DeviceContext* p
 {
 	if (m_selectedObject != nullptr)
 	{
+		if (m_selectedObject->m_isDialog) return;
 		static ImVec2 windowPos = ImVec2(1582, 341);
 		static string windowName = "Object Material Buffer Window";
 
@@ -321,31 +354,31 @@ void ImGuiRendering::DrawUpdateObjectMaterialBufferWindow(ID3D11DeviceContext* p
 		ImGui::Begin(windowName.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove);
 
 		MaterialPropertiesConstantBuffer currentMaterialBuffer = m_selectedObject->GetMaterialConstantBufferData();
-		
-			float diffuse[3] = { currentMaterialBuffer.Material.Diffuse.x, currentMaterialBuffer.Material.Diffuse.y, currentMaterialBuffer.Material.Diffuse.z };
-			if (ImGui::ColorEdit3("Object Color", diffuse))
-			{
-				currentMaterialBuffer.Material.Diffuse = XMFLOAT4(diffuse[0], diffuse[1], diffuse[2], 1.0f);
-			}
 
-			ImGui::Separator();
-			if (m_selectedObject->GetTextureResourceView() != nullptr)
+		float diffuse[3] = { currentMaterialBuffer.Material.Diffuse.x, currentMaterialBuffer.Material.Diffuse.y, currentMaterialBuffer.Material.Diffuse.z };
+		if (ImGui::ColorEdit3("Object Color", diffuse))
+		{
+			currentMaterialBuffer.Material.Diffuse = XMFLOAT4(diffuse[0], diffuse[1], diffuse[2], 1.0f);
+		}
+
+		ImGui::Separator();
+		if (m_selectedObject->GetTextureResourceView() != nullptr)
+		{
+			bool useTexture = currentMaterialBuffer.Material.UseTexture;
+			if (ImGui::Checkbox("Use Texture", &useTexture))
 			{
-				bool useTexture = currentMaterialBuffer.Material.UseTexture;
-				if (ImGui::Checkbox("Use Texture", &useTexture))
-				{
-					currentMaterialBuffer.Material.UseTexture = useTexture;
-				}
+				currentMaterialBuffer.Material.UseTexture = useTexture;
 			}
-			if (m_selectedObject->GetNormalMapResourceView() != nullptr)
+		}
+		if (m_selectedObject->GetNormalMapResourceView() != nullptr)
+		{
+			bool useNormalMap = currentMaterialBuffer.Material.UseNormalMap;
+			if (ImGui::Checkbox("Use Normal Map", &useNormalMap))
 			{
-				bool useNormalMap = currentMaterialBuffer.Material.UseNormalMap;
-				if (ImGui::Checkbox("Use Normal Map", &useNormalMap))
-				{
-					currentMaterialBuffer.Material.UseNormalMap = useNormalMap;
-				}
+				currentMaterialBuffer.Material.UseNormalMap = useNormalMap;
 			}
-			ImGui::Separator();
+		}
+		ImGui::Separator();
 
 		m_selectedObject->UpdateMaterialConstantBuffer(currentMaterialBuffer, pContext);
 
@@ -364,7 +397,9 @@ void ImGuiRendering::DrawObjectGimzo()
 
 	if (m_selectedObject != nullptr)
 	{
-		static ImVec2 windowPos = ImVec2(1336, 13);
+		if (m_selectedObject->m_isDialog) return;
+
+		static ImVec2 windowPos = ImVec2(1300, 13);
 		static string windowName = "Object Gizmo Type Window";
 
 		m_originalWindowPositions.try_emplace(windowName, windowPos);
@@ -402,24 +437,40 @@ void ImGuiRendering::DrawObjectGimzo()
 		static ImGuizmo::OPERATION operation = ImGuizmo::TRANSLATE;
 		static ImGuizmo::MODE mode = ImGuizmo::LOCAL;
 
-		if (ImGui::IsKeyPressed(ImGuiKey_1) )
+		if (ImGui::IsKeyPressed(ImGuiKey_1, false))
 		{
 			operation = ImGuizmo::TRANSLATE;
+			ma_engine_play_sound(&m_audioEngine, "resources\\Audio\\GizmoPick.wav", NULL);
 		}
 
-		if (ImGui::IsKeyPressed(ImGuiKey_2))
+		if (ImGui::IsKeyPressed(ImGuiKey_2, false))
 		{
 			operation = ImGuizmo::ROTATE;
+			ma_engine_play_sound(&m_audioEngine, "resources\\Audio\\GizmoPick.wav", NULL);
 		}
 
-		if (ImGui::IsKeyPressed(ImGuiKey_3))
+		if (ImGui::IsKeyPressed(ImGuiKey_3, false))
 		{
 			operation = ImGuizmo::SCALE;
+			ma_engine_play_sound(&m_audioEngine, "resources\\Audio\\GizmoPick.wav", NULL);
 		}
 
-		if (ImGui::RadioButton("Translate", operation == ImGuizmo::TRANSLATE)) operation = ImGuizmo::TRANSLATE; ImGui::SameLine();
-		if (ImGui::RadioButton("Rotate", operation == ImGuizmo::ROTATE)) operation = ImGuizmo::ROTATE; ImGui::SameLine();
-		if (ImGui::RadioButton("Scale", operation == ImGuizmo::SCALE)) operation = ImGuizmo::SCALE;
+		if (ImGui::RadioButton("Translate", operation == ImGuizmo::TRANSLATE))
+		{
+			operation = ImGuizmo::TRANSLATE;
+			ma_engine_play_sound(&m_audioEngine, "resources\\Audio\\GizmoPick.wav", NULL);
+		}
+		ImGui::SameLine();
+		if (ImGui::RadioButton("Rotate", operation == ImGuizmo::ROTATE))
+		{
+			operation = ImGuizmo::ROTATE;
+			ma_engine_play_sound(&m_audioEngine, "resources\\Audio\\GizmoPick.wav", NULL);
+		} ImGui::SameLine();
+		if (ImGui::RadioButton("Scale", operation == ImGuizmo::SCALE))
+		{
+			operation = ImGuizmo::SCALE;
+			ma_engine_play_sound(&m_audioEngine, "resources\\Audio\\GizmoPick.wav", NULL);
+		}
 		ImGui::Text("Use 1,2,3 For Hot KeyBinds");
 		if (ImGuizmo::Manipulate(view, proj, operation, mode, objMat))
 		{
@@ -483,9 +534,17 @@ void ImGuiRendering::DrawObjectSelectionWindow()
 
 	ImGui::Text("Choose an object to select!");
 	ImGui::Separator();
+	if (m_deferredRendering)
+		ImGui::Text("Try Using Deferred Rendering Mouse Picking!");
+	else
+		ImGui::Text("Mouse Picking Unavailable in Forward Rendering Mode");
+	ImGui::Separator();
+	ImGui::BeginChild("ObjectList", ImVec2(290, 200), true);
 
 	for (auto dgo : m_currentScene->m_vecDrawables)
 	{
+		if (dgo->m_isDialog) continue;
+
 		bool isSelected = (m_selectedObject == dgo);
 
 		if (ImGui::Selectable(dgo->GetObjectName().c_str(), isSelected))
@@ -493,14 +552,19 @@ void ImGuiRendering::DrawObjectSelectionWindow()
 			if (isSelected)
 			{
 				m_selectedObject = nullptr;
+				ma_engine_play_sound(&m_audioEngine, "resources\\Audio\\ObjectDeselect.wav", NULL);
 			}
 			else
 			{
 				m_selectedObject = dgo;
+				ma_engine_play_sound(&m_audioEngine, "resources\\Audio\\ObjectSelect.wav", NULL);
+
 				m_selectedLight = nullptr;
 			}
 		}
 	}
+	ImGui::EndChild();
+
 	ImGui::End();
 }
 
@@ -543,6 +607,7 @@ void ImGuiRendering::DrawTextureSelectionWindow(ID3D11DeviceContext* pContext)
 {
 	if (m_selectedObject != nullptr)
 	{
+		if (m_selectedObject->m_isDialog) return;
 		static ImVec2 windowPos = ImVec2(10, 185);
 		static string windowName = "Texture Selection";
 
@@ -555,7 +620,7 @@ void ImGuiRendering::DrawTextureSelectionWindow(ID3D11DeviceContext* pContext)
 		ImGui::Separator();
 		ImGui::Text("Selected Object: %s", m_selectedObject->GetObjectName().c_str());
 		ImGui::Separator();
-
+		ImGui::BeginChild("TextureList", ImVec2(230, 200), true);
 		auto& textures = m_currentScene->m_textureMap;
 
 		bool isNullSelected = (m_selectedObject->GetTextureResourceView() == nullptr);
@@ -583,6 +648,7 @@ void ImGuiRendering::DrawTextureSelectionWindow(ID3D11DeviceContext* pContext)
 				m_selectedObject->m_textureName = shaderPair.first;
 			}
 		}
+		ImGui::EndChild();
 		ImGui::End();
 	}
 }
@@ -591,7 +657,8 @@ void ImGuiRendering::DrawMeshSelectionWindow()
 {
 	if (m_selectedObject != nullptr)
 	{
-		static ImVec2 windowPos = ImVec2(1666, 593);
+		if (m_selectedObject->m_isDialog) return;
+		static ImVec2 windowPos = ImVec2(1666, 560);
 		static string windowName = "Mesh/Model Selection";
 
 		m_originalWindowPositions.try_emplace(windowName, windowPos);
@@ -626,6 +693,7 @@ void ImGuiRendering::DrawNormalMapSelectionWindow(ID3D11DeviceContext* pContext)
 {
 	if (m_selectedObject != nullptr)
 	{
+		if (m_selectedObject->m_isDialog) return;
 		static ImVec2 windowPos = ImVec2(280, 185);
 		static string windowName = "Normal Map Selection";
 
@@ -673,7 +741,7 @@ void ImGuiRendering::DrawNormalMapSelectionWindow(ID3D11DeviceContext* pContext)
 void ImGuiRendering::DrawCameraStatsWindow()
 {
 	XMFLOAT3 cameraPosition = m_currentScene->GetCamera()->GetPosition();
-	static ImVec2 windowPos = ImVec2(342, 590);
+	static ImVec2 windowPos = ImVec2(362, 590);
 	static string windowName = "Camera Statistics";
 
 	m_originalWindowPositions.try_emplace(windowName, windowPos);
@@ -699,6 +767,7 @@ void ImGuiRendering::DrawCameraStatsWindow()
 	if (ImGui::Button("Reset Camera"))
 	{
 		m_currentScene->GetCamera()->Reset();
+		ma_engine_play_sound(&m_audioEngine, "resources\\Audio\\Reset Camera.wav", NULL);
 	}
 
 	ImGui::End();
@@ -706,7 +775,7 @@ void ImGuiRendering::DrawCameraStatsWindow()
 
 void ImGuiRendering::DrawCameraSplineWindow()
 {
-	static ImVec2 windowPos = ImVec2(705, 628);
+	static ImVec2 windowPos = ImVec2(715, 530);
 	static std::string windowName = "Camera Spline Animation";
 
 	m_originalWindowPositions.try_emplace(windowName, windowPos);
@@ -754,7 +823,7 @@ void ImGuiRendering::DrawCameraSplineWindow()
 void ImGuiRendering::DrawDeferredRenderingWindow()
 {
 	ImVec2 displaySize(SCREEN_WIDTH * 0.20f, SCREEN_HEIGHT * 0.20f);
-	static ImVec2 windowPos = ImVec2(350, 800);
+	static ImVec2 windowPos = ImVec2(370, 800);
 	static std::string windowName = "Deferred Lighting Textures";
 
 	m_originalWindowPositions.try_emplace(windowName, windowPos);
@@ -808,18 +877,18 @@ void ImGuiRendering::DrawDeferredRenderingWindow()
 
 void ImGuiRendering::DrawPostProcessingWindow()
 {
-	static ImVec2 windowPos = ImVec2(20, 590);
+	static ImVec2 windowPos = ImVec2(10, 515);
 	static string windowName = "Post-Processing Window";
 
 	m_originalWindowPositions.try_emplace(windowName, windowPos);
 
 	ImGui::SetNextWindowPos(windowPos, ImGuiCond_FirstUseEver);
-	ImGui::Begin(windowName.c_str(),nullptr ,ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove);
+	ImGui::Begin(windowName.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove);
 
 	ImGui::Text("Screen Output Tint");
 
 	float colour[4] = { m_postProcessCBData.vOutputColor.x,m_postProcessCBData.vOutputColor.y,m_postProcessCBData.vOutputColor.z,m_postProcessCBData.vOutputColor.w };
-	if(ImGui::ColorPicker4("Output Tint", colour))
+	if (ImGui::ColorPicker4("Output Tint", colour))
 	{
 		m_postProcessCBData.vOutputColor = { colour[0],colour[1],colour[2] ,colour[3] };
 	}
@@ -839,7 +908,6 @@ void ImGuiRendering::DrawPostProcessingWindow()
 		if (grayscalemode)
 		{
 			m_postProcessCBData.GrayScaleMode = 1;
-
 		}
 		else
 		{
@@ -848,14 +916,14 @@ void ImGuiRendering::DrawPostProcessingWindow()
 	}
 
 	ImGui::Separator();
-	if (ImGui::Checkbox("Gussian Blur Mode", &blurmode)) 
+	if (ImGui::Checkbox("Gaussian Blur Mode", &blurmode))
 	{
 		if (blurmode)
 		{
 			m_postProcessCBData.BlurMode = 1;
 		}
-		else 
-		{ 
+		else
+		{
 			m_postProcessCBData.BlurMode = 0;
 		}
 	}
@@ -864,8 +932,31 @@ void ImGuiRendering::DrawPostProcessingWindow()
 	{
 		m_postProcessCBData.BlurSteps = blursteps;
 	}
+	ImGui::Separator();
 
+	if (ImGui::Checkbox("Toggle Scan Line Mode", &scanlinemode))
+	{
+		if (scanlinemode)
+		{
+			m_postProcessCBData.ScanLineMode = 1;
+		}
+		else
+		{
+			m_postProcessCBData.ScanLineMode = 0;
+		}
+	}
 
+	float size = m_postProcessCBData.ScanLineSize;
+	if (ImGui::SliderFloat("Scan Line Size", &size, 0.0f, 2000.0f))
+	{
+		m_postProcessCBData.ScanLineSize = size;
+	}
+
+	float opacity = m_postProcessCBData.ScanLinesOpacity;
+	if (ImGui::SliderFloat("Scan Line Opacity", &opacity, 0.00f, 0.2f))
+	{
+		m_postProcessCBData.ScanLinesOpacity = opacity;
+	}
 
 	ImGui::End();
 }

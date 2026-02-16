@@ -8,13 +8,14 @@
 #include <d3d11_1.h>
 #include <unordered_map>
 #include <functional>
+#include "miniaudio.h"
 
 #include "Scene.h"
 
 class ImGuiRendering
 {
 public:
-	ImGuiRendering(HWND hwnd, ID3D11Device* m_pd3dDevice, ID3D11DeviceContext* m_pImmediateContext, vector<Microsoft::WRL::ComPtr <ID3D11ShaderResourceView>> renderSRVs);
+	ImGuiRendering(HWND hwnd, ID3D11Device* m_pd3dDevice, ID3D11DeviceContext* m_pImmediateContext, vector<Microsoft::WRL::ComPtr <ID3D11ShaderResourceView>> renderSRVs, ma_engine& audioEngine);
 
 	void ShutDownImGui();
 
@@ -29,6 +30,9 @@ public:
 	bool m_deferredRendering = true;
 	bool m_isBorderlessFullscreen = false;
 	PostProcessConstantBuffer m_postProcessCBData;
+	GameObject* m_selectedObject = nullptr;
+	Light* m_selectedLight = nullptr;
+	bool showWindows = false;
 
 private:
 	void	DrawVersionWindow(const unsigned int FPS, float totalAppTime, ID3D11DeviceContext* pContext, std::function<void()> toggleFullScreen);
@@ -51,12 +55,11 @@ private:
 	void	CompleteIMGUIDraw();
 	unordered_map<std::string, ImVec2> m_originalWindowPositions;
 	vector<Microsoft::WRL::ComPtr <ID3D11ShaderResourceView>> m_textureSRVs;
-	bool showWindows = false;
 	bool showCameraSplineWindow = false;
 	Scene* m_currentScene = nullptr;
-	GameObject* m_selectedObject = nullptr;
-	Light* m_selectedLight = nullptr;
 	int lightIndex = 0;
 	bool grayscalemode = false;
 	bool blurmode = false;
+	bool scanlinemode = false;
+	ma_engine m_audioEngine;
 };

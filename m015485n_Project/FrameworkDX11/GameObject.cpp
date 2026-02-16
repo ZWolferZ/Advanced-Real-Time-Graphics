@@ -4,7 +4,7 @@
 using namespace std;
 using namespace DirectX;
 
-GameObject::GameObject(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, string ObjectName, MeshData meshData, ID3D11Device* m_pd3dDevice, ID3D11DeviceContext* m_pImmediateContext, Microsoft::WRL::ComPtr <ID3D11PixelShader> pixelShader)
+GameObject::GameObject(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, string ObjectName, MeshData meshData, ID3D11Device* m_pd3dDevice, ID3D11DeviceContext* m_pImmediateContext, Microsoft::WRL::ComPtr <ID3D11PixelShader> pixelShader, string messageWavPath)
 {
 	SetPosition(Position);
 	SetRotate(Rotation);
@@ -20,7 +20,17 @@ GameObject::GameObject(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, str
 	m_originalMaterial = m_material;
 	m_meshData = meshData;
 	CreateSampler(m_pd3dDevice, m_pImmediateContext);
+	if (!messageWavPath.empty())
+	{
+		m_isDialog = true;
+		m_msgWavPath = messageWavPath;
+	}
 
+	if (m_isDialog)
+	{
+		m_material.Material.Diffuse = XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f);
+		m_autoRotateY = true;
+	}
 	CreateMaterialBuffer(m_pd3dDevice, m_pImmediateContext);
 }
 
@@ -48,7 +58,7 @@ GameObject::GameObject(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, str
 	CreateMaterialBuffer(m_pd3dDevice, m_pImmediateContext);
 }
 
-GameObject::GameObject(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, string ObjectName, MeshData meshData, ID3D11Device* m_pd3dDevice, ID3D11DeviceContext* m_pImmediateContext, Microsoft::WRL::ComPtr <ID3D11PixelShader> pixelShader, Microsoft::WRL::ComPtr < ID3D11ShaderResourceView> texture, string textureName,Microsoft::WRL::ComPtr < ID3D11ShaderResourceView> normalMap)
+GameObject::GameObject(XMFLOAT3 Position, XMFLOAT3 Rotation, XMFLOAT3 Scale, string ObjectName, MeshData meshData, ID3D11Device* m_pd3dDevice, ID3D11DeviceContext* m_pImmediateContext, Microsoft::WRL::ComPtr <ID3D11PixelShader> pixelShader, Microsoft::WRL::ComPtr < ID3D11ShaderResourceView> texture, string textureName, Microsoft::WRL::ComPtr < ID3D11ShaderResourceView> normalMap)
 {
 	SetPosition(Position);
 	SetRotate(Rotation);
