@@ -4,14 +4,16 @@ Forum Post Week 2 (ERA Template, from blackboard + Stage 4: Images/Video/Gif Out
 
 Forum Post Week 3 (ERA Template, from blackboard + Stage 4: Images/Video/Gif Output)
 
-Recompile Shaders at Runtime (Imgui Text Editor in runtime)
 
-Window Title Info (Copy Raytracing)
+Critical Reflection Forum Post
 
-Fix Compiler Warnings
+Writeup
 
-Make David EZ Mode
+Controls Doc
 
-David Document
+Deferred Lighting Explanation Doc
 
-Add Audio
+Update Readme
+
+Video Demo
+
