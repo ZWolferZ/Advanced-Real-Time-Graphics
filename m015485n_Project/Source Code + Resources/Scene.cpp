@@ -123,7 +123,7 @@ void Scene::CreateGameObjects()
 
 	GameObject* Floor2 = new GameObject(XMFLOAT3(200, -1.5, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(10, 0.1, 10), "Floor 2", GetModelData("Cube"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture(m_textureMap, "Bunny.dds"), "Bunny.dds");
 
-	GameObject* Floor3 = new GameObject(XMFLOAT3(-200, -1.5, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(10, 0.1, 10), "Floor 3", GetModelData("Cube"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture(m_textureMap, "Glass.dds"), "Glass.dds");
+	GameObject* Floor3 = new GameObject(XMFLOAT3(-200, -11.2, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(10, 10, 10), "Floor 3", GetModelData("Cube"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture(m_textureMap, "Glass.dds"), "Glass.dds");
 
 	GameObject* messageboxNormalMapping = new GameObject(XMFLOAT3(0.0f, 2, 0), XMFLOAT3(0, 180, 0), XMFLOAT3(1, 1, 1), "Normal Mapping Message", GetModelData("SpeechBubble.obj"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), "resources\\Audio\\Normal Mapping Message.wav");
 

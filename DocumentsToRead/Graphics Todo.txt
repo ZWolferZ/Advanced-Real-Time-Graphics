@@ -1,19 +1,43 @@
-Forum Post Week 1 (ERA Template, from blackboard + Stage 4: Images/Video/Gif Output)
 
-Forum Post Week 2 (ERA Template, from blackboard + Stage 4: Images/Video/Gif Output)
+Deferred Lighting Explanation Doc
 
-Forum Post Week 3 (ERA Template, from blackboard + Stage 4: Images/Video/Gif Output)
+Video Demo
 
+Dev Post Week 1 (ERA Template, from blackboard + Stage 4: Images/Video/Gif Output) - Light Selection - Per Object Pixel Shaders - Multiple Textures, Multiple Objects
+
+Research Post - Pixel Shaders - Lighting
+
+Dev Post Week 2 (ERA Template, from blackboard + Stage 4: Images/Video/Gif Output) - Normal Mapping - Lighting Structured Buffer
+
+Research Post - Normal mapping
+
+Dev Post Week 3 (ERA Template, from blackboard + Stage 4: Images/Video/Gif Output) - OBJ Loading - Gimzos.
+
+Research Post - OBJs + Other 3D Model File Types, Gimzos
+
+Dev Post Week 4 (ERA Template, from blackboard + Stage 4: Images/Video/Gif Output) - Full Screen Quad / Post Processing
+
+Research Post - Post Processing Techniques
+
+Dev Post Week 5 (ERA Template, from blackboard + Stage 4: Images/Video/Gif Output) - Deferred Lighting.
+
+Research Post - Deferred Rendering Techniques.
+
+Research Post - Terrain Gen and Tessellation Shaders
+
+Research Post - PBR / Raytracing (use image/gifs from Ryan Raytracer)
+
+Research Post - Geometry and Compute Shaders
+
+Dev Post Week 7 (ERA Template, from blackboard + Stage 4: Images/Video/Gif Output) - Camera Scene Object Picking by Sampling the World Pos Buffer.
+
+Research Post - Buffer Sampling
+
+Dev Post Week 8 (ERA Template, from blackboard + Stage 4: Images/Video/Gif Output) - Final Scene Touches Plus Audio
 
 Critical Reflection Forum Post
 
 Writeup
 
-Controls Doc
 
-Deferred Lighting Explanation Doc
-
-Update Readme
-
-Video Demo
 

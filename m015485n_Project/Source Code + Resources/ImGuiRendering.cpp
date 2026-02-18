@@ -113,7 +113,7 @@ void ImGuiRendering::DrawHideAllWindows()
 
 	ImGui::SetNextWindowPos(windowPos, ImGuiCond_FirstUseEver);
 	ImGui::Begin(windowName.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove);
-	ImGui::Checkbox("Show All Windows", &showWindows);
+	ImGui::Checkbox("Show/Hide UI + Enable Object Picking", &showWindows);
 	ImGui::Separator();
 	ImGui::Text("Teleport Menu:");
 	if (ImGui::Button("Normal Map Area"))
@@ -192,7 +192,7 @@ void ImGuiRendering::DrawLightUpdateWindow()
 	if (m_selectedLight != nullptr)
 	{
 		static ImVec2 windowPos = ImVec2(276, 2);
-		static string windowName = "Light Movement Update Window";
+		static string windowName = "Light Properties Update Window";
 
 		m_originalWindowPositions.try_emplace(windowName, windowPos);
 
@@ -659,7 +659,7 @@ void ImGuiRendering::DrawMeshSelectionWindow()
 	{
 		if (m_selectedObject->m_isDialog) return;
 		static ImVec2 windowPos = ImVec2(1580, 560);
-		static string windowName = "Mesh/Model Selection";
+		static string windowName = "Object Mesh/Model Selection";
 
 		m_originalWindowPositions.try_emplace(windowName, windowPos);
 
