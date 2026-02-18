@@ -59,7 +59,8 @@ private:
 	Scene* m_currentScene = nullptr;
 	int lightIndex = 0;
 	bool grayscalemode = false;
-	bool blurmode = false;
+	bool guassianblurmode = false;
+	bool depthblurmode = false;
 	bool scanlinemode = false;
 	ma_engine m_audioEngine;
 };

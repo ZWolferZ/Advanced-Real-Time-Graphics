@@ -869,7 +869,7 @@ void ImGuiRendering::DrawDeferredRenderingWindow()
 	}
 	else
 	{
-		ImGui::Text("Forward Rendering Is Enabled!");
+		ImGui::Text("Forward Rendering Is Enabled! (Disables Object Picking)");
 	}
 
 	ImGui::End();
@@ -882,8 +882,9 @@ void ImGuiRendering::DrawPostProcessingWindow()
 
 	m_originalWindowPositions.try_emplace(windowName, windowPos);
 
+	ImGui::SetNextWindowSize(ImVec2(330, 500), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowPos(windowPos, ImGuiCond_FirstUseEver);
-	ImGui::Begin(windowName.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove);
+	ImGui::Begin(windowName.c_str(), nullptr, ImGuiWindowFlags_NoMove);
 
 	ImGui::Text("Screen Output Tint");
 
@@ -916,21 +917,70 @@ void ImGuiRendering::DrawPostProcessingWindow()
 	}
 
 	ImGui::Separator();
-	if (ImGui::Checkbox("Gaussian Blur Mode", &blurmode))
+	if (ImGui::Checkbox("Gaussian Blur Mode", &guassianblurmode))
 	{
-		if (blurmode)
+		if (guassianblurmode)
 		{
-			m_postProcessCBData.BlurMode = 1;
+			m_postProcessCBData.GuassianBlurMode = 1;
 		}
 		else
 		{
-			m_postProcessCBData.BlurMode = 0;
+			m_postProcessCBData.GuassianBlurMode = 0;
 		}
 	}
-	int blursteps = m_postProcessCBData.BlurSteps;
-	if (ImGui::SliderInt("Blur Steps", &blursteps, 1, 8))
+	int guassianblursteps = m_postProcessCBData.GuassianBlurSteps;
+	if (ImGui::SliderInt("Gaussian Blur Steps", &guassianblursteps, 1, 8))
 	{
-		m_postProcessCBData.BlurSteps = blursteps;
+		m_postProcessCBData.GuassianBlurSteps = guassianblursteps;
+	}
+	ImGui::Separator();
+
+	if (m_deferredRendering)
+	{
+		if (ImGui::Checkbox("Depth Blur Mode", &depthblurmode))
+		{
+			if (depthblurmode)
+			{
+				m_postProcessCBData.DepthBlurMode = 1;
+			}
+			else
+			{
+				m_postProcessCBData.DepthBlurMode = 0;
+			}
+		}
+		int depthblursteps = m_postProcessCBData.DepthBlurSteps;
+		if (ImGui::SliderInt("Depth Blur Steps", &depthblursteps, 1, 8))
+		{
+			m_postProcessCBData.DepthBlurSteps = depthblursteps;
+		}
+
+		float depthblurdepth = m_postProcessCBData.FocusDepth;
+		if (ImGui::SliderFloat("Focus Depth", &depthblurdepth, 0.0f, 1.0f))
+		{
+			m_postProcessCBData.FocusDepth = depthblurdepth;
+		}
+
+		float depthblurfocusrange = m_postProcessCBData.FocusRange;
+		if (ImGui::SliderFloat("Focus Range", &depthblurfocusrange, 0.0f, 1.0f))
+		{
+			m_postProcessCBData.FocusRange = depthblurfocusrange;
+		}
+
+		float depthblurstrength = m_postProcessCBData.MaxBlurStrength;
+		if (ImGui::SliderFloat("Max Blur Strength", &depthblurstrength, 0.0f, 10.0f))
+		{
+			m_postProcessCBData.MaxBlurStrength = depthblurstrength;
+		}
+	}
+	else
+	{
+		if (depthblurmode)
+		{
+			depthblurmode = false;
+			m_postProcessCBData.DepthBlurMode = 0;
+		}
+
+		ImGui::Text("Depth of Field Blur Unavailable");
 	}
 	ImGui::Separator();
 

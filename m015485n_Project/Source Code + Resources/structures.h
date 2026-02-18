@@ -251,12 +251,18 @@ struct PostProcessConstantBuffer
 	XMFLOAT4 vOutputColor = { 1,1,1,1 };
 	float Brightness = 2.0f;
 	UINT GrayScaleMode = 0;
-	UINT BlurMode = 0;
-	int BlurSteps = 5;
+	UINT GuassianBlurMode = 0;
+	int GuassianBlurSteps = 5;
+	UINT DepthBlurMode = 0;
+	int DepthBlurSteps = 3;
+	float FocusDepth = 0.975f;
+	float FocusRange = 0.05f;
+	float MaxBlurStrength = 2.7f;
 	UINT ScanLineMode = 0;
 	float ScanLineSize = 800.0f;
 	float ScanLinesOpacity = 0.04f;
 	float Time = 0.0f;
+	XMFLOAT3 Padding;
 };
 
 struct _Material

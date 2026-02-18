@@ -7,8 +7,8 @@ cbuffer ConstantBuffer : register(b0)
 	matrix View;
 	matrix Projection;
 	float4 vOutputColor;
-    matrix InvView;
-    matrix InvProjection;
+	matrix InvView;
+	matrix InvProjection;
 
 };
 
@@ -56,12 +56,18 @@ cbuffer PostProcessProperties : register(b2)
 	float4 PostProcessColor;
 	float Brightness;
 	uint GrayScaleMode;
-	uint BlurMode;
-	int BlurSteps;
-    uint ScanMode;
-    float ScanLineSize;
-    float ScanLineOpacity;
-    float Time;
+	uint GuassianBlurMode;
+	int GuassianBlurSteps;
+	uint DepthBlurMode;
+	int DepthBlurSteps;
+	float FocusDepth;
+	float FocusRange;
+	float MaxBlurStrength;
+	uint ScanMode;
+	float ScanLineSize;
+	float ScanLineOpacity;
+	float Time;
+	float3 Padding;
 };
 
 struct Light
@@ -456,10 +462,10 @@ float4 PSWriteAlbedoBuffer(PS_INPUT IN) : SV_TARGET
 		texColor = Material.Diffuse;
 	}
 
-    if (texColor.a < 0.1f)
-    {
-        discard;
-    }
+	if (texColor.a < 0.1f)
+	{
+		discard;
+	}
 
 	return texColor;
 }
@@ -546,7 +552,7 @@ float4 QuadPSForwardRendered(QuadVS_Output IN) : SV_TARGET
 {
 	float4 scene = ForwardRenderedTexture.Sample(samLinear, IN.Tex);
 
-	if (BlurMode == 1.0f)
+	if (GuassianBlurMode == 1.0f)
 	{
 		float3 blur = float3(0, 0, 0);
 		float tex_width, tex_height;
@@ -555,10 +561,10 @@ float4 QuadPSForwardRendered(QuadVS_Output IN) : SV_TARGET
 
 		float scalar = 1;
 		float scalar_sum = 0;
-		for (int i = -BlurSteps + 1; i < BlurSteps; i++)
+		for (int i = -GuassianBlurSteps + 1; i < GuassianBlurSteps; i++)
 		{
 			float scalar_tmp = scalar;
-			for (int j = -BlurSteps + 1; j < BlurSteps; j++)
+			for (int j = -GuassianBlurSteps + 1; j < GuassianBlurSteps; j++)
 			{
 				blur += ForwardRenderedTexture.Sample(samLinear, IN.Tex + float2(i * uv_scale.x, j * uv_scale.y)).rgb * scalar_tmp;
 				scalar_sum += scalar_tmp;
@@ -578,6 +584,59 @@ float4 QuadPSForwardRendered(QuadVS_Output IN) : SV_TARGET
 		scene.rgb = blur;
 	}
 
+    if (DepthBlurMode == 1.0f)
+    {
+        float2 uv = IN.Tex;
+
+        float depth = DepthBuffer.SampleLevel(samLinear, uv, 0).r;
+
+        float distance = abs(depth - FocusDepth);
+        float blurFactor = saturate(distance / FocusRange) * MaxBlurStrength;
+
+        if (blurFactor > 0.001f)
+        {
+            float3 blur = float3(0, 0, 0);
+
+            float tex_width, tex_height;
+            ForwardRenderedTexture.GetDimensions(tex_width, tex_height);
+            float2 uv_scale = 1.0f / float2(tex_width, tex_height);
+
+            float scalar = 1;
+            float scalar_sum = 0;
+
+            for (int i = -DepthBlurSteps + 1; i < DepthBlurSteps; i++)
+            {
+                float scalar_tmp = scalar;
+
+                for (int j = -DepthBlurSteps + 1; j < DepthBlurSteps; j++)
+                {
+                    float2 offset = float2(i, j) * uv_scale * blurFactor;
+
+                    float3 sampleColor =
+                    ForwardRenderedTexture.SampleLevel(samLinear, uv + offset, 0).rgb;
+
+                    blur += sampleColor * scalar_tmp;
+                    scalar_sum += scalar_tmp;
+
+                    if (j <= 0)
+                        scalar_tmp *= 2.0f;
+                    else
+                        scalar_tmp /= 2.0f;
+                }
+
+                if (i <= 0)
+                    scalar *= 2.0f;
+                else
+                    scalar /= 2.0f;
+            }
+
+            blur /= scalar_sum;
+
+            scene.rgb = lerp(scene.rgb, blur, saturate(blurFactor));
+        }
+    }
+
+
 	scene *= PostProcessColor;
 
 	scene *= Brightness;
@@ -587,11 +646,11 @@ float4 QuadPSForwardRendered(QuadVS_Output IN) : SV_TARGET
 		scene.rgb = dot(scene.rgb, float3(0.3, 0.59, 0.11));
 	}
 
-    if (ScanMode)
-    {
-        float scan = sin(IN.Tex.y * ScanLineSize) * ScanLineOpacity;
-        scene.rgb -= scan;
-    }
+	if (ScanMode)
+	{
+		float scan = sin(IN.Tex.y * ScanLineSize) * ScanLineOpacity;
+		scene.rgb -= scan;
+	}
 
 	return scene;
 }
@@ -610,9 +669,8 @@ QuadVS_Output QuadVS(QuadVS_Input Input)
 float4 ComputeScene(float2 uv)
 {
 
-	float4 light = LightAccBuffer.Sample(samLinear, uv);
-
-	float4 albedo = AlbedoBuffer.Sample(samLinear, uv);
+	float4 light = LightAccBuffer.SampleLevel(samLinear, uv, 0);
+	float4 albedo = AlbedoBuffer.SampleLevel(samLinear, uv, 0);
 	float4 scene = albedo * light;
 
 	scene *= PostProcessColor;
@@ -630,7 +688,7 @@ float4 QuadPS(QuadVS_Output IN) : SV_TARGET
 
 	float4 scene = ComputeScene(uv);
 
-	if (BlurMode == 1.0f)
+	if (GuassianBlurMode == 1.0f)
 	{
 		float3 blur = float3(0, 0, 0);
 		float tex_width, tex_height;
@@ -639,10 +697,10 @@ float4 QuadPS(QuadVS_Output IN) : SV_TARGET
 
 		float scalar = 1;
 		float scalar_sum = 0;
-		for (int i = -BlurSteps + 1; i < BlurSteps; i++)
+		for (int i = -GuassianBlurSteps + 1; i < GuassianBlurSteps; i++)
 		{
 			float scalar_tmp = scalar;
-			for (int j = -BlurSteps + 1; j < BlurSteps; j++)
+			for (int j = -GuassianBlurSteps + 1; j < GuassianBlurSteps; j++)
 			{
 				blur += ComputeScene(uv + float2(i * uv_scale.x, j * uv_scale.y)).rgb * scalar_tmp;
 				scalar_sum += scalar_tmp;
@@ -665,6 +723,54 @@ float4 QuadPS(QuadVS_Output IN) : SV_TARGET
 		scene.rgb = blur;
 	}
 
+	if (DepthBlurMode == 1.0f)
+	{
+		float depth = DepthBuffer.SampleLevel(samLinear, uv, 0).r;
+
+		float distance = abs(depth - FocusDepth);
+
+		float blurFactor = saturate(distance / FocusRange) * MaxBlurStrength;
+
+		if (blurFactor > 0.001f)
+		{
+			float3 blur = float3(0, 0, 0);
+			float tex_width, tex_height;
+			AlbedoBuffer.GetDimensions(tex_width, tex_height);
+			float2 uv_scale = 1.0f / float2(tex_width, tex_height);
+
+			float scalar = 1;
+			float scalar_sum = 0;
+
+			for (int i = -DepthBlurSteps + 1; i < DepthBlurSteps; i++)
+			{
+				float scalar_tmp = scalar;
+				for (int j = -DepthBlurSteps + 1; j < DepthBlurSteps; j++)
+				{
+					float2 offset = float2(i, j) * uv_scale * blurFactor;
+
+					float3 sampleColor = ComputeScene(uv + offset).rgb;
+					blur += sampleColor * scalar_tmp;
+					scalar_sum += scalar_tmp;
+
+					if (j <= 0)
+						scalar_tmp *= 2.0f;
+					else
+						scalar_tmp /= 2.0f;
+				}
+
+				if (i <= 0)
+					scalar *= 2.0f;
+				else
+					scalar /= 2.0f;
+			}
+
+			blur /= scalar_sum;
+
+			scene.rgb = lerp(scene.rgb, blur, saturate(blurFactor));
+		}
+	}
+
+
 	if (GrayScaleMode == 1.0f)
 	{
 		scene.rgb = dot(scene.rgb, float3(0.3, 0.59, 0.11));
@@ -673,11 +779,11 @@ float4 QuadPS(QuadVS_Output IN) : SV_TARGET
 
 	if (ScanMode)
 	{
-        float scan = sin(uv.y * ScanLineSize) * ScanLineOpacity;
-        scene.rgb -= scan;
-    }
+		float scan = sin(uv.y * ScanLineSize) * ScanLineOpacity;
+		scene.rgb -= scan;
+	}
 
-    return scene;
+	return scene;
 
 }
 

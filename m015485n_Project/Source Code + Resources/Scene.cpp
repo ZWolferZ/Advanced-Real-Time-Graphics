@@ -151,7 +151,7 @@ void Scene::CreateGameObjects()
 
 	GameObject* LightAccTV = new GameObject(XMFLOAT3(-208.2, -1.3, -7.7), XMFLOAT3(-90, 31, 0), XMFLOAT3(.05, .05, .05), "LightAccTV", GetModelData("TV.obj"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture(m_textureMap, "TV.dds"), "TV.dds");
 
-	GameObject* LightAccImage = new GameObject(XMFLOAT3(-208.195, 0.766, -7.6), XMFLOAT3(0, 31, 0), XMFLOAT3(2.181, 1.35, 0.04), "LightAccImage", GetModelData("Cube"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture(m_textureMap, "Light Accumulation View Texture"), "Light Accumulation View Texture");
+	GameObject* LightAccImage = new GameObject(XMFLOAT3(-208.233, 0.766, -7.664), XMFLOAT3(0, 31, 0), XMFLOAT3(2.266, 1.35, 0.04), "LightAccImage", GetModelData("Cube"), m_pd3dDevice.Get(), m_pImmediateContext.Get(), GetPixelShader("Texture Pixel Shader"), GetTexture(m_textureMap, "Light Accumulation View Texture"), "Light Accumulation View Texture");
 
 	NormalMapCube1->m_autoRotateX = true;
 	NormalMapCube1->m_autoRotateY = true;
