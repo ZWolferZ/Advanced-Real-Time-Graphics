@@ -1,4 +1,4 @@
-\# RyanLabs Real-Time Advanced Graphical Renderer (RRTAGR)
+# RyanLabs Real-Time Advanced Graphical Renderer (RRTAGR)
 
 
 
